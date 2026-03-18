@@ -14,10 +14,12 @@ object GuiApp:
       ui.open()
     }
 
-final class GuiUi(session: GameSession):
+final class GuiUi(session: GameSession) extends Reactor:
 
   private val boardButtons: Array[Array[Button]] =
     Array.tabulate(8, 8)((_, _) => new Button(""))
+
+  private val boardGrid: GridPanel = new GridPanel(8, 8)
 
   private var core: CoreState = session.snapshot()
   private var flipped: Boolean = false
@@ -55,16 +57,20 @@ final class GuiUi(session: GameSession):
     frame.visible = true
 
   private def buildUi(): Component =
-    val boardGrid = new GridPanel(8, 8):
-      for r <- 0 until 8 do
-        for c <- 0 until 8 do
-          val btn = boardButtons(r)(c)
-          btn.focusable = false
-          btn.font = new Font("Dialog", java.awt.Font.PLAIN, 28)
-          btn.preferredSize = new Dimension(70, 70)
-          listenTo(btn)
-          reactions += { case ButtonClicked(`btn`) => onUiSquareClicked(uiCol = c, uiRow = r) }
-          contents += btn
+    boardGrid.contents.clear()
+    for r <- 0 until 8 do
+      for c <- 0 until 8 do
+        val btn = boardButtons(r)(c)
+        btn.focusable = false
+        btn.margin = new Insets(0, 0, 0, 0)
+        btn.preferredSize = new Dimension(0, 0) // let layout/resize decide
+        listenTo(btn)
+        reactions += { case ButtonClicked(`btn`) => onUiSquareClicked(uiCol = c, uiRow = r) }
+        boardGrid.contents += btn
+
+    // rescale on window resize
+    listenTo(boardGrid)
+    reactions += { case UIElementResized(`boardGrid`) => rescaleBoard() }
 
     val controls = new FlowPanel(FlowPanel.Alignment.Left)(
       new Button(Action("New") { dispatchCore(Command.NewGame) }),
@@ -96,6 +102,21 @@ final class GuiUi(session: GameSession):
       border = Swing.EmptyBorder(10, 10, 10, 10)
       layout(leftPanel) = BorderPanel.Position.Center
       layout(rightPanel) = BorderPanel.Position.East
+
+  private def rescaleBoard(): Unit =
+    val w = boardGrid.size.width
+    val h = boardGrid.size.height
+    if w <= 0 || h <= 0 then return
+    val cell = math.max(20, math.min(w / 8, h / 8))
+    val fontSize = math.max(14, (cell * 0.55).toInt)
+    val f = new Font("Dialog", java.awt.Font.PLAIN, fontSize)
+    for r <- 0 until 8 do
+      for c <- 0 until 8 do
+        val b = boardButtons(r)(c)
+        b.font = f
+        b.preferredSize = new Dimension(cell, cell)
+    boardGrid.revalidate()
+    boardGrid.repaint()
 
   private def onUiSquareClicked(uiCol: Int, uiRow: Int): Unit =
     val (col, row) =
@@ -190,6 +211,7 @@ final class GuiUi(session: GameSession):
     refreshUi()
 
   private def refreshUi(): Unit =
+    rescaleBoard()
     val flippedNow = flipped
     for uiRow <- 0 until 8 do
       for uiCol <- 0 until 8 do
