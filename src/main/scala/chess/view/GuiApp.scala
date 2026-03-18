@@ -183,8 +183,16 @@ object GuiApp extends SimpleSwingApplication:
         btn.background = bg
         btn.opaque = true
 
-        val txt = app.game.board.get(pos).map(_.symbol.toString).getOrElse("")
-        btn.text = txt
+        app.game.board.get(pos) match
+          case Some(Piece(Color.White, pt)) =>
+            btn.foreground = java.awt.Color.WHITE
+            btn.text = Piece(Color.White, pt).symbol.toString
+          case Some(Piece(Color.Black, pt)) =>
+            // leicht aufgehelltes Schwarz für bessere Sichtbarkeit auf dunklen Feldern
+            btn.foreground = new java.awt.Color(30, 30, 30)
+            btn.text = Piece(Color.Black, pt).symbol.toString
+          case None =>
+            btn.text = ""
 
     statusLabel.text = statusText(app)
     app.message.foreach { m => messageArea.text = m.trim }
