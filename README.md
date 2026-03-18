@@ -71,6 +71,14 @@ cd chess
 sbt run
 ```
 
+## Run (GUI)
+
+Desktop GUI using Scala Swing:
+
+```bash
+sbt runMain chess.GuiMain
+```
+
 ## Test
 
 ```bash

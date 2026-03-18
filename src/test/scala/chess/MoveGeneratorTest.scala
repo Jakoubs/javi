@@ -57,7 +57,7 @@ class MoveGeneratorTest extends AnyFunSuite with Matchers:
     val state = stateWith(
       pos("e7") -> white(PieceType.Pawn),
       pos("e1") -> white(PieceType.King),
-      pos("e8") -> black(PieceType.King)
+      pos("a8") -> black(PieceType.King)
     )
     val moves = MoveGenerator.legalMovesFrom(state, pos("e7"))
     moves.flatMap(_.promotion).distinct should contain allOf

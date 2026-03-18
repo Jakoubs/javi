@@ -171,16 +171,12 @@ object MoveGenerator:
     def slidingAttack(dirs: List[(Int, Int)], types: Set[PieceType]): Boolean =
       dirs.exists { (dc, dr) =>
         LazyList
-          .iterate(pos + (dc, dr))(p => p + (dc, dr))
+          .iterate(pos + (dc, dr))(_ + (dc, dr))
           .takeWhile(_.isValid)
-          .foldLeft((false, false)) { case ((found, blocked), cur) =>
-            if blocked then (false, true)
-            else board.get(cur) match
-              case None                                      => (false, false)
-              case Some(Piece(c, pt)) if c == attacker && types.contains(pt) => (true, true)
-              case _                                         => (false, true)
-          }
-          ._1
+          .map(board.get)
+          .collectFirst { case Some(p) => p } match
+            case Some(Piece(c, pt)) if c == attacker && types.contains(pt) => true
+            case _                                                        => false
       }
 
     slidingAttack(bishopDirs, Set(PieceType.Bishop, PieceType.Queen)) ||
