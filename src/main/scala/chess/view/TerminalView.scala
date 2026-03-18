@@ -98,18 +98,18 @@ object TerminalView:
           else if isLight                      then BG_LIGHT
           else                                      BG_DARK
 
-        // Unicode chess glyphs are double-width (2 terminal columns).
-        // Every cell must occupy exactly 4 terminal columns:
-        //   piece : " ♟ "  = 1 space + glyph(2) + 1 space = 4
-        //   empty : "    " = 4 spaces                      = 4
-        //   dot   : " •  " = 1 + dot(1) + 2 spaces        = 4
+      // Render in a fixed-width safe way (avoid unicode glyph width issues):
+      // Every cell is exactly 4 terminal columns:
+      //   piece : " P  " (or " p  ")
+      //   empty : "    "
+      //   dot   : " .  "
         val cell = state.board.get(pos) match
           case None =>
-            if highlights.contains(pos) then s"$bg •  $RESET"
+            if highlights.contains(pos) then s"$bg .  $RESET"
             else                             s"$bg    $RESET"
           case Some(piece) =>
             val fg = if piece.color == Color.White then FG_WHITE else s"$FG_BLACK$BOLD"
-            s"$bg$fg ${piece.symbol} $RESET"
+            s"$bg$fg ${piece.letter}  $RESET"
 
         sb.append(cell)
       }

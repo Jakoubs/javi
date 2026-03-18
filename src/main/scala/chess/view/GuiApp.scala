@@ -1,19 +1,29 @@
 package chess.view
 
-import chess.controller.{AppState, Command, GameController}
+import chess.controller.{Command, CommandParser, CoreState, GameSession}
 import chess.model.*
 
 import scala.swing.*
 import scala.swing.event.*
 
-object GuiApp extends SimpleSwingApplication:
+object GuiApp:
+
+  def start(session: GameSession): Unit =
+    Swing.onEDT {
+      val ui = new GuiUi(session)
+      ui.open()
+    }
+
+final class GuiUi(session: GameSession):
 
   private val boardButtons: Array[Array[Button]] =
     Array.tabulate(8, 8)((_, _) => new Button(""))
 
-  private var app: AppState = AppState.initial
+  private var core: CoreState = session.snapshot()
+  private var flipped: Boolean = false
   private var selected: Option[Pos] = None
   private var mainFrame: MainFrame | Null = null
+  private var highlights: Set[Pos] = Set.empty
 
   private val statusLabel = new Label("")
   private val messageArea = new TextArea:
@@ -24,7 +34,7 @@ object GuiApp extends SimpleSwingApplication:
 
   private val moveField = new TextField(columns = 10)
 
-  def top: Frame =
+  private val frame: MainFrame =
     val f = new MainFrame:
       title = "Chess"
       contents = buildUi()
@@ -33,6 +43,16 @@ object GuiApp extends SimpleSwingApplication:
       refreshUi()
     mainFrame = f
     f
+
+  session.addListener { s =>
+    core = s
+    Swing.onEDT {
+      refreshUi()
+    }
+  }
+
+  def open(): Unit =
+    frame.visible = true
 
   private def buildUi(): Component =
     val boardGrid = new GridPanel(8, 8):
@@ -47,11 +67,11 @@ object GuiApp extends SimpleSwingApplication:
           contents += btn
 
     val controls = new FlowPanel(FlowPanel.Alignment.Left)(
-      new Button(Action("New") { dispatch(Command.NewGame) }),
-      new Button(Action("Undo") { dispatch(Command.Undo) }),
-      new Button(Action("Flip") { dispatch(Command.Flip) }),
-      new Button(Action("Draw") { dispatch(Command.OfferDraw) }),
-      new Button(Action("Resign") { dispatch(Command.Resign) }),
+      new Button(Action("New") { dispatchCore(Command.NewGame) }),
+      new Button(Action("Undo") { dispatchCore(Command.Undo) }),
+      new Button(Action("Flip") { flipped = !flipped; highlights = Set.empty; refreshUi() }),
+      new Button(Action("Draw") { dispatchCore(Command.OfferDraw) }),
+      new Button(Action("Resign") { dispatchCore(Command.Resign) }),
       new Button(Action("Help") { showHelp() })
     )
 
@@ -79,30 +99,30 @@ object GuiApp extends SimpleSwingApplication:
 
   private def onUiSquareClicked(uiCol: Int, uiRow: Int): Unit =
     val (col, row) =
-      if !app.flipped then (uiCol, 7 - uiRow) else (7 - uiCol, uiRow)
+      if !flipped then (uiCol, 7 - uiRow) else (7 - uiCol, uiRow)
     val pos = Pos(col, row)
     selected match
       case None =>
-        app.game.board.get(pos) match
-          case Some(piece) if piece.color == app.game.activeColor =>
+        core.game.board.get(pos) match
+          case Some(piece) if piece.color == core.game.activeColor =>
             selected = Some(pos)
-            val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
-            app = app.copy(highlights = targets, message = None)
+            val targets = MoveGenerator.legalMovesFrom(core.game, pos).map(_.to).toSet
+            highlights = targets
           case _ =>
-            app = app.copy(message = Some("Select one of your pieces."))
+            messageArea.text = "Select one of your pieces."
       case Some(from) =>
         if from == pos then
           selected = None
-          app = app.copy(highlights = Set.empty, message = None)
+          highlights = Set.empty
         else
           val promoChoice = promotionIfNeeded(from, pos)
           promoChoice match
             case PromotionChoice.Cancelled =>
-              app = app.copy(message = Some("Promotion cancelled."))
+              messageArea.text = "Promotion cancelled."
             case PromotionChoice.NotNeeded =>
-              dispatch(Command.MakeMove(Move(from, pos, None)))
+              dispatchCore(Command.MakeMove(Move(from, pos, None)))
             case PromotionChoice.Chosen(p) =>
-              dispatch(Command.MakeMove(Move(from, pos, Some(p))))
+              dispatchCore(Command.MakeMove(Move(from, pos, Some(p))))
     refreshUi()
 
   private enum PromotionChoice:
@@ -111,7 +131,7 @@ object GuiApp extends SimpleSwingApplication:
     case Chosen(piece: PieceType)
 
   private def promotionIfNeeded(from: Pos, to: Pos): PromotionChoice =
-    val candidates = MoveGenerator.legalMoves(app.game).filter(m => m.from == from && m.to == to)
+    val candidates = MoveGenerator.legalMoves(core.game).filter(m => m.from == from && m.to == to)
     if candidates.exists(_.promotion.isDefined) then
       askPromotion().fold(PromotionChoice.Cancelled)(PromotionChoice.Chosen.apply)
     else PromotionChoice.NotNeeded
@@ -137,7 +157,17 @@ object GuiApp extends SimpleSwingApplication:
   private def onMoveEntered(): Unit =
     val txt = moveField.text.trim
     if txt.nonEmpty then
-      dispatch(chess.controller.CommandParser.parse(txt))
+      CommandParser.parse(txt) match
+        case Command.Flip =>
+          flipped = !flipped
+          highlights = Set.empty
+          refreshUi()
+        case Command.ShowMoves(pos) =>
+          val targets = MoveGenerator.legalMovesFrom(core.game, pos).map(_.to).toSet
+          highlights = targets
+          refreshUi()
+        case other =>
+          dispatchCore(other)
       moveField.text = ""
       refreshUi()
 
@@ -152,27 +182,27 @@ object GuiApp extends SimpleSwingApplication:
         |""".stripMargin
     messageArea.text = help
 
-  private def dispatch(cmd: Command): Unit =
-    app = GameController.handleCommand(app, cmd)
+  private def dispatchCore(cmd: Command): Unit =
     selected = None
-    // Convert terminal-coloured messages into plain text for GUI
-    app = app.copy(message = app.message.map(stripAnsi), highlights = Set.empty)
+    highlights = Set.empty
+    val msg = session.dispatch(cmd)
+    msg.foreach(m => messageArea.text = m.trim)
     refreshUi()
 
   private def refreshUi(): Unit =
-    val flipped = app.flipped
+    val flippedNow = flipped
     for uiRow <- 0 until 8 do
       for uiCol <- 0 until 8 do
         val (col, row) =
-          if !flipped then (uiCol, 7 - uiRow) else (7 - uiCol, uiRow)
+          if !flippedNow then (uiCol, 7 - uiRow) else (7 - uiCol, uiRow)
         val pos = Pos(col, row)
         val btn = boardButtons(uiRow)(uiCol)
         val baseLight = ((col + row) % 2 == 1)
         val bgBase = if baseLight then new java.awt.Color(240, 217, 181) else new java.awt.Color(181, 136, 99)
 
         val isSelected = selected.contains(pos)
-        val isHighlight = app.highlights.contains(pos)
-        val isLastMove = app.lastMove.exists(m => m.from == pos || m.to == pos)
+        val isHighlight = highlights.contains(pos)
+        val isLastMove = core.lastMove.exists(m => m.from == pos || m.to == pos)
 
         val bg =
           if isSelected then new java.awt.Color(120, 170, 255)
@@ -183,7 +213,7 @@ object GuiApp extends SimpleSwingApplication:
         btn.background = bg
         btn.opaque = true
 
-        app.game.board.get(pos) match
+        core.game.board.get(pos) match
           case Some(Piece(Color.White, pt)) =>
             btn.foreground = java.awt.Color.WHITE
             btn.text = Piece(Color.White, pt).symbol.toString
@@ -194,12 +224,11 @@ object GuiApp extends SimpleSwingApplication:
           case None =>
             btn.text = ""
 
-    statusLabel.text = statusText(app)
-    app.message.foreach { m => messageArea.text = m.trim }
+    statusLabel.text = statusText(core)
 
-  private def statusText(app: AppState): String =
-    val turn = s"${app.game.activeColor} to move"
-    val s = app.status match
+  private def statusText(core: CoreState): String =
+    val turn = s"${core.game.activeColor} to move"
+    val s = core.status match
       case GameStatus.Playing => turn
       case GameStatus.Check(c) => s"$c is in check — $turn"
       case GameStatus.Checkmate(loser) =>
@@ -207,8 +236,5 @@ object GuiApp extends SimpleSwingApplication:
         s"Checkmate — $winner wins"
       case GameStatus.Stalemate => "Stalemate — draw"
       case GameStatus.Draw(reason) => s"Draw by $reason"
-    s"Move ${app.game.fullMoveNumber} • $s"
-
-  private def stripAnsi(s: String): String =
-    s.replaceAll("\u001b\\[[;\\d]*m", "").replace("✗", "x").replace("✓", "")
+    s"Move ${core.game.fullMoveNumber} • $s"
 
