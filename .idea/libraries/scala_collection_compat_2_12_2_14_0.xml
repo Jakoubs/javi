@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="scala-collection-compat_2.12-2.14.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.coursier/cache/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-collection-compat_2.12/2.14.0/scala-collection-compat_2.12-2.14.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

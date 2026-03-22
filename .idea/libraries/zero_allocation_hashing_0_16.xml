@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="zero-allocation-hashing-0.16">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.coursier/cache/https/repo1.maven.org/maven2/net/openhft/zero-allocation-hashing/0.16/zero-allocation-hashing-0.16.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

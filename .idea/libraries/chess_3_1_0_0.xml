@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="chess_3-1.0.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/target/scala-3.3.1/chess_3-1.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

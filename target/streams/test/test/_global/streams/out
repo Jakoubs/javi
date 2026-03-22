@@ -1,0 +1,54 @@
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.GameControllerTest, org.scalatest.tools.Framework$$anon$1@66d99132, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.CommandParserTest, org.scalatest.tools.Framework$$anon$1@66d99132, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.MoveGeneratorTest, org.scalatest.tools.Framework$$anon$1@66d99132, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mCommandParserTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses a simple move[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses a move with promotion[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'moves e2'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'flip'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'undo'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'resign'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'new'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'quit'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- unknown input produces Unknown command[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- invalid position in 'moves' produces Unknown[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mMoveGeneratorTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- white pawn on e2 can advance one or two squares[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- white pawn cannot advance if blocked[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- white pawn can capture diagonally[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- pawn promotion generates 4 moves per target square[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- knight on e4 has 8 possible target squares in open position[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- knight on a1 has only 2 target squares[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- rook on e4 in open position has 14 moves[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- bishop on e4 in open position has 13 moves[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- king on e4 in open position has 8 moves[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- king cannot move into check[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- king in check must resolve the check[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- isInCheck is true when queen attacks king[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- en passant is legal when target square is set[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- en passant capture removes the captured pawn[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- castling is available when path is clear[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- castling is blocked when a square is under attack[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Scholar's mate is checkmate[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- stalemate is detected correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mGameControllerTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- initial app state is Playing[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- legal move updates board and switches active color[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- illegal move produces an error message and does not change board[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- undo after first move returns to initial board[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- undo on empty history shows error[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- ShowMoves highlights targets for a valid own piece[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- ShowMoves on empty square shows error[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Flip toggles flipped flag[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- NewGame resets the game state[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Quit sets running to false[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- draw offer then accept produces Draw status[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mRun completed in 482 milliseconds.[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mTotal number of tests run: 39[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mSuites: completed 3, aborted 0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mTests: succeeded 39, failed 0, canceled 0, ignored 0, pending 0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mAll tests passed.[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mPassed tests:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.CommandParserTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.GameControllerTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.MoveGeneratorTest[0m

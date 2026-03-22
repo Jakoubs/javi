@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="flexmark-0.62.2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.coursier/cache/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark/0.62.2/flexmark-0.62.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="protocol_2.12-1.12.6">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.coursier/cache/https/repo1.maven.org/maven2/org/scala-sbt/protocol_2.12/1.12.6/protocol_2.12-1.12.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

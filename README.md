@@ -64,20 +64,51 @@ ANSI colours mimic lichess's board palette. Unicode chess symbols ♔♕♖♗�
 
 ---
 
-## Run
+## Run (All UIs - TUI + GUI + WebUI)
+
+Run all three interfaces simultaneously, sharing the same game state:
 
 ```bash
-cd chess
 sbt run
 ```
 
-## Run (GUI)
+This will start:
+- **TUI**: Terminal interface in the current terminal
+- **GUI**: Desktop window with Scala Swing interface  
+- **WebUI**: Web interface at http://localhost:8080
+
+All three UIs share the same game session - moves made in one UI will instantly reflect in the others.
+
+## Run (TUI only)
+
+```bash
+sbt "runMain chess.Main"
+```
+
+## Run (GUI only)
 
 Desktop GUI using Scala Swing:
 
 ```bash
 sbt runMain chess.GuiMain
 ```
+
+## Run (WebUI only)
+
+Web interface only:
+
+```bash
+sbt "runMain chess.web.WebMain"
+```
+
+Then start the frontend:
+
+```bash
+cd webui
+npm run dev
+```
+
+Access at http://localhost:5173
 
 ## Test
 

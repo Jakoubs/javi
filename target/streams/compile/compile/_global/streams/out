@@ -1,209 +1,22 @@
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E018] Syntax Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:38:23 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m38 |[0m            ): String =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                       ^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                       expression expected but [31mval[0m found[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E172] Type Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/UnifiedMain.scala:20:55 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m20 |[0m        WebMain.runWithSession(session).unsafeRunSync()[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                                       ^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mCould not find an implicit IORuntime.[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E018] Syntax Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:48:68 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m48 |[0m  [33mprivate[0m [33mdef[0m header(state: GameState, status: GameStatus): String =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                                                    ^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                                       expression expected but [31mval[0m found[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mInstead of calling unsafe methods directly, consider using cats.effect.IOApp, which[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mruns your IO. If integrating with non-functional code or experimenting in a REPL / Worksheet,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0madd the following import:[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E018] Syntax Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:69:30 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m69 |[0m                   ): String =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                              ^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                              expression expected but [31mval[0m found[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mimport cats.effect.unsafe.implicits.global[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:91:6 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m91 |[0m      [33melse[0m [33mif[0m lastMovePosSet.contains(pos) [33mthen[0m BG_YELLOW[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m      ^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m      end of statement expected but 'else' found[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E018] Syntax Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:124:68 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m124 |[0m  [33mprivate[0m [33mdef[0m footer(state: GameState, status: GameStatus): String =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                                                    ^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                     expression expected but [31mval[0m found[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E088] Syntax Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:134:2 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m134 |[0m  [33mcase[0m GameStatus.Checkmate(loser) =>[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m  ^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m  Expected start of definition[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E088] Syntax Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:137:2 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m137 |[0m  [33mcase[0m GameStatus.Stalemate        =>[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m  ^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m  Expected start of definition[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E088] Syntax Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:139:2 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m139 |[0m  [33mcase[0m GameStatus.Draw(reason)     =>[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m  ^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m  Expected start of definition[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:40:19 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m40 |[0m  sb.append(header(state, status))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                   ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                   Not found: state[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mAlternatively, you can create an explicit IORuntime value and put it in implicit scope.[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mThis may be useful if you have a pre-existing fixed thread pool and/or scheduler which you[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mwish to use to execute IO programs. Please be sure to review thread pool best practices to[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mavoid unintentionally degrading your application performance.[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:40:26 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m40 |[0m  sb.append(header(state, status))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                          ^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                          Not found: status[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:42:18 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m42 |[0m  sb.append(board(state, status, highlights, lastMove, flipped))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                  ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                  Not found: state[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mThe following import might fix the problem:[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:42:25 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m42 |[0m  sb.append(board(state, status, highlights, lastMove, flipped))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                         ^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                         Not found: status[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  import cats.effect.unsafe.implicits.global[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:42:33 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m42 |[0m  sb.append(board(state, status, highlights, lastMove, flipped))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                 ^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                                 Not found: highlights[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:42:45 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m42 |[0m  sb.append(board(state, status, highlights, lastMove, flipped))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                             ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                                             Not found: lastMove[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:42:55 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m42 |[0m  sb.append(board(state, status, highlights, lastMove, flipped))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                                       ^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                                                      Not found: flipped[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:43:19 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m43 |[0m  sb.append(footer(state, status))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                   ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                   Not found: state[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:43:26 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m43 |[0m  sb.append(footer(state, status))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                          ^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                          Not found: status[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:52:17 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m52 |[0m  [33mval[0m [36mcheckStr[0m = status [33mmatch[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                 ^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                 Not found: status[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:57:31 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m57 |[0m  [33mval[0m [36mmoveStr[0m = [31ms"[0m${DIM}[31mMove [0m${state.fullMoveNumber}${RESET}[31m"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                               ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                               Not found: state[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:59:20 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m59 |[0m  [31ms"  [0m$FG_CYAN$BOLD$top$RESET[31m  [0m$moveStr$checkStr[31m\n"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                    ^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                    Not found: top[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:73:16 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m73 |[0m  [33mval[0m [36mrows[0m = [33mif[0m flipped [33mthen[0m [31m0[0m to [31m7[0m [33melse[0m ([31m7[0m to [31m0[0m by -[31m1[0m)[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                ^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                Not found: flipped[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:74:16 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m74 |[0m  [33mval[0m [36mcols[0m = [33mif[0m flipped [33mthen[0m ([31m7[0m to [31m0[0m by -[31m1[0m).toList [33melse[0m ([31m0[0m to [31m7[0m).toList[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                ^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                Not found: flipped[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:88:11 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m88 |[0m        [33mif[0m state.board.findKing(state.activeColor).contains(pos) &&[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m           ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m           Not found: state[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:101:17 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m101 |[0m      [33mval[0m [36mcell[0m = state.board.get(pos) [33mmatch[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                 ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                 Not found: state[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:103:11 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m103 |[0m        [33mif[0m highlights.contains(pos) [33mthen[0m [31ms"[0m$bg[31m [0m${[31m"•"[0m}[31m  [0m$RESET[31m"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m           ^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m           Not found: highlights[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:106:18 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m106 |[0m      [33mval[0m [36mfg[0m = [33mif[0m piece.color == Color.White [33mthen[0m FG_WHITE [33melse[0m [31ms"[0m$FG_BLACK$BOLD[31m"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                  ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                  Not found: piece[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:107:17 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m107 |[0m      [31ms"[0m$bg$fg[31m [0m${piece.symbol}[31m [0m$RESET[31m"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                 ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                 Not found: piece[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:129:19 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m129 |[0m  [33mval[0m [36mstatusLine[0m = status [33mmatch[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                   ^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                   Not found: status[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:130:46 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m130 |[0m  [33mcase[0m GameStatus.Playing           => [31ms"\n  [0m$turn[31m to move"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                              ^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                              Not found: turn[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:132:15 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m132 |[0m  [33mval[0m [36mcol[0m = [33mif[0m c == Color.White [33mthen[0m [31ms"[0m${FG_WHITE}${BOLD}[31mWhite[0m${RESET}[31m"[0m [33melse[0m [31ms"[0m${FG_CYAN}${BOLD}[31mBlack[0m${RESET}[31m"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m               ^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m               Not found: c[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:133:28 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m133 |[0m  [31ms"\n  [0m$col[31m is in check — [0m$turn[31m to move"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                            ^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                            Not found: turn[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:136:44 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m136 |[0m  [31ms"\n  [0m${FG_RED}${BOLD}[31mCheckmate![0m${RESET}[31m [0m$winner[31m wins! 🏆"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                            ^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                            Not found: winner[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E008] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:142:13 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m142 |[0m  statusLine + [31m"\n"[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m  ^^^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0mvalue + is not a member of String | Unit, but could be made available as an extension method.[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0mOne of the following imports might make progress towards fixing the problem:[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m  import math.Fractional.Implicits.infixFractionalOps[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m  import math.Integral.Implicits.infixIntegralOps[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m  import math.Numeric.Implicits.infixNumericOps[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- [E129] Potential Issue Warning: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/src/main/scala/chess/view/TerminalView.scala:90:11 [0m[0m[0m
-[0m[[0m[33mwarn[0m] [0m[0m[33m90 |[0m      [33mthen[0m BG_RED[0m
-[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m           ^^^^^^[0m[0m
-[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0mA pure expression does nothing in statement position; you may be omitting necessary parentheses[0m
-[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m[0m
-[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[33mwarn[0m] [0m[0mone warning found[0m
-[0m[[0m[31merror[0m] [0m[0m33 errors found[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m

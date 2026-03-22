@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="lib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.sbt_boot/scala-2.12.21/lib/scala-reflect.jar!/" />
+      <root url="jar://$PROJECT_DIR$/.sbt_boot/scala-2.12.21/lib/scala-library.jar!/" />
+      <root url="jar://$PROJECT_DIR$/.sbt_boot/scala-2.12.21/lib/scala-compiler.jar!/" />
+      <root url="jar://$PROJECT_DIR$/.sbt_boot/scala-2.12.21/lib/scala-xml_2.12-2.3.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

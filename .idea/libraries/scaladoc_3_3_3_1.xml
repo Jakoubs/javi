@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="scaladoc_3-3.3.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.coursier/cache/https/repo1.maven.org/maven2/org/scala-lang/scaladoc_3/3.3.1/scaladoc_3-3.3.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,9 @@
+[0m[[0m[31merror[0m] [0m[0mjava.net.BindException: Die Adresse wird bereits verwendet[0m
+[0m[[0m[31merror[0m] [0m[0m	at java.base/sun.nio.ch.Net.bind0(Native Method)[0m
+[0m[[0m[31merror[0m] [0m[0m	at java.base/sun.nio.ch.Net.bind(Net.java:522)[0m
+[0m[[0m[31merror[0m] [0m[0m	at java.base/sun.nio.ch.Net.bind(Net.java:511)[0m
+[0m[[0m[31merror[0m] [0m[0m	at java.base/sun.nio.ch.AsynchronousServerSocketChannelImpl.bind(AsynchronousServerSocketChannelImpl.java:160)[0m
+[0m[[0m[31merror[0m] [0m[0m	at java.base/java.nio.channels.AsynchronousServerSocketChannel.bind(AsynchronousServerSocketChannel.java:197)[0m
+[0m[[0m[31merror[0m] [0m[0m	at fs2.io.net.SocketGroupCompanionPlatform.fs2$io$net$SocketGroupCompanionPlatform$AsyncSocketGroup$$_$$anonfun$2$$anonfun$3$$anonfun$1(SocketGroupPlatform.scala:102)[0m
+[0m[[0m[31merror[0m] [0m[0m	at delay @ fs2.io.net.SocketGroupCompanionPlatform$AsyncSocketGroup.$anonfun$2$$anonfun$3(SocketGroupPlatform.scala:104)[0m
+[0m[[0m[31merror[0m] [0m[0m(Compile / [31mrunMain[0m) java.net.BindException: Die Adresse wird bereits verwendet[0m

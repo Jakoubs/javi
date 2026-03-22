@@ -28,6 +28,7 @@ final class GuiUi(session: GameSession) extends Reactor:
   private var highlights: Set[Pos] = Set.empty
 
   private val statusLabel = new Label("")
+  private val infoTitle = new Label("Info")
   private val messageArea = new TextArea:
     editable = false
     lineWrap = true
@@ -35,6 +36,14 @@ final class GuiUi(session: GameSession) extends Reactor:
     rows = 3
 
   private val moveField = new TextField(columns = 10)
+  private val playButton = new Button(Action("Play") { onMoveEntered() })
+
+  private val btnNew    = new Button(Action("New") { dispatchCore(Command.NewGame) })
+  private val btnUndo   = new Button(Action("Undo") { dispatchCore(Command.Undo) })
+  private val btnFlip   = new Button(Action("Flip") { flipped = !flipped; highlights = Set.empty; refreshUi() })
+  private val btnDraw   = new Button(Action("Draw") { dispatchCore(Command.OfferDraw) })
+  private val btnResign = new Button(Action("Resign") { dispatchCore(Command.Resign) })
+  private val btnHelp   = new Button(Action("Help") { showHelp() })
 
   private val frame: MainFrame =
     val f = new MainFrame:
@@ -42,9 +51,13 @@ final class GuiUi(session: GameSession) extends Reactor:
       contents = buildUi()
       minimumSize = new Dimension(780, 720)
       centerOnScreen()
-      refreshUi()
     mainFrame = f
     f
+
+  // Initialize UI after frame is fully constructed
+  Swing.onEDT {
+    refreshUi()
+  }
 
   session.addListener { s =>
     core = s
@@ -73,35 +86,42 @@ final class GuiUi(session: GameSession) extends Reactor:
     reactions += { case UIElementResized(`boardGrid`) => rescaleBoard() }
 
     val controls = new FlowPanel(FlowPanel.Alignment.Left)(
-      new Button(Action("New") { dispatchCore(Command.NewGame) }),
-      new Button(Action("Undo") { dispatchCore(Command.Undo) }),
-      new Button(Action("Flip") { flipped = !flipped; highlights = Set.empty; refreshUi() }),
-      new Button(Action("Draw") { dispatchCore(Command.OfferDraw) }),
-      new Button(Action("Resign") { dispatchCore(Command.Resign) }),
-      new Button(Action("Help") { showHelp() })
+      btnNew,
+      btnUndo,
+      btnFlip,
+      btnDraw,
+      btnResign,
+      btnHelp
     )
 
     val movePanel = new FlowPanel(FlowPanel.Alignment.Left)(
       new Label("Move:"),
       moveField,
-      new Button(Action("Play") { onMoveEntered() })
+      playButton
     )
 
     val rightPanel = new BorderPanel:
-      layout(new Label("Info")) = BorderPanel.Position.North
+      layout(infoTitle) = BorderPanel.Position.North
       layout(new ScrollPane(messageArea)) = BorderPanel.Position.Center
       layout(movePanel) = BorderPanel.Position.South
-      preferredSize = new Dimension(260, 0)
 
     val leftPanel = new BorderPanel:
       layout(controls) = BorderPanel.Position.North
       layout(boardGrid) = BorderPanel.Position.Center
       layout(statusLabel) = BorderPanel.Position.South
 
+    val split = new SplitPane(Orientation.Horizontal, leftPanel, rightPanel):
+      continuousLayout = true
+      oneTouchExpandable = true
+      resizeWeight = 0.75
+
+    // rescale other UI elements on resize
+    listenTo(split)
+    reactions += { case UIElementResized(`split`) => rescaleUi() }
+
     new BorderPanel:
       border = Swing.EmptyBorder(10, 10, 10, 10)
-      layout(leftPanel) = BorderPanel.Position.Center
-      layout(rightPanel) = BorderPanel.Position.East
+      layout(split) = BorderPanel.Position.Center
 
   private def rescaleBoard(): Unit =
     val w = boardGrid.size.width
@@ -117,6 +137,28 @@ final class GuiUi(session: GameSession) extends Reactor:
         b.preferredSize = new Dimension(cell, cell)
     boardGrid.revalidate()
     boardGrid.repaint()
+
+  private def rescaleUi(): Unit =
+    // scale controls / inputs relative to window size
+    val w = frame.size.width
+    val h = frame.size.height
+    if w <= 0 || h <= 0 then return
+
+    val base = math.max(12, math.min(w, h) / 55)
+    val fontControls = new Font("Dialog", java.awt.Font.PLAIN, base)
+    val fontTitle    = new Font("Dialog", java.awt.Font.BOLD, math.max(12, base + 1))
+
+    Seq(btnNew, btnUndo, btnFlip, btnDraw, btnResign, btnHelp, playButton).foreach { b =>
+      b.font = fontControls
+      b.margin = new Insets(2, 10, 2, 10)
+    }
+
+    moveField.font = fontControls
+    moveField.preferredSize = new Dimension(math.max(140, w / 10), math.max(28, base * 2))
+
+    statusLabel.font = fontControls
+    infoTitle.font = fontTitle
+    messageArea.font = fontControls
 
   private def onUiSquareClicked(uiCol: Int, uiRow: Int): Unit =
     val (col, row) =
@@ -211,6 +253,7 @@ final class GuiUi(session: GameSession) extends Reactor:
     refreshUi()
 
   private def refreshUi(): Unit =
+    rescaleUi()
     rescaleBoard()
     val flippedNow = flipped
     for uiRow <- 0 until 8 do

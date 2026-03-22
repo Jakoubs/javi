@@ -1,0 +1,5 @@
+1773847607432:runMain chess.GuiMain
+1773865951967:sbt runMain chess.web.WebMain
+1773865995526:runMain chess.web.WebMain
+1773921763204:sbt runMain chess.web.WebMain
+1773921770138:runMain chess.web.WebMain

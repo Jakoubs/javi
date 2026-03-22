@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jsch-2.27.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.coursier/cache/https/repo1.maven.org/maven2/com/github/mwiede/jsch/2.27.5/jsch-2.27.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

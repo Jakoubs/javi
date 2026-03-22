@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <option name="separateProdTestSources" value="true" />
+    <profile name="sbt 1" modules="chess,chess.main,chess.test,javi_2167,javi_2167.main,javi_2167.test" />
+  </component>
+</project>
