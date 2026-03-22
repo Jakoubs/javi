@@ -283,8 +283,8 @@ final class GuiUi(session: GameSession) extends Reactor:
             btn.foreground = java.awt.Color.WHITE
             btn.text = Piece(Color.White, pt).symbol.toString
           case Some(Piece(Color.Black, pt)) =>
-            // leicht aufgehelltes Schwarz für bessere Sichtbarkeit auf dunklen Feldern
-            btn.foreground = new java.awt.Color(30, 30, 30)
+            // Use a lighter black color for better visibility on dark squares
+            btn.foreground = new java.awt.Color(80, 80, 80)
             btn.text = Piece(Color.Black, pt).symbol.toString
           case None =>
             btn.text = ""
