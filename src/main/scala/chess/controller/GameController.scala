@@ -42,7 +42,7 @@ object CommandParser:
       if trimmed.startsWith("moves ") then
         val posStr = trimmed.drop(6).trim
         Pos.fromAlgebraic(posStr)
-          .map(Command.ShowMoves)
+          .map(Command.ShowMoves.apply)
           .getOrElse(Command.Unknown(s"Invalid position: $posStr"))
       else
         parseMove(trimmed)

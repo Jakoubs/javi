@@ -45,17 +45,17 @@ object TerminalView:
   // ── Header (player names, captured pieces placeholder) ───────────────────
 
   private def header(state: GameState, status: GameStatus): String =
-  val (top, bottom) =
-    ("Black", "White")
+    val (top, bottom) =
+      ("Black", "White")
 
-  val checkStr = status match
-  case GameStatus.Check(c)     => s" ${FG_RED}${BOLD}CHECK!${RESET}"
-  case GameStatus.Checkmate(c) => s" ${FG_RED}${BOLD}CHECKMATE${RESET}"
-  case _                       => ""
+    val checkStr = status match
+      case GameStatus.Check(c)     => s" ${FG_RED}${BOLD}CHECK!${RESET}"
+      case GameStatus.Checkmate(c) => s" ${FG_RED}${BOLD}CHECKMATE${RESET}"
+      case _                       => ""
 
-  val moveStr = s"${DIM}Move ${state.fullMoveNumber}${RESET}"
+    val moveStr = s"${DIM}Move ${state.fullMoveNumber}${RESET}"
 
-  s"  $FG_CYAN$BOLD$top$RESET  $moveStr$checkStr\n"
+    s"  $FG_CYAN$BOLD$top$RESET  $moveStr$checkStr\n"
 
   // ── Board ─────────────────────────────────────────────────────────────────
 
@@ -115,24 +115,24 @@ object TerminalView:
   // ── Footer (status message + prompt) ──────────────────────────────────────
 
   private def footer(state: GameState, status: GameStatus): String =
-  val turn = state.activeColor match
-  case Color.White => s"${FG_WHITE}${BOLD}White${RESET}"
-  case Color.Black => s"${FG_CYAN}${BOLD}Black${RESET}"
+    val turn = state.activeColor match
+      case Color.White => s"${FG_WHITE}${BOLD}White${RESET}"
+      case Color.Black => s"${FG_CYAN}${BOLD}Black${RESET}"
 
-  val statusLine = status match
-  case GameStatus.Playing           => s"\n  $turn to move"
-  case GameStatus.Check(c)         =>
-  val col = if c == Color.White then s"${FG_WHITE}${BOLD}White${RESET}" else s"${FG_CYAN}${BOLD}Black${RESET}"
-  s"\n  $col is in check — $turn to move"
-  case GameStatus.Checkmate(loser) =>
-  val winner = if loser == Color.White then s"${FG_CYAN}${BOLD}Black${RESET}" else s"${FG_WHITE}${BOLD}White${RESET}"
-  s"\n  ${FG_RED}${BOLD}Checkmate!${RESET} $winner wins! 🏆"
-  case GameStatus.Stalemate        =>
-  s"\n  ${FG_YELLOW}${BOLD}Stalemate!${RESET} The game is a draw. 🤝"
-  case GameStatus.Draw(reason)     =>
-  s"\n  ${FG_YELLOW}${BOLD}Draw${RESET} by $reason. 🤝"
+    val statusLine = status match
+      case GameStatus.Playing           => s"\n  $turn to move"
+      case GameStatus.Check(c)         =>
+        val col = if c == Color.White then s"${FG_WHITE}${BOLD}White${RESET}" else s"${FG_CYAN}${BOLD}Black${RESET}"
+        s"\n  $col is in check — $turn to move"
+      case GameStatus.Checkmate(loser) =>
+        val winner = if loser == Color.White then s"${FG_CYAN}${BOLD}Black${RESET}" else s"${FG_WHITE}${BOLD}White${RESET}"
+        s"\n  ${FG_RED}${BOLD}Checkmate!${RESET} $winner wins! 🏆"
+      case GameStatus.Stalemate        =>
+        s"\n  ${FG_YELLOW}${BOLD}Stalemate!${RESET} The game is a draw. 🤝"
+      case GameStatus.Draw(reason)     =>
+        s"\n  ${FG_YELLOW}${BOLD}Draw${RESET} by $reason. 🤝"
 
-  statusLine + "\n"
+    statusLine + "\n"
 
   // ── Help text ─────────────────────────────────────────────────────────────
 
