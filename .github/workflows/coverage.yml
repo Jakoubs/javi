@@ -2,9 +2,7 @@ name: Coverage Report
 
 on:
   push:
-    branches: [ main, functional-improvements ]
   pull_request:
-    branches: [ main, functional-improvements ]
 
 jobs:
   coverage:

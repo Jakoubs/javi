@@ -29,3 +29,18 @@ jobs:
           path: target/**/scoverage-report/**
           if-no-files-found: warn
 
+      - name: Upload coverage to Coveralls
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: sbt coverageAggregate coveralls || echo "Coveralls upload failed"
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./target/**/scoverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
