@@ -48,6 +48,11 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
         
+    - name: Upload coverage to Coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: sbt coverageAggregate coveralls
+        
     - name: Coverage Summary
       run: |
         echo "## 📊 Coverage Report" >> $GITHUB_STEP_SUMMARY

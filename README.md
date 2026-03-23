@@ -1,7 +1,7 @@
 # ♟ Terminal Chess in Scala
 
+[![Coverage](https://coveralls.io/repos/YOUR_USERNAME/chess/badge.svg?branch=main)](https://coveralls.io/r/YOUR_USERNAME/chess?branch=main)
 [![codecov](https://codecov.io/gh/YOUR_USERNAME/chess/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/YOUR_USERNAME/chess)
-[![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://github.com/YOUR_USERNAME/chess/actions)
 [![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/chess/Coverage%20Report)](https://github.com/YOUR_USERNAME/chess/actions/workflows/coverage.yml)
 
 A fully playable, legal-moves-only chess game for the terminal, built in pure Scala 3 with MVC architecture inspired by lichess.
@@ -87,8 +87,8 @@ This project uses **scoverage** for test coverage reporting with automated GitHu
 
 ### Coverage Badges
 
+- **Coveralls**: ![Coverage](https://coveralls.io/repos/YOUR_USERNAME/chess/badge.svg?branch=main)
 - **Codecov**: ![codecov](https://codecov.io/gh/YOUR_USERNAME/chess/graph/badge.svg?token=YOUR_TOKEN)
-- **Coverage Status**: ![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)
 - **Build Status**: ![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/chess/Coverage%20Report)
 
 ### Generate Coverage Locally
@@ -120,6 +120,7 @@ Coverage is automatically generated and reported on:
 ### Coverage Reports
 
 - **Local**: `target/scala-3.3.1/scoverage-report/index.html`
+- **Coveralls**: https://coveralls.io/r/YOUR_USERNAME/chess?branch=main
 - **Codecov**: https://codecov.io/gh/YOUR_USERNAME/chess
 - **GitHub Actions**: Available as workflow artifacts
 
@@ -137,9 +138,10 @@ coverageHighlighting := true
 ### View Coverage Details
 
 1. **Local Report**: Open `target/scala-3.3.1/scoverage-report/index.html`
-2. **Codecov Dashboard**: Visit https://codecov.io/gh/YOUR_USERNAME/chess
-3. **GitHub Actions**: Check workflow runs for coverage summaries
-4. **Pull Requests**: Coverage diff in PR checks
+2. **Coveralls Dashboard**: Visit https://coveralls.io/r/YOUR_USERNAME/chess
+3. **Codecov Dashboard**: Visit https://codecov.io/gh/YOUR_USERNAME/chess
+4. **GitHub Actions**: Check workflow runs for coverage summaries
+5. **Pull Requests**: Coverage diff in PR checks
 
 ## Build fat JAR
 
