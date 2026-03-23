@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Run tests with coverage (continue on failure)
+        continue-on-error: true
+        run: sbt -batch clean coverage test
+
+      - name: Generate coverage report
+        run: sbt -batch coverageReport
+
+      - name: Upload scoverage HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scoverage-report
+          path: target/**/scoverage-report/**
+          if-no-files-found: warn
+

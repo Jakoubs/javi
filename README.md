@@ -77,6 +77,18 @@ sbt run
 sbt test
 ```
 
+## Code Coverage
+
+Mit `sbt-scoverage` wird die Coverage mit Instrumentierung über `sbt coverage test` erzeugt.
+
+```bash
+sbt clean coverage test coverageReport
+```
+
+Der HTML-Report wird unter `target/<scalaVersion>/scoverage-report/index.html` generiert (für dieses Projekt typischerweise `target/scala-3.3.1/scoverage-report/index.html`).
+
+In GitHub Actions wird der Report als Artefakt mit dem Namen `scoverage-report` hochgeladen.
+
 ## Build fat JAR
 
 ```bash

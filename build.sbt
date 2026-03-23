@@ -3,6 +3,7 @@ ThisBuild / version      := "1.0.0"
 ThisBuild / organization := "chess"
 
 lazy val root = (project in file("."))
+  .enablePlugins(scoverage.ScoverageSbtPlugin)
   .settings(
     name := "chess",
     libraryDependencies ++= Seq(
