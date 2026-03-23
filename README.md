@@ -1,5 +1,4 @@
 # ♟ Terminal Chess in Scala
-test
 [![Coverage](https://coveralls.io/repos/YOUR_USERNAME/chess/badge.svg?branch=main)](https://coveralls.io/r/YOUR_USERNAME/chess?branch=main)
 [![codecov](https://codecov.io/gh/YOUR_USERNAME/chess/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/YOUR_USERNAME/chess)
 [![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/chess/Coverage%20Report)](https://github.com/YOUR_USERNAME/chess/actions/workflows/coverage.yml)
