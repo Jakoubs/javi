@@ -18,19 +18,8 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
-    - name: Cache sbt dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.sbt
-          ~/.ivy2/cache
-          ~/.coursier/cache/v1
-          ~/.cache/coursier/v1
-          ~/Library/Caches/Coursier/v1
-          !~/.ivy2/local
-        key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.sbt') }}
-        restore-keys: |
-          ${{ runner.os }}-sbt-
+    - name: Setup SBT
+      uses: sbt/setup-sbt@v1
           
     - name: Run tests with coverage
       run: sbt clean coverage test
