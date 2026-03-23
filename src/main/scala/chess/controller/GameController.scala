@@ -24,40 +24,40 @@ object CommandParser:
   def parse(input: String): Command =
     val trimmed = input.trim.toLowerCase
 
-    trimmed match
-      case "flip"               => Command.Flip
-      case "undo"               => Command.Undo
-      case "resign"             => Command.Resign
-      case "draw"               => Command.OfferDraw
-      case "new" | "newgame"    => Command.NewGame
-      case "help" | "?"         => Command.Help
-      case "quit" | "exit" | "q"=> Command.Quit
-      case s if s.startsWith("moves ") =>
-        val posStr = s.drop(6).trim
-        Pos.fromAlgebraic(posStr) match
-          case Some(pos) => Command.ShowMoves(pos)
-          case None      => Command.Unknown(s"Invalid position: $posStr")
-      case s =>
-        parseMove(s) match
-          case Some(cmd) => cmd
-          case None      => Command.Unknown(s"Unknown command: '$input'. Type 'help' for help.")
+    val simpleCommands = Map(
+      "flip" -> Command.Flip,
+      "undo" -> Command.Undo,
+      "resign" -> Command.Resign,
+      "draw" -> Command.OfferDraw,
+      "new" -> Command.NewGame,
+      "newgame" -> Command.NewGame,
+      "help" -> Command.Help,
+      "?" -> Command.Help,
+      "quit" -> Command.Quit,
+      "exit" -> Command.Quit,
+      "q" -> Command.Quit
+    )
+
+    simpleCommands.get(trimmed).getOrElse {
+      if trimmed.startsWith("moves ") then
+        val posStr = trimmed.drop(6).trim
+        Pos.fromAlgebraic(posStr)
+          .map(Command.ShowMoves)
+          .getOrElse(Command.Unknown(s"Invalid position: $posStr"))
+      else
+        parseMove(trimmed)
+          .getOrElse(Command.Unknown(s"Unknown command: '$input'. Type 'help' for help."))
+    }
 
   private def parseMove(s: String): Option[Command] =
-    // Formats: "e2e4"  or  "e7e8q"
-    val cleaned = s.trim.toLowerCase
-    if cleaned.length < 4 then return None
-
-    val fromStr   = cleaned.take(2)
-    val restStr   = cleaned.drop(2)
-    val toStr     = restStr.take(2)
-    val promoChar = restStr.drop(2).headOption
-
-    for
-      from  <- Pos.fromAlgebraic(fromStr)
-      to    <- Pos.fromAlgebraic(toStr)
-      promo = promoChar.flatMap(charToPromotion)
-      _     <- if promoChar.isDefined && promo.isEmpty then None else Some(())
-    yield Command.MakeMove(Move(from, to, promo))
+    if s.length < 4 then None
+    else
+      for
+        from  <- Pos.fromAlgebraic(s.take(2))
+        to    <- Pos.fromAlgebraic(s.drop(2).take(2))
+        promo = s.drop(4).headOption.flatMap(charToPromotion)
+        _     <- if s.drop(4).headOption.isDefined && promo.isEmpty then None else Some(())
+      yield Command.MakeMove(Move(from, to, promo))
 
   private def charToPromotion(c: Char): Option[PieceType] = c match
     case 'q' => Some(PieceType.Queen)
@@ -93,15 +93,16 @@ object GameController:
   // ── Main loop ──────────────────────────────────────────────────────────────
 
   def run(): Unit =
-    var app = AppState.initial
-    renderFull(app)
+    @annotation.tailrec
+    def loop(app: AppState): Unit =
+      renderFull(app)
+      if app.running then
+        print(TerminalView.prompt)
+        val input = scala.io.StdIn.readLine()
+        if input != null then
+          loop(handleCommand(app, CommandParser.parse(input.trim)))
 
-    while app.running do
-      print(TerminalView.prompt)
-      val input = scala.io.StdIn.readLine()
-      if input != null then
-        app = handleCommand(app, CommandParser.parse(input.trim))
-        renderFull(app)
+    loop(AppState.initial)
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

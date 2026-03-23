@@ -17,33 +17,39 @@ enum PieceType:
 // ─── Piece ───────────────────────────────────────────────────────────────────
 
 case class Piece(color: Color, pieceType: PieceType):
-  def symbol: String = (color, pieceType) match
-    case (Color.White, PieceType.King)   => "♔"
-    case (Color.White, PieceType.Queen)  => "♕"
-    case (Color.White, PieceType.Rook)   => "♖"
-    case (Color.White, PieceType.Bishop) => "♗"
-    case (Color.White, PieceType.Knight) => "♘"
-    case (Color.White, PieceType.Pawn)   => "♙"
-    case (Color.Black, PieceType.King)   => "♚"
-    case (Color.Black, PieceType.Queen)  => "♛"
-    case (Color.Black, PieceType.Rook)   => "♜"
-    case (Color.Black, PieceType.Bishop) => "♝"
-    case (Color.Black, PieceType.Knight) => "♞"
-    case (Color.Black, PieceType.Pawn)   => "♟"
+  def symbol: String =
+    val symbols = Map(
+      (Color.White, PieceType.King)   -> "♔",
+      (Color.White, PieceType.Queen)  -> "♕",
+      (Color.White, PieceType.Rook)   -> "♖",
+      (Color.White, PieceType.Bishop) -> "♗",
+      (Color.White, PieceType.Knight) -> "♘",
+      (Color.White, PieceType.Pawn)   -> "♙",
+      (Color.Black, PieceType.King)   -> "♚",
+      (Color.Black, PieceType.Queen)  -> "♛",
+      (Color.Black, PieceType.Rook)   -> "♜",
+      (Color.Black, PieceType.Bishop) -> "♝",
+      (Color.Black, PieceType.Knight) -> "♞",
+      (Color.Black, PieceType.Pawn)   -> "♟"
+    )
+    symbols((color, pieceType))
 
-  def letter: String = (color, pieceType) match
-    case (Color.White, PieceType.King)   => "K"
-    case (Color.White, PieceType.Queen)  => "Q"
-    case (Color.White, PieceType.Rook)   => "R"
-    case (Color.White, PieceType.Bishop) => "B"
-    case (Color.White, PieceType.Knight) => "N"
-    case (Color.White, PieceType.Pawn)   => "P"
-    case (Color.Black, PieceType.King)   => "k"
-    case (Color.Black, PieceType.Queen)  => "q"
-    case (Color.Black, PieceType.Rook)   => "r"
-    case (Color.Black, PieceType.Bishop) => "b"
-    case (Color.Black, PieceType.Knight) => "n"
-    case (Color.Black, PieceType.Pawn)   => "p"
+  def letter: String =
+    val letters = Map(
+      (Color.White, PieceType.King)   -> "K",
+      (Color.White, PieceType.Queen)  -> "Q",
+      (Color.White, PieceType.Rook)   -> "R",
+      (Color.White, PieceType.Bishop) -> "B",
+      (Color.White, PieceType.Knight) -> "N",
+      (Color.White, PieceType.Pawn)   -> "P",
+      (Color.Black, PieceType.King)   -> "k",
+      (Color.Black, PieceType.Queen)  -> "q",
+      (Color.Black, PieceType.Rook)   -> "r",
+      (Color.Black, PieceType.Bishop) -> "b",
+      (Color.Black, PieceType.Knight) -> "n",
+      (Color.Black, PieceType.Pawn)   -> "p"
+    )
+    letters((color, pieceType))
 
 // ─── Position ────────────────────────────────────────────────────────────────
 

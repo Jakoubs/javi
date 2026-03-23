@@ -36,12 +36,11 @@ object TerminalView:
               lastMove:   Option[Move] = None,
               flipped:    Boolean      = false
             ): String =
-  val sb = new StringBuilder
-  sb.append(header(state, status))
-  sb.append("\n")
-  sb.append(board(state, status, highlights, lastMove, flipped))
-  sb.append(footer(state, status))
-  sb.toString
+    Seq(
+      header(state, status),
+      board(state, status, highlights, lastMove, flipped),
+      footer(state, status)
+    ).mkString("\n")
 
   // ── Header (player names, captured pieces placeholder) ───────────────────
 
@@ -67,57 +66,51 @@ object TerminalView:
                      lastMove:   Option[Move],
                      flipped:    Boolean
                    ): String =
-  val lastMovePosSet: Set[Pos] =
-    lastMove.map(m => Set(m.from, m.to)).getOrElse(Set.empty)
+    val lastMovePosSet: Set[Pos] =
+      lastMove.map(m => Set(m.from, m.to)).getOrElse(Set.empty)
 
-  val rows = if flipped then 0 to 7 else (7 to 0 by -1)
-  val cols = if flipped then (7 to 0 by -1).toList else (0 to 7).toList
+    val rows = if flipped then 0 to 7 else (7 to 0 by -1)
+    val cols = if flipped then (7 to 0 by -1).toList else (0 to 7).toList
 
-  val sb = new StringBuilder
+    val boardRows = rows.map { row =>
+      val rankLabel = s"$FG_GRAY${BOLD} ${row + 1}  $RESET"
+      val cells = cols.map { col =>
+        val pos    = Pos(col, row)
+        val isLight = (col + row) % 2 == 1
 
-  rows.foreach { row =>
-    // rank label: exactly 4 chars " N  "
-    sb.append(s"$FG_GRAY${BOLD} ${row + 1}  $RESET")
+        // Determine background
+        val bg =
+          if state.board.findKing(state.activeColor).contains(pos) &&
+            (status match { case GameStatus.Check(_) | GameStatus.Checkmate(_) => true; case _ => false })
+          then BG_RED
+          else if lastMovePosSet.contains(pos) then BG_YELLOW
+          else if highlights.contains(pos)     then BG_GREEN
+          else if isLight                      then BG_LIGHT
+          else                                      BG_DARK
 
-    cols.foreach { col =>
-      val pos    = Pos(col, row)
-      val isLight = (col + row) % 2 == 1
+        // Unicode chess glyphs are double-width (2 terminal columns).
+        // Every cell must occupy exactly 4 terminal columns:
+        //   piece : " ♟ "  = 1 space + glyph(2) + 1 space = 4
+        //   empty : "    " = 4 spaces                      = 4
+        //   dot   : " •  " = 1 + dot(1) + 2 spaces        = 4
+        state.board.get(pos) match
+          case None =>
+            if highlights.contains(pos) then s"$bg ${"•"}  $RESET"
+            else                             s"$bg    $RESET"
+          case Some(piece) =>
+            val fg = if piece.color == Color.White then FG_WHITE else s"$FG_BLACK$BOLD"
+            s"$bg$fg ${piece.symbol} $RESET"
+      }.mkString
+      
+      rankLabel + cells + "\n"
+    }.mkString
 
-      // Determine background
-      val bg =
-        if state.board.findKing(state.activeColor).contains(pos) &&
-          (status match { case GameStatus.Check(_) | GameStatus.Checkmate(_) => true; case _ => false })
-      then BG_RED
-      else if lastMovePosSet.contains(pos) then BG_YELLOW
-      else if highlights.contains(pos)     then BG_GREEN
-      else if isLight                      then BG_LIGHT
-      else                                      BG_DARK
-
-      // Unicode chess glyphs are double-width (2 terminal columns).
-      // Every cell must occupy exactly 4 terminal columns:
-      //   piece : " ♟ "  = 1 space + glyph(2) + 1 space = 4
-      //   empty : "    " = 4 spaces                      = 4
-      //   dot   : " •  " = 1 + dot(1) + 2 spaces        = 4
-      val cell = state.board.get(pos) match
-      case None =>
-        if highlights.contains(pos) then s"$bg ${"•"}  $RESET"
-        else                             s"$bg    $RESET"
-      case Some(piece) =>
-      val fg = if piece.color == Color.White then FG_WHITE else s"$FG_BLACK$BOLD"
-      s"$bg$fg ${piece.symbol} $RESET"
-
-      sb.append(cell)
-    }
-    sb.append("\n")
-  }
-
-  // file labels: rank-label prefix is 4 chars wide, each cell is 4 columns
-  sb.append("    ")
-  cols.foreach { col =>
-    sb.append(s"$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET")
-  }
-  sb.append("\n")
-  sb.toString
+    // file labels: rank-label prefix is 4 chars wide, each cell is 4 columns
+    val fileLabels = cols.map { col =>
+      s"$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET"
+    }.mkString
+    
+    boardRows + "    " + fileLabels + "\n"
 
   // ── Footer (status message + prompt) ──────────────────────────────────────
 
