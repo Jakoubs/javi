@@ -1,0 +1,2849 @@
+<html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title id="title">
+          chess\view\TerminalView.scala.html
+        </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/css/theme.default.min.css" type="text/css"/><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.min.js"></script><link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css"/><script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script><script type="text/javascript">
+        $(document).ready(function() {$(".tablesorter").tablesorter();});
+      </script>
+        <style>
+          table.codegrid { font-family: monospace; font-size: 12px; width: auto!important; }table.statementlist { width: auto!important; font-size: 13px; } table.codegrid td { padding: 0!important; border: 0!important } table td.linenumber { width: 40px!important; } 
+        </style>
+      </head>
+      <body style="font-family: monospace;">
+        <ul class="nav nav-tabs">
+          <li>
+            <a href="#codegrid" data-toggle="tab">Codegrid</a>
+          </li>
+          <li>
+            <a href="#statementlist" data-toggle="tab">Statement List</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane active" id="codegrid">
+            <pre style='font-size: 12pt; font-family: courier, monospace;'>1 <span style=''>package chess.view
+</span>2 <span style=''>
+</span>3 <span style=''>import chess.model.*
+</span>4 <span style=''>
+</span>5 <span style=''>// ─── TerminalView ─────────────────────────────────────────────────────────────
+</span>6 <span style=''>
+</span>7 <span style=''>object TerminalView:
+</span>8 <span style=''>
+</span>9 <span style=''>  // ANSI colour codes
+</span>10 <span style=''>  private val RESET      = &quot;\u001b[0m&quot;
+</span>11 <span style=''>  private val BOLD       = &quot;\u001b[1m&quot;
+</span>12 <span style=''>  private val DIM        = &quot;\u001b[2m&quot;
+</span>13 <span style=''>  private val UNDERLINE  = &quot;\u001b[4m&quot;
+</span>14 <span style=''>
+</span>15 <span style=''>  private val FG_WHITE   = &quot;\u001b[97m&quot;
+</span>16 <span style=''>  private val FG_BLACK   = &quot;\u001b[30m&quot;
+</span>17 <span style=''>  private val FG_GRAY    = &quot;\u001b[37m&quot;
+</span>18 <span style=''>  private val FG_YELLOW  = &quot;\u001b[33m&quot;
+</span>19 <span style=''>  private val FG_CYAN    = &quot;\u001b[36m&quot;
+</span>20 <span style=''>  private val FG_GREEN   = &quot;\u001b[32m&quot;
+</span>21 <span style=''>  private val FG_RED     = &quot;\u001b[31m&quot;
+</span>22 <span style=''>  private val FG_MAGENTA = &quot;\u001b[35m&quot;
+</span>23 <span style=''>
+</span>24 <span style=''>  private val BG_LIGHT   = &quot;\u001b[48;5;180m&quot;  // warm beige (light squares)
+</span>25 <span style=''>  private val BG_DARK    = &quot;\u001b[48;5;94m&quot;   // brown (dark squares)
+</span>26 <span style=''>  private val BG_YELLOW  = &quot;\u001b[48;5;220m&quot;  // last move highlight
+</span>27 <span style=''>  private val BG_GREEN   = &quot;\u001b[48;5;64m&quot;   // legal move dot
+</span>28 <span style=''>  private val BG_RED     = &quot;\u001b[48;5;124m&quot;  // king in check
+</span>29 <span style=''>
+</span>30 <span style=''>  // ── Public render method ───────────────────────────────────────────────────
+</span>31 <span style=''>
+</span>32 <span style=''>  </span><span style='background: #F0ADAD'>def render</span><span style=''>(
+</span>33 <span style=''>              state:      GameState,
+</span>34 <span style=''>              status:     GameStatus,
+</span>35 <span style=''>              highlights: Set[Pos]   = </span><span style='background: #F0ADAD'>Set.empty</span><span style=''>,   // legal-move targets
+</span>36 <span style=''>              lastMove:   Option[Move] = None,
+</span>37 <span style=''>              flipped:    Boolean      = false
+</span>38 <span style=''>            ): String =
+</span>39 <span style=''>    </span><span style='background: #F0ADAD'>Seq(
+</span>40 <span style=''></span><span style='background: #F0ADAD'>      header(state, status),
+</span>41 <span style=''></span><span style='background: #F0ADAD'>      board(state, status, highlights, lastMove, flipped),
+</span>42 <span style=''></span><span style='background: #F0ADAD'>      footer(state, status)
+</span>43 <span style=''></span><span style='background: #F0ADAD'>    ).mkString(&quot;\n&quot;)</span><span style=''>
+</span>44 <span style=''>
+</span>45 <span style=''>  // ── Header (player names, captured pieces placeholder) ───────────────────
+</span>46 <span style=''>
+</span>47 <span style=''>  </span><span style='background: #F0ADAD'>private def header</span><span style=''>(state: GameState, status: GameStatus): String =
+</span>48 <span style=''>    val (top, bottom) =
+</span>49 <span style=''>      (&quot;Black&quot;, &quot;White&quot;)
+</span>50 <span style=''>
+</span>51 <span style=''>    val checkStr = status match
+</span>52 <span style=''>      </span><span style='background: #F0ADAD'>case GameStatus.Check(c)</span><span style=''>     =&gt; </span><span style='background: #F0ADAD'>s&quot; ${FG_RED}${BOLD}CHECK!${RESET}&quot;</span><span style=''>
+</span>53 <span style=''>      </span><span style='background: #F0ADAD'>case GameStatus.Checkmate(c)</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>s&quot; ${FG_RED}${BOLD}CHECKMATE${RESET}&quot;</span><span style=''>
+</span>54 <span style=''>      </span><span style='background: #F0ADAD'>case _</span><span style=''>                       =&gt; &quot;&quot;
+</span>55 <span style=''>
+</span>56 <span style=''>    val moveStr = </span><span style='background: #F0ADAD'>s&quot;${DIM}Move ${state.fullMoveNumber}${RESET}&quot;</span><span style=''>
+</span>57 <span style=''>
+</span>58 <span style=''>    </span><span style='background: #F0ADAD'>s&quot;  $FG_CYAN$BOLD$top$RESET  $moveStr$checkStr\n&quot;</span><span style=''>
+</span>59 <span style=''>
+</span>60 <span style=''>  // ── Board ─────────────────────────────────────────────────────────────────
+</span>61 <span style=''>
+</span>62 <span style=''>  </span><span style='background: #F0ADAD'>private def board</span><span style=''>(
+</span>63 <span style=''>                     state:      GameState,
+</span>64 <span style=''>                     status:     GameStatus,
+</span>65 <span style=''>                     highlights: Set[Pos],
+</span>66 <span style=''>                     lastMove:   Option[Move],
+</span>67 <span style=''>                     flipped:    Boolean
+</span>68 <span style=''>                   ): String =
+</span>69 <span style=''>    val lastMovePosSet: Set[Pos] =
+</span>70 <span style=''>      </span><span style='background: #F0ADAD'>lastMove.map(m =&gt; Set(m.from, m.to)).getOrElse(Set.empty)</span><span style=''>
+</span>71 <span style=''>
+</span>72 <span style=''>    val rows = if flipped then 0 to 7 else (7 to 0 by -1)
+</span>73 <span style=''>    val cols = if flipped then </span><span style='background: #F0ADAD'>(7 to 0 by -1).toList</span><span style=''> else </span><span style='background: #F0ADAD'>(0 to 7).toList</span><span style=''>
+</span>74 <span style=''>
+</span>75 <span style=''>    val boardRows = </span><span style='background: #F0ADAD'>rows.map { row =&gt;
+</span>76 <span style=''></span><span style='background: #F0ADAD'>      val rankLabel = s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;
+</span>77 <span style=''></span><span style='background: #F0ADAD'>      val cells = cols.map { col =&gt;
+</span>78 <span style=''></span><span style='background: #F0ADAD'>        val pos    = Pos(col, row)
+</span>79 <span style=''></span><span style='background: #F0ADAD'>        val isLight = (col + row) % 2 == 1
+</span>80 <span style=''></span><span style='background: #F0ADAD'>
+</span>81 <span style=''></span><span style='background: #F0ADAD'>        // Determine background
+</span>82 <span style=''></span><span style='background: #F0ADAD'>        val bg =
+</span>83 <span style=''></span><span style='background: #F0ADAD'>          if state.board.findKing(state.activeColor).contains(pos) &amp;&amp;
+</span>84 <span style=''></span><span style='background: #F0ADAD'>            (status match { case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true; case _ =&gt; false })
+</span>85 <span style=''></span><span style='background: #F0ADAD'>          then BG_RED
+</span>86 <span style=''></span><span style='background: #F0ADAD'>          else if lastMovePosSet.contains(pos) then BG_YELLOW
+</span>87 <span style=''></span><span style='background: #F0ADAD'>          else if highlights.contains(pos)     then BG_GREEN
+</span>88 <span style=''></span><span style='background: #F0ADAD'>          else if isLight                      then BG_LIGHT
+</span>89 <span style=''></span><span style='background: #F0ADAD'>          else                                      BG_DARK
+</span>90 <span style=''></span><span style='background: #F0ADAD'>
+</span>91 <span style=''></span><span style='background: #F0ADAD'>        // Piece glyph width depends on the symbol we render:
+</span>92 <span style=''></span><span style='background: #F0ADAD'>        // - Emoji/Unicode chess glyphs are often double-width (2 terminal columns).
+</span>93 <span style=''></span><span style='background: #F0ADAD'>        // - Letters are single-width (1 terminal column).
+</span>94 <span style=''></span><span style='background: #F0ADAD'>        // Every cell must occupy exactly 4 terminal columns:
+</span>95 <span style=''></span><span style='background: #F0ADAD'>        //   piece (letter) : &quot; A  &quot;  = 1 space + letter(1) + 2 spaces = 4
+</span>96 <span style=''></span><span style='background: #F0ADAD'>        //   empty           : &quot;    &quot; = 4 spaces                        = 4
+</span>97 <span style=''></span><span style='background: #F0ADAD'>        //   dot             : &quot; •  &quot; = 1 + dot(1) + 2 spaces          = 4
+</span>98 <span style=''></span><span style='background: #F0ADAD'>        state.board.get(pos) match
+</span>99 <span style=''></span><span style='background: #F0ADAD'>          case None =&gt;
+</span>100 <span style=''></span><span style='background: #F0ADAD'>            if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;
+</span>101 <span style=''></span><span style='background: #F0ADAD'>            else                             s&quot;$bg    $RESET&quot;
+</span>102 <span style=''></span><span style='background: #F0ADAD'>          case Some(piece) =&gt;
+</span>103 <span style=''></span><span style='background: #F0ADAD'>            val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;
+</span>104 <span style=''></span><span style='background: #F0ADAD'>            // Add one extra trailing space so that letters still align to 4 columns.
+</span>105 <span style=''></span><span style='background: #F0ADAD'>            s&quot;$bg$fg ${piece.letter}  $RESET&quot;
+</span>106 <span style=''></span><span style='background: #F0ADAD'>      }.mkString
+</span>107 <span style=''></span><span style='background: #F0ADAD'>      
+</span>108 <span style=''></span><span style='background: #F0ADAD'>      rankLabel + cells + &quot;\n&quot;
+</span>109 <span style=''></span><span style='background: #F0ADAD'>    }.mkString</span><span style=''>
+</span>110 <span style=''>
+</span>111 <span style=''>    // file labels: rank-label prefix is 4 chars wide, each cell is 4 columns
+</span>112 <span style=''>    val fileLabels = </span><span style='background: #F0ADAD'>cols.map { col =&gt;
+</span>113 <span style=''></span><span style='background: #F0ADAD'>      s&quot;$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET&quot;
+</span>114 <span style=''></span><span style='background: #F0ADAD'>    }.mkString</span><span style=''>
+</span>115 <span style=''>    
+</span>116 <span style=''>    </span><span style='background: #F0ADAD'>boardRows + &quot;    &quot; + fileLabels + &quot;\n&quot;</span><span style=''>
+</span>117 <span style=''>
+</span>118 <span style=''>  // ── Footer (status message + prompt) ──────────────────────────────────────
+</span>119 <span style=''>
+</span>120 <span style=''>  </span><span style='background: #F0ADAD'>private def footer</span><span style=''>(state: GameState, status: GameStatus): String =
+</span>121 <span style=''>    val turn = state.activeColor match
+</span>122 <span style=''>      </span><span style='background: #F0ADAD'>case Color.White</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;</span><span style=''>
+</span>123 <span style=''>      </span><span style='background: #F0ADAD'>case Color.Black</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;</span><span style=''>
+</span>124 <span style=''>
+</span>125 <span style=''>    val statusLine = status match
+</span>126 <span style=''>      </span><span style='background: #F0ADAD'>case GameStatus.Playing</span><span style=''>           =&gt; </span><span style='background: #F0ADAD'>s&quot;\n  $turn to move&quot;</span><span style=''>
+</span>127 <span style=''>      </span><span style='background: #F0ADAD'>case GameStatus.Check(c)</span><span style=''>         =&gt;
+</span>128 <span style=''>        val col = if c == Color.White then </span><span style='background: #F0ADAD'>s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;</span><span style=''> else </span><span style='background: #F0ADAD'>s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;</span><span style=''>
+</span>129 <span style=''>        </span><span style='background: #F0ADAD'>s&quot;\n  $col is in check — $turn to move&quot;</span><span style=''>
+</span>130 <span style=''>      </span><span style='background: #F0ADAD'>case GameStatus.Checkmate(loser)</span><span style=''> =&gt;
+</span>131 <span style=''>        val winner = if loser == Color.White then </span><span style='background: #F0ADAD'>s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;</span><span style=''> else </span><span style='background: #F0ADAD'>s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;</span><span style=''>
+</span>132 <span style=''>        </span><span style='background: #F0ADAD'>s&quot;\n  ${FG_RED}${BOLD}Checkmate!${RESET} $winner wins!&quot;</span><span style=''>
+</span>133 <span style=''>      </span><span style='background: #F0ADAD'>case GameStatus.Stalemate</span><span style=''>        =&gt;
+</span>134 <span style=''>        </span><span style='background: #F0ADAD'>s&quot;\n  ${FG_YELLOW}${BOLD}Stalemate!${RESET} The game is a draw.&quot;</span><span style=''>
+</span>135 <span style=''>      </span><span style='background: #F0ADAD'>case GameStatus.Draw(reason)</span><span style=''>     =&gt;
+</span>136 <span style=''>        </span><span style='background: #F0ADAD'>s&quot;\n  ${FG_YELLOW}${BOLD}Draw${RESET} by $reason.&quot;</span><span style=''>
+</span>137 <span style=''>
+</span>138 <span style=''>    </span><span style='background: #F0ADAD'>statusLine + &quot;\n&quot;</span><span style=''>
+</span>139 <span style=''>
+</span>140 <span style=''>  // ── Help text ─────────────────────────────────────────────────────────────
+</span>141 <span style=''>
+</span>142 <span style=''>  val helpText: String =
+</span>143 <span style=''>    </span><span style='background: #AEF1AE'>s&quot;&quot;&quot;
+</span>144 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}${FG_CYAN}Chess Commands${RESET}
+</span>145 <span style=''></span><span style='background: #AEF1AE'>  ${DIM}─────────────────────────────────────${RESET}
+</span>146 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}e2e4${RESET}          Move piece (from→to)
+</span>147 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}e7e8q${RESET}         Move with promotion (q/r/b/n)
+</span>148 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}moves e2${RESET}      Show legal moves for piece on e2
+</span>149 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}flip${RESET}          Flip board perspective
+</span>150 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}undo${RESET}          Undo last move
+</span>151 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}resign${RESET}        Resign the game
+</span>152 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}draw${RESET}          Offer / accept draw
+</span>153 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}new${RESET}           Start a new game
+</span>154 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}help${RESET}          Show this help
+</span>155 <span style=''></span><span style='background: #AEF1AE'>  ${BOLD}quit${RESET}          Quit
+</span>156 <span style=''></span><span style='background: #AEF1AE'>  ${DIM}─────────────────────────────────────${RESET}
+</span>157 <span style=''></span><span style='background: #AEF1AE'>&quot;&quot;&quot;</span><span style=''>
+</span>158 <span style=''>
+</span>159 <span style=''>  // ── Simple message helpers ────────────────────────────────────────────────
+</span>160 <span style=''>
+</span>161 <span style=''>  </span><span style='background: #AEF1AE'>def error</span><span style=''>(msg: String): String   = </span><span style='background: #AEF1AE'>s&quot;  ${FG_RED}${BOLD}✗ $msg${RESET}\n&quot;</span><span style=''>
+</span>162 <span style=''>  </span><span style='background: #F0ADAD'>def success</span><span style=''>(msg: String): String = </span><span style='background: #F0ADAD'>s&quot;  ${FG_GREEN}${BOLD}✓ $msg${RESET}\n&quot;</span><span style=''>
+</span>163 <span style=''>  </span><span style='background: #AEF1AE'>def info</span><span style=''>(msg: String): String    = </span><span style='background: #AEF1AE'>s&quot;  ${FG_YELLOW}$msg${RESET}\n&quot;</span><span style=''>
+</span>164 <span style=''>
+</span>165 <span style=''>  val prompt: String = </span><span style='background: #AEF1AE'>s&quot;  ${DIM}&gt; ${RESET}&quot;</span><span style=''>
+</span>166 <span style=''>
+</span>167 <span style=''>  </span><span style='background: #F0ADAD'>def clear</span><span style=''>(): Unit = </span><span style='background: #F0ADAD'>print(&quot;\u001b[H\u001b[2J&quot;)</span><span style=''>
+</span></pre>
+          </div>
+          <div class="tab-pane" id="statementlist">
+            <table cellspacing="0" cellpadding="0" class="table statementlist">
+      <tr>
+        <th>Line</th>
+        <th>Stmt Id</th>
+        <th>Pos</th>
+        <th>Tree</th>
+        <th>Symbol</th>
+        <th>Tests</th>
+        <th>Code</th>
+      </tr><tr>
+        <td>
+          31
+        </td>
+        <td>
+          685
+        </td>
+        <td>
+          1111
+          -
+          1121
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          render
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          def render
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          687
+        </td>
+        <td>
+          1240
+          -
+          1249
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Set.empty
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          686
+        </td>
+        <td>
+          1240
+          -
+          1243
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Set
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Set
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          688
+        </td>
+        <td>
+          1240
+          -
+          1240
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          render$default$3
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          
+        </td>
+      </tr><tr>
+        <td>
+          35
+        </td>
+        <td>
+          689
+        </td>
+        <td>
+          1317
+          -
+          1317
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          render$default$4
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          
+        </td>
+      </tr><tr>
+        <td>
+          36
+        </td>
+        <td>
+          690
+        </td>
+        <td>
+          1365
+          -
+          1365
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          render$default$5
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          681
+        </td>
+        <td>
+          1401
+          -
+          1404
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Seq
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Seq
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          680
+        </td>
+        <td>
+          1401
+          -
+          1531
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Seq(\r\n      header(state, status),\r\n      board(state, status, highlights, lastMove, flipped),\r\n      footer(state, status)\r\n    )
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          682
+        </td>
+        <td>
+          1413
+          -
+          1434
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          header
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          header(state, status)
+        </td>
+      </tr><tr>
+        <td>
+          40
+        </td>
+        <td>
+          683
+        </td>
+        <td>
+          1443
+          -
+          1494
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          board
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          board(state, status, highlights, lastMove, flipped)
+        </td>
+      </tr><tr>
+        <td>
+          41
+        </td>
+        <td>
+          684
+        </td>
+        <td>
+          1503
+          -
+          1524
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          footer
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          footer(state, status)
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          679
+        </td>
+        <td>
+          1401
+          -
+          1546
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          mkString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Seq(\r\n      header(state, status),\r\n      board(state, status, highlights, lastMove, flipped),\r\n      footer(state, status)\r\n    ).mkString(&quot;\\n&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          698
+        </td>
+        <td>
+          1634
+          -
+          1652
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          header
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          private def header
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          692
+        </td>
+        <td>
+          1826
+          -
+          1860
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot; ${FG_RED}${BOLD}CHECK!${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          691
+        </td>
+        <td>
+          1794
+          -
+          1818
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Check(c)
+        </td>
+      </tr><tr>
+        <td>
+          52
+        </td>
+        <td>
+          693
+        </td>
+        <td>
+          1868
+          -
+          1896
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Checkmate(c)
+        </td>
+      </tr><tr>
+        <td>
+          52
+        </td>
+        <td>
+          694
+        </td>
+        <td>
+          1900
+          -
+          1937
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot; ${FG_RED}${BOLD}CHECKMATE${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          53
+        </td>
+        <td>
+          695
+        </td>
+        <td>
+          1945
+          -
+          1951
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case _
+        </td>
+      </tr><tr>
+        <td>
+          55
+        </td>
+        <td>
+          696
+        </td>
+        <td>
+          2001
+          -
+          2046
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${DIM}Move ${state.fullMoveNumber}${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          57
+        </td>
+        <td>
+          697
+        </td>
+        <td>
+          2054
+          -
+          2103
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;  $FG_CYAN$BOLD$top$RESET  $moveStr$checkStr\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
+          61
+        </td>
+        <td>
+          754
+        </td>
+        <td>
+          2192
+          -
+          2209
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          board
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          private def board
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          699
+        </td>
+        <td>
+          2511
+          -
+          2568
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          getOrElse
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          lastMove.map(m =&gt; Set(m.from, m.to)).getOrElse(Set.empty)
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          702
+        </td>
+        <td>
+          2529
+          -
+          2532
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Set
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Set
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          701
+        </td>
+        <td>
+          2529
+          -
+          2546
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Set(m.from, m.to)
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          704
+        </td>
+        <td>
+          2558
+          -
+          2567
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Set.empty
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          700
+        </td>
+        <td>
+          2511
+          -
+          2547
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          lastMove.map(m =&gt; Set(m.from, m.to))
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          703
+        </td>
+        <td>
+          2558
+          -
+          2561
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Set
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Set
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          705
+        </td>
+        <td>
+          2663
+          -
+          2675
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          by
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          7 to 0 by -1
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          708
+        </td>
+        <td>
+          2662
+          -
+          2683
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (7 to 0 by -1).toList
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          711
+        </td>
+        <td>
+          2690
+          -
+          2691
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          intWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          710
+        </td>
+        <td>
+          2690
+          -
+          2696
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          to
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0 to 7
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          713
+        </td>
+        <td>
+          2689
+          -
+          2704
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).toList
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          707
+        </td>
+        <td>
+          2663
+          -
+          2664
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          intWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          7
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          706
+        </td>
+        <td>
+          2663
+          -
+          2669
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          to
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          7 to 0
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          709
+        </td>
+        <td>
+          2662
+          -
+          2683
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (7 to 0 by -1).toList
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          712
+        </td>
+        <td>
+          2689
+          -
+          2704
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).toList
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          714
+        </td>
+        <td>
+          2728
+          -
+          4439
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          rows.map { row =&gt;\r\n      val rankLabel = s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;\r\n      val cells = cols.map { col =&gt;\r\n        val pos    = Pos(col, row)\r\n        val isLight = (col + row) % 2 == 1\r\n\r\n        // Determine background\r\n        val bg =\r\n          if state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\r\n            (status match { case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true; case _ =&gt; false })\r\n          then BG_RED\r\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos)     then BG_GREEN\r\n          else if isLight                      then BG_LIGHT\r\n          else                                      BG_DARK\r\n\r\n        // Piece glyph width depends on the symbol we render:\r\n        // - Emoji/Unicode chess glyphs are often double-width (2 terminal columns).\r\n        // - Letters are single-width (1 terminal column).\r\n        // Every cell must occupy exactly 4 terminal columns:\r\n        //   piece (letter) : &quot; A  &quot;  = 1 space + letter(1) + 2 spaces = 4\r\n        //   empty           : &quot;    &quot; = 4 spaces                        = 4\r\n        //   dot             : &quot; •  &quot; = 1 + dot(1) + 2 spaces          = 4\r\n        state.board.get(pos) match\r\n          case None =&gt;\r\n            if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\r\n            else                             s&quot;$bg    $RESET&quot;\r\n          case Some(piece) =&gt;\r\n            val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;\r\n            // Add one extra trailing space so that letters still align to 4 columns.\r\n            s&quot;$bg$fg ${piece.letter}  $RESET&quot;\r\n      }.mkString\r\n      \r\n      rankLabel + cells + &quot;\\n&quot;\r\n    }
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          715
+        </td>
+        <td>
+          2769
+          -
+          2806
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          716
+        </td>
+        <td>
+          2826
+          -
+          4383
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          cols.map { col =&gt;\r\n        val pos    = Pos(col, row)\r\n        val isLight = (col + row) % 2 == 1\r\n\r\n        // Determine background\r\n        val bg =\r\n          if state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\r\n            (status match { case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true; case _ =&gt; false })\r\n          then BG_RED\r\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos)     then BG_GREEN\r\n          else if isLight                      then BG_LIGHT\r\n          else                                      BG_DARK\r\n\r\n        // Piece glyph width depends on the symbol we render:\r\n        // - Emoji/Unicode chess glyphs are often double-width (2 terminal columns).\r\n        // - Letters are single-width (1 terminal column).\r\n        // Every cell must occupy exactly 4 terminal columns:\r\n        //   piece (letter) : &quot; A  &quot;  = 1 space + letter(1) + 2 spaces = 4\r\n        //   empty           : &quot;    &quot; = 4 spaces                        = 4\r\n        //   dot             : &quot; •  &quot; = 1 + dot(1) + 2 spaces          = 4\r\n        state.board.get(pos) match\r\n          case None =&gt;\r\n            if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\r\n            else                             s&quot;$bg    $RESET&quot;\r\n          case Some(piece) =&gt;\r\n            val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;\r\n            // Add one extra trailing space so that letters still align to 4 columns.\r\n            s&quot;$bg$fg ${piece.letter}  $RESET&quot;\r\n      }
+        </td>
+      </tr><tr>
+        <td>
+          82
+        </td>
+        <td>
+          717
+        </td>
+        <td>
+          2991
+          -
+          3044
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          state.board.findKing(state.activeColor).contains(pos)
+        </td>
+      </tr><tr>
+        <td>
+          82
+        </td>
+        <td>
+          718
+        </td>
+        <td>
+          2991
+          -
+          3030
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          findKing
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          state.board.findKing(state.activeColor)
+        </td>
+      </tr><tr>
+        <td>
+          83
+        </td>
+        <td>
+          720
+        </td>
+        <td>
+          3137
+          -
+          3143
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case _
+        </td>
+      </tr><tr>
+        <td>
+          83
+        </td>
+        <td>
+          719
+        </td>
+        <td>
+          3077
+          -
+          3127
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Check(_) | GameStatus.Checkmate(_)
+        </td>
+      </tr><tr>
+        <td>
+          84
+        </td>
+        <td>
+          721
+        </td>
+        <td>
+          3172
+          -
+          3178
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          BG_RED
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          BG_RED
+        </td>
+      </tr><tr>
+        <td>
+          85
+        </td>
+        <td>
+          723
+        </td>
+        <td>
+          3232
+          -
+          3241
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          BG_YELLOW
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          BG_YELLOW
+        </td>
+      </tr><tr>
+        <td>
+          85
+        </td>
+        <td>
+          722
+        </td>
+        <td>
+          3198
+          -
+          3226
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          lastMovePosSet.contains(pos)
+        </td>
+      </tr><tr>
+        <td>
+          85
+        </td>
+        <td>
+          730
+        </td>
+        <td>
+          3195
+          -
+          3426
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos)     then BG_GREEN\r\n          else if isLight                      then BG_LIGHT\r\n          else                                      BG_DARK
+        </td>
+      </tr><tr>
+        <td>
+          86
+        </td>
+        <td>
+          729
+        </td>
+        <td>
+          3258
+          -
+          3426
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          if highlights.contains(pos)     then BG_GREEN\r\n          else if isLight                      then BG_LIGHT\r\n          else                                      BG_DARK
+        </td>
+      </tr><tr>
+        <td>
+          86
+        </td>
+        <td>
+          725
+        </td>
+        <td>
+          3295
+          -
+          3303
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          BG_GREEN
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          BG_GREEN
+        </td>
+      </tr><tr>
+        <td>
+          86
+        </td>
+        <td>
+          724
+        </td>
+        <td>
+          3261
+          -
+          3285
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          highlights.contains(pos)
+        </td>
+      </tr><tr>
+        <td>
+          87
+        </td>
+        <td>
+          726
+        </td>
+        <td>
+          3357
+          -
+          3365
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          BG_LIGHT
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          BG_LIGHT
+        </td>
+      </tr><tr>
+        <td>
+          87
+        </td>
+        <td>
+          728
+        </td>
+        <td>
+          3320
+          -
+          3426
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          if isLight                      then BG_LIGHT\r\n          else                                      BG_DARK
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          727
+        </td>
+        <td>
+          3419
+          -
+          3426
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          BG_DARK
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          BG_DARK
+        </td>
+      </tr><tr>
+        <td>
+          97
+        </td>
+        <td>
+          731
+        </td>
+        <td>
+          3939
+          -
+          3959
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          state.board.get(pos)
+        </td>
+      </tr><tr>
+        <td>
+          98
+        </td>
+        <td>
+          732
+        </td>
+        <td>
+          3977
+          -
+          3986
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case None
+        </td>
+      </tr><tr>
+        <td>
+          99
+        </td>
+        <td>
+          735
+        </td>
+        <td>
+          4036
+          -
+          4057
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$bg ${&quot;•&quot;}  $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          99
+        </td>
+        <td>
+          734
+        </td>
+        <td>
+          4036
+          -
+          4057
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$bg ${&quot;•&quot;}  $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          99
+        </td>
+        <td>
+          733
+        </td>
+        <td>
+          4006
+          -
+          4030
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          highlights.contains(pos)
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          737
+        </td>
+        <td>
+          4104
+          -
+          4120
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$bg    $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          736
+        </td>
+        <td>
+          4104
+          -
+          4120
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$bg    $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          101
+        </td>
+        <td>
+          738
+        </td>
+        <td>
+          4132
+          -
+          4148
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case Some(piece)
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          741
+        </td>
+        <td>
+          4223
+          -
+          4240
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$FG_BLACK$BOLD&quot;
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          740
+        </td>
+        <td>
+          4223
+          -
+          4240
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$FG_BLACK$BOLD&quot;
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          739
+        </td>
+        <td>
+          4209
+          -
+          4217
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          FG_WHITE
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          FG_WHITE
+        </td>
+      </tr><tr>
+        <td>
+          104
+        </td>
+        <td>
+          743
+        </td>
+        <td>
+          4352
+          -
+          4364
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          letter
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          piece.letter
+        </td>
+      </tr><tr>
+        <td>
+          104
+        </td>
+        <td>
+          742
+        </td>
+        <td>
+          4341
+          -
+          4374
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$bg$fg ${piece.letter}  $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          105
+        </td>
+        <td>
+          744
+        </td>
+        <td>
+          2826
+          -
+          4392
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          mkString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          cols.map { col =&gt;\r\n        val pos    = Pos(col, row)\r\n        val isLight = (col + row) % 2 == 1\r\n\r\n        // Determine background\r\n        val bg =\r\n          if state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\r\n            (status match { case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true; case _ =&gt; false })\r\n          then BG_RED\r\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos)     then BG_GREEN\r\n          else if isLight                      then BG_LIGHT\r\n          else                                      BG_DARK\r\n\r\n        // Piece glyph width depends on the symbol we render:\r\n        // - Emoji/Unicode chess glyphs are often double-width (2 terminal columns).\r\n        // - Letters are single-width (1 terminal column).\r\n        // Every cell must occupy exactly 4 terminal columns:\r\n        //   piece (letter) : &quot; A  &quot;  = 1 space + letter(1) + 2 spaces = 4\r\n        //   empty           : &quot;    &quot; = 4 spaces                        = 4\r\n        //   dot             : &quot; •  &quot; = 1 + dot(1) + 2 spaces          = 4\r\n        state.board.get(pos) match\r\n          case None =&gt;\r\n            if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\r\n            else                             s&quot;$bg    $RESET&quot;\r\n          case Some(piece) =&gt;\r\n            val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;\r\n            // Add one extra trailing space so that letters still align to 4 columns.\r\n            s&quot;$bg$fg ${piece.letter}  $RESET&quot;\r\n      }.mkString
+        </td>
+      </tr><tr>
+        <td>
+          107
+        </td>
+        <td>
+          746
+        </td>
+        <td>
+          4408
+          -
+          4425
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          rankLabel + cells
+        </td>
+      </tr><tr>
+        <td>
+          107
+        </td>
+        <td>
+          745
+        </td>
+        <td>
+          4408
+          -
+          4432
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          rankLabel + cells + &quot;\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
+          108
+        </td>
+        <td>
+          747
+        </td>
+        <td>
+          2728
+          -
+          4448
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          mkString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          rows.map { row =&gt;\r\n      val rankLabel = s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;\r\n      val cells = cols.map { col =&gt;\r\n        val pos    = Pos(col, row)\r\n        val isLight = (col + row) % 2 == 1\r\n\r\n        // Determine background\r\n        val bg =\r\n          if state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\r\n            (status match { case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true; case _ =&gt; false })\r\n          then BG_RED\r\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos)     then BG_GREEN\r\n          else if isLight                      then BG_LIGHT\r\n          else                                      BG_DARK\r\n\r\n        // Piece glyph width depends on the symbol we render:\r\n        // - Emoji/Unicode chess glyphs are often double-width (2 terminal columns).\r\n        // - Letters are single-width (1 terminal column).\r\n        // Every cell must occupy exactly 4 terminal columns:\r\n        //   piece (letter) : &quot; A  &quot;  = 1 space + letter(1) + 2 spaces = 4\r\n        //   empty           : &quot;    &quot; = 4 spaces                        = 4\r\n        //   dot             : &quot; •  &quot; = 1 + dot(1) + 2 spaces          = 4\r\n        state.board.get(pos) match\r\n          case None =&gt;\r\n            if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\r\n            else                             s&quot;$bg    $RESET&quot;\r\n          case Some(piece) =&gt;\r\n            val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;\r\n            // Add one extra trailing space so that letters still align to 4 columns.\r\n            s&quot;$bg$fg ${piece.letter}  $RESET&quot;\r\n      }.mkString\r\n      \r\n      rankLabel + cells + &quot;\\n&quot;\r\n    }.mkString
+        </td>
+      </tr><tr>
+        <td>
+          111
+        </td>
+        <td>
+          748
+        </td>
+        <td>
+          4552
+          -
+          4632
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          cols.map { col =&gt;\r\n      s&quot;$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET&quot;\r\n    }
+        </td>
+      </tr><tr>
+        <td>
+          112
+        </td>
+        <td>
+          749
+        </td>
+        <td>
+          4577
+          -
+          4625
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          113
+        </td>
+        <td>
+          750
+        </td>
+        <td>
+          4552
+          -
+          4641
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          mkString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          cols.map { col =&gt;\r\n      s&quot;$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET&quot;\r\n    }.mkString
+        </td>
+      </tr><tr>
+        <td>
+          115
+        </td>
+        <td>
+          753
+        </td>
+        <td>
+          4653
+          -
+          4671
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          boardRows + &quot;    &quot;
+        </td>
+      </tr><tr>
+        <td>
+          115
+        </td>
+        <td>
+          752
+        </td>
+        <td>
+          4653
+          -
+          4684
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          boardRows + &quot;    &quot; + fileLabels
+        </td>
+      </tr><tr>
+        <td>
+          115
+        </td>
+        <td>
+          751
+        </td>
+        <td>
+          4653
+          -
+          4691
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          boardRows + &quot;    &quot; + fileLabels + &quot;\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
+          119
+        </td>
+        <td>
+          778
+        </td>
+        <td>
+          4780
+          -
+          4798
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          footer
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          private def footer
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          756
+        </td>
+        <td>
+          4914
+          -
+          4948
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          755
+        </td>
+        <td>
+          4894
+          -
+          4910
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case Color.White
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          758
+        </td>
+        <td>
+          4976
+          -
+          5009
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          757
+        </td>
+        <td>
+          4956
+          -
+          4972
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case Color.Black
+        </td>
+      </tr><tr>
+        <td>
+          125
+        </td>
+        <td>
+          759
+        </td>
+        <td>
+          5054
+          -
+          5077
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Playing
+        </td>
+      </tr><tr>
+        <td>
+          125
+        </td>
+        <td>
+          760
+        </td>
+        <td>
+          5091
+          -
+          5111
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;\\n  $turn to move&quot;
+        </td>
+      </tr><tr>
+        <td>
+          126
+        </td>
+        <td>
+          761
+        </td>
+        <td>
+          5119
+          -
+          5143
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Check(c)
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          765
+        </td>
+        <td>
+          5239
+          -
+          5272
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          762
+        </td>
+        <td>
+          5199
+          -
+          5233
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          764
+        </td>
+        <td>
+          5239
+          -
+          5272
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          763
+        </td>
+        <td>
+          5199
+          -
+          5233
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          128
+        </td>
+        <td>
+          766
+        </td>
+        <td>
+          5282
+          -
+          5321
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;\\n  $col is in check — $turn to move&quot;
+        </td>
+      </tr><tr>
+        <td>
+          129
+        </td>
+        <td>
+          767
+        </td>
+        <td>
+          5329
+          -
+          5361
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Checkmate(loser)
+        </td>
+      </tr><tr>
+        <td>
+          130
+        </td>
+        <td>
+          768
+        </td>
+        <td>
+          5416
+          -
+          5449
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          130
+        </td>
+        <td>
+          771
+        </td>
+        <td>
+          5455
+          -
+          5489
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          130
+        </td>
+        <td>
+          770
+        </td>
+        <td>
+          5455
+          -
+          5489
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          130
+        </td>
+        <td>
+          769
+        </td>
+        <td>
+          5416
+          -
+          5449
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;${FG_CYAN}${BOLD}Black${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          131
+        </td>
+        <td>
+          772
+        </td>
+        <td>
+          5499
+          -
+          5554
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;\\n  ${FG_RED}${BOLD}Checkmate!${RESET} $winner wins!&quot;
+        </td>
+      </tr><tr>
+        <td>
+          132
+        </td>
+        <td>
+          773
+        </td>
+        <td>
+          5562
+          -
+          5587
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Stalemate
+        </td>
+      </tr><tr>
+        <td>
+          133
+        </td>
+        <td>
+          774
+        </td>
+        <td>
+          5607
+          -
+          5671
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;\\n  ${FG_YELLOW}${BOLD}Stalemate!${RESET} The game is a draw.&quot;
+        </td>
+      </tr><tr>
+        <td>
+          134
+        </td>
+        <td>
+          775
+        </td>
+        <td>
+          5679
+          -
+          5707
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case GameStatus.Draw(reason)
+        </td>
+      </tr><tr>
+        <td>
+          135
+        </td>
+        <td>
+          776
+        </td>
+        <td>
+          5724
+          -
+          5774
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;\\n  ${FG_YELLOW}${BOLD}Draw${RESET} by $reason.&quot;
+        </td>
+      </tr><tr>
+        <td>
+          137
+        </td>
+        <td>
+          777
+        </td>
+        <td>
+          5782
+          -
+          5799
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          statusLine + &quot;\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
+          142
+        </td>
+        <td>
+          779
+        </td>
+        <td>
+          5916
+          -
+          6593
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;&quot;&quot;\r\n  ${BOLD}${FG_CYAN}Chess Commands${RESET}\r\n  ${DIM}─────────────────────────────────────${RESET}\r\n  ${BOLD}e2e4${RESET}          Move piece (from→to)\r\n  ${BOLD}e7e8q${RESET}         Move with promotion (q/r/b/n)\r\n  ${BOLD}moves e2${RESET}      Show legal moves for piece on e2\r\n  ${BOLD}flip${RESET}          Flip board perspective\r\n  ${BOLD}undo${RESET}          Undo last move\r\n  ${BOLD}resign${RESET}        Resign the game\r\n  ${BOLD}draw${RESET}          Offer / accept draw\r\n  ${BOLD}new${RESET}           Start a new game\r\n  ${BOLD}help${RESET}          Show this help\r\n  ${BOLD}quit${RESET}          Quit\r\n  ${DIM}─────────────────────────────────────${RESET}\r\n&quot;&quot;&quot;
+        </td>
+      </tr><tr>
+        <td>
+          160
+        </td>
+        <td>
+          781
+        </td>
+        <td>
+          6682
+          -
+          6691
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          error
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def error
+        </td>
+      </tr><tr>
+        <td>
+          160
+        </td>
+        <td>
+          780
+        </td>
+        <td>
+          6717
+          -
+          6754
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;  ${FG_RED}${BOLD}✗ $msg${RESET}\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
+          161
+        </td>
+        <td>
+          783
+        </td>
+        <td>
+          6758
+          -
+          6769
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          success
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          def success
+        </td>
+      </tr><tr>
+        <td>
+          161
+        </td>
+        <td>
+          782
+        </td>
+        <td>
+          6793
+          -
+          6832
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          s&quot;  ${FG_GREEN}${BOLD}✓ $msg${RESET}\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
+          162
+        </td>
+        <td>
+          785
+        </td>
+        <td>
+          6836
+          -
+          6844
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          info
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def info
+        </td>
+      </tr><tr>
+        <td>
+          162
+        </td>
+        <td>
+          784
+        </td>
+        <td>
+          6871
+          -
+          6902
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;  ${FG_YELLOW}$msg${RESET}\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
+          164
+        </td>
+        <td>
+          786
+        </td>
+        <td>
+          6929
+          -
+          6950
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;  ${DIM}&gt; ${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          166
+        </td>
+        <td>
+          788
+        </td>
+        <td>
+          6956
+          -
+          6965
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          clear
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          def clear
+        </td>
+      </tr><tr>
+        <td>
+          166
+        </td>
+        <td>
+          787
+        </td>
+        <td>
+          6976
+          -
+          7002
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          print
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          print(&quot;\\u001b[H\\u001b[2J&quot;)
+        </td>
+      </tr>
+    </table>
+          </div>
+        </div>
+      </body>
+    </html>

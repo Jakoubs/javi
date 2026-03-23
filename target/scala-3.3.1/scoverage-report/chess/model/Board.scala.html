@@ -1,0 +1,1857 @@
+<html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title id="title">
+          chess\model\Board.scala.html
+        </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/css/theme.default.min.css" type="text/css"/><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.min.js"></script><link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css"/><script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script><script type="text/javascript">
+        $(document).ready(function() {$(".tablesorter").tablesorter();});
+      </script>
+        <style>
+          table.codegrid { font-family: monospace; font-size: 12px; width: auto!important; }table.statementlist { width: auto!important; font-size: 13px; } table.codegrid td { padding: 0!important; border: 0!important } table td.linenumber { width: 40px!important; } 
+        </style>
+      </head>
+      <body style="font-family: monospace;">
+        <ul class="nav nav-tabs">
+          <li>
+            <a href="#codegrid" data-toggle="tab">Codegrid</a>
+          </li>
+          <li>
+            <a href="#statementlist" data-toggle="tab">Statement List</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane active" id="codegrid">
+            <pre style='font-size: 12pt; font-family: courier, monospace;'>1 <span style=''>package chess.model
+</span>2 <span style=''>
+</span>3 <span style=''>// ─── Board ───────────────────────────────────────────────────────────────────
+</span>4 <span style=''>
+</span>5 <span style=''>/** Immutable 8×8 board represented as a Map from Pos to Piece */
+</span>6 <span style=''>case class Board(pieces: Map[Pos, Piece]):
+</span>7 <span style=''>
+</span>8 <span style=''>  </span><span style='background: #AEF1AE'>def get</span><span style=''>(pos: Pos): Option[Piece] = </span><span style='background: #AEF1AE'>pieces.get(pos)</span><span style=''>
+</span>9 <span style=''>
+</span>10 <span style=''>  </span><span style='background: #AEF1AE'>def isOccupied</span><span style=''>(pos: Pos): Boolean = </span><span style='background: #AEF1AE'>pieces.contains(pos)</span><span style=''>
+</span>11 <span style=''>
+</span>12 <span style=''>  </span><span style='background: #AEF1AE'>def isOccupiedBy</span><span style=''>(pos: Pos, color: Color): Boolean =
+</span>13 <span style=''>    </span><span style='background: #AEF1AE'>pieces.get(pos).exists(_.color == color)</span><span style=''>
+</span>14 <span style=''>
+</span>15 <span style=''>  </span><span style='background: #AEF1AE'>def isEmpty</span><span style=''>(pos: Pos): Boolean = !</span><span style='background: #AEF1AE'>pieces.contains(pos)</span><span style=''>
+</span>16 <span style=''>
+</span>17 <span style=''>  /** Place a piece (overwrites) */
+</span>18 <span style=''>  </span><span style='background: #AEF1AE'>def put</span><span style=''>(pos: Pos, piece: Piece): Board = copy(pieces = </span><span style='background: #AEF1AE'>pieces + (pos -&gt; piece</span><span style=''>))
+</span>19 <span style=''>
+</span>20 <span style=''>  /** Remove a piece */
+</span>21 <span style=''>  </span><span style='background: #AEF1AE'>def remove</span><span style=''>(pos: Pos): Board = copy(pieces = </span><span style='background: #AEF1AE'>pieces - pos</span><span style=''>)
+</span>22 <span style=''>
+</span>23 <span style=''>  /** Move without any special logic */
+</span>24 <span style=''>  </span><span style='background: #AEF1AE'>def movePiece</span><span style=''>(from: Pos, to: Pos): Board =
+</span>25 <span style=''>    </span><span style='background: #AEF1AE'>pieces.get(from)</span><span style=''> match
+</span>26 <span style=''>      </span><span style='background: #F0ADAD'>case None</span><span style=''>        =&gt; this
+</span>27 <span style=''>      </span><span style='background: #AEF1AE'>case Some(piece)</span><span style=''> =&gt; copy(pieces = </span><span style='background: #AEF1AE'>(</span><span style='background: #F0ADAD'>pieces - from</span><span style='background: #AEF1AE'>) + (to -&gt; piece</span><span style=''>))
+</span>28 <span style=''>
+</span>29 <span style=''>  </span><span style='background: #AEF1AE'>def findKing</span><span style=''>(color: Color): Option[Pos] =
+</span>30 <span style=''>    </span><span style='background: #AEF1AE'>pieces.collectFirst { case (pos, Piece(c, PieceType.King)) if c == color =&gt; pos }</span><span style=''>
+</span>31 <span style=''>
+</span>32 <span style=''>  </span><span style='background: #AEF1AE'>def allPiecesOf</span><span style=''>(color: Color): List[(Pos, Piece)] =
+</span>33 <span style=''>    </span><span style='background: #AEF1AE'>pieces.toList.filter(_._2.color == color)</span><span style=''>
+</span>34 <span style=''>
+</span>35 <span style=''>object Board:
+</span>36 <span style=''>  /** Standard starting position */
+</span>37 <span style=''>  </span><span style='background: #AEF1AE'>def initial</span><span style=''>: Board =
+</span>38 <span style=''>    val backRank: Color =&gt; List[PieceType] = _ =&gt;
+</span>39 <span style=''>      </span><span style='background: #F0ADAD'>List</span><span style='background: #AEF1AE'>(PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen,
+</span>40 <span style=''></span><span style='background: #AEF1AE'>           PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook)</span><span style=''>
+</span>41 <span style=''>
+</span>42 <span style=''>    val whitePieces =
+</span>43 <span style=''>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))).toMap</span><span style='background: #AEF1AE'> ++
+</span>44 <span style=''></span><span style='background: #AEF1AE'>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn))</span><span style='background: #AEF1AE'>.toMap</span><span style=''>
+</span>45 <span style=''>
+</span>46 <span style=''>    val blackPieces =
+</span>47 <span style=''>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))).toMap</span><span style='background: #AEF1AE'> ++
+</span>48 <span style=''></span><span style='background: #AEF1AE'>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn))</span><span style='background: #AEF1AE'>.toMap</span><span style=''>
+</span>49 <span style=''>
+</span>50 <span style=''>    Board(</span><span style='background: #AEF1AE'>whitePieces ++ blackPieces</span><span style=''>)
+</span>51 <span style=''>
+</span>52 <span style=''>  </span><span style='background: #F0ADAD'>def empty</span><span style=''>: Board = Board(</span><span style='background: #F0ADAD'>Map.empty</span><span style=''>)
+</span>53 <span style=''>
+</span>54 <span style=''>// ─── GameState ───────────────────────────────────────────────────────────────
+</span>55 <span style=''>
+</span>56 <span style=''>/**
+</span>57 <span style=''> * Complete, immutable game state.
+</span>58 <span style=''> *
+</span>59 <span style=''> * @param board          current board
+</span>60 <span style=''> * @param activeColor    whose turn it is
+</span>61 <span style=''> * @param castlingRights remaining castling rights
+</span>62 <span style=''> * @param enPassantTarget square a pawn may capture en-passant, if any
+</span>63 <span style=''> * @param halfMoveClock  half-moves since last capture or pawn move (for 50-move rule)
+</span>64 <span style=''> * @param fullMoveNumber increments after Black's move
+</span>65 <span style=''> * @param history        previous states for threefold-repetition detection
+</span>66 <span style=''> */
+</span>67 <span style=''>case class GameState(
+</span>68 <span style=''>  board:           Board,
+</span>69 <span style=''>  activeColor:     Color,
+</span>70 <span style=''>  castlingRights:  CastlingRights,
+</span>71 <span style=''>  enPassantTarget: Option[Pos],
+</span>72 <span style=''>  halfMoveClock:   Int,
+</span>73 <span style=''>  fullMoveNumber:  Int,
+</span>74 <span style=''>  history:         List[GameState] = </span><span style='background: #F0ADAD'>Nil</span><span style=''>   // oldest first, current excluded
+</span>75 <span style=''>):
+</span>76 <span style=''>  </span><span style='background: #AEF1AE'>def withHistory</span><span style=''>: GameState = copy(history = </span><span style='background: #AEF1AE'>history :+ this</span><span style=''>)
+</span>77 <span style=''>
+</span>78 <span style=''>object GameState:
+</span>79 <span style=''>  </span><span style='background: #AEF1AE'>def initial</span><span style=''>: GameState = GameState(
+</span>80 <span style=''>    board           = </span><span style='background: #AEF1AE'>Board.initial</span><span style=''>,
+</span>81 <span style=''>    activeColor     = Color.White,
+</span>82 <span style=''>    castlingRights  = </span><span style='background: #AEF1AE'>CastlingRights</span><span style=''>(),
+</span>83 <span style=''>    enPassantTarget = None,
+</span>84 <span style=''>    halfMoveClock   = 0,
+</span>85 <span style=''>    fullMoveNumber  = 1,
+</span>86 <span style=''>    history         = </span><span style='background: #AEF1AE'>Nil</span><span style=''>
+</span>87 <span style=''>  )
+</span></pre>
+          </div>
+          <div class="tab-pane" id="statementlist">
+            <table cellspacing="0" cellpadding="0" class="table statementlist">
+      <tr>
+        <th>Line</th>
+        <th>Stmt Id</th>
+        <th>Pos</th>
+        <th>Tree</th>
+        <th>Symbol</th>
+        <th>Tests</th>
+        <th>Code</th>
+      </tr><tr>
+        <td>
+          7
+        </td>
+        <td>
+          196
+        </td>
+        <td>
+          257
+          -
+          272
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.get(pos)
+        </td>
+      </tr><tr>
+        <td>
+          7
+        </td>
+        <td>
+          197
+        </td>
+        <td>
+          222
+          -
+          229
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def get
+        </td>
+      </tr><tr>
+        <td>
+          9
+        </td>
+        <td>
+          199
+        </td>
+        <td>
+          278
+          -
+          292
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          isOccupied
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def isOccupied
+        </td>
+      </tr><tr>
+        <td>
+          9
+        </td>
+        <td>
+          198
+        </td>
+        <td>
+          314
+          -
+          334
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.contains(pos)
+        </td>
+      </tr><tr>
+        <td>
+          11
+        </td>
+        <td>
+          202
+        </td>
+        <td>
+          340
+          -
+          356
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          isOccupiedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def isOccupiedBy
+        </td>
+      </tr><tr>
+        <td>
+          12
+        </td>
+        <td>
+          200
+        </td>
+        <td>
+          397
+          -
+          437
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          exists
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.get(pos).exists(_.color == color)
+        </td>
+      </tr><tr>
+        <td>
+          12
+        </td>
+        <td>
+          201
+        </td>
+        <td>
+          397
+          -
+          412
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.get(pos)
+        </td>
+      </tr><tr>
+        <td>
+          14
+        </td>
+        <td>
+          204
+        </td>
+        <td>
+          443
+          -
+          454
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def isEmpty
+        </td>
+      </tr><tr>
+        <td>
+          14
+        </td>
+        <td>
+          203
+        </td>
+        <td>
+          477
+          -
+          497
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.contains(pos)
+        </td>
+      </tr><tr>
+        <td>
+          17
+        </td>
+        <td>
+          205
+        </td>
+        <td>
+          595
+          -
+          617
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces + (pos -&gt; piece
+        </td>
+      </tr><tr>
+        <td>
+          17
+        </td>
+        <td>
+          207
+        </td>
+        <td>
+          540
+          -
+          547
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          put
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def put
+        </td>
+      </tr><tr>
+        <td>
+          17
+        </td>
+        <td>
+          206
+        </td>
+        <td>
+          605
+          -
+          617
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos -&gt; piece
+        </td>
+      </tr><tr>
+        <td>
+          20
+        </td>
+        <td>
+          209
+        </td>
+        <td>
+          650
+          -
+          660
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          remove
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def remove
+        </td>
+      </tr><tr>
+        <td>
+          20
+        </td>
+        <td>
+          208
+        </td>
+        <td>
+          694
+          -
+          706
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces - pos
+        </td>
+      </tr><tr>
+        <td>
+          23
+        </td>
+        <td>
+          216
+        </td>
+        <td>
+          754
+          -
+          767
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          movePiece
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def movePiece
+        </td>
+      </tr><tr>
+        <td>
+          24
+        </td>
+        <td>
+          210
+        </td>
+        <td>
+          802
+          -
+          818
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.get(from)
+        </td>
+      </tr><tr>
+        <td>
+          25
+        </td>
+        <td>
+          211
+        </td>
+        <td>
+          832
+          -
+          841
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case None
+        </td>
+      </tr><tr>
+        <td>
+          26
+        </td>
+        <td>
+          214
+        </td>
+        <td>
+          899
+          -
+          912
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          pieces - from
+        </td>
+      </tr><tr>
+        <td>
+          26
+        </td>
+        <td>
+          213
+        </td>
+        <td>
+          898
+          -
+          928
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (pieces - from) + (to -&gt; piece
+        </td>
+      </tr><tr>
+        <td>
+          26
+        </td>
+        <td>
+          212
+        </td>
+        <td>
+          864
+          -
+          880
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Some(piece)
+        </td>
+      </tr><tr>
+        <td>
+          26
+        </td>
+        <td>
+          215
+        </td>
+        <td>
+          917
+          -
+          928
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          to -&gt; piece
+        </td>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          219
+        </td>
+        <td>
+          936
+          -
+          948
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          findKing
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def findKing
+        </td>
+      </tr><tr>
+        <td>
+          29
+        </td>
+        <td>
+          218
+        </td>
+        <td>
+          1005
+          -
+          1055
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (pos, Piece(c, PieceType.King)) if c == color
+        </td>
+      </tr><tr>
+        <td>
+          29
+        </td>
+        <td>
+          217
+        </td>
+        <td>
+          983
+          -
+          1064
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          collectFirst
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.collectFirst { case (pos, Piece(c, PieceType.King)) if c == color =&gt; pos }
+        </td>
+      </tr><tr>
+        <td>
+          31
+        </td>
+        <td>
+          223
+        </td>
+        <td>
+          1070
+          -
+          1085
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          allPiecesOf
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def allPiecesOf
+        </td>
+      </tr><tr>
+        <td>
+          32
+        </td>
+        <td>
+          220
+        </td>
+        <td>
+          1127
+          -
+          1168
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          filter
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.toList.filter(_._2.color == color)
+        </td>
+      </tr><tr>
+        <td>
+          32
+        </td>
+        <td>
+          222
+        </td>
+        <td>
+          1148
+          -
+          1152
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          _2
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          _._2
+        </td>
+      </tr><tr>
+        <td>
+          32
+        </td>
+        <td>
+          221
+        </td>
+        <td>
+          1127
+          -
+          1140
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.toList
+        </td>
+      </tr><tr>
+        <td>
+          36
+        </td>
+        <td>
+          253
+        </td>
+        <td>
+          1226
+          -
+          1237
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          initial
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def initial
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          225
+        </td>
+        <td>
+          1305
+          -
+          1309
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          List
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          List
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          224
+        </td>
+        <td>
+          1305
+          -
+          1458
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          List(PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen,\r\n           PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook)
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          227
+        </td>
+        <td>
+          1491
+          -
+          1573
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          toMap
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))).toMap
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          226
+        </td>
+        <td>
+          1491
+          -
+          1656
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))).toMap ++\r\n      (0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn)).toMap
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          229
+        </td>
+        <td>
+          1492
+          -
+          1498
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          to
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0 to 7
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          232
+        </td>
+        <td>
+          1541
+          -
+          1565
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          backRank(Color.White)(c)
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          228
+        </td>
+        <td>
+          1491
+          -
+          1567
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c)))
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          231
+        </td>
+        <td>
+          1509
+          -
+          1566
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          230
+        </td>
+        <td>
+          1492
+          -
+          1493
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          intWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          233
+        </td>
+        <td>
+          1541
+          -
+          1562
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          backRank(Color.White)
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          236
+        </td>
+        <td>
+          1585
+          -
+          1591
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          to
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0 to 7
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          235
+        </td>
+        <td>
+          1584
+          -
+          1650
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn))
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          238
+        </td>
+        <td>
+          1602
+          -
+          1649
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn)
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          234
+        </td>
+        <td>
+          1584
+          -
+          1656
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          toMap
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn)).toMap
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          237
+        </td>
+        <td>
+          1585
+          -
+          1586
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          intWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          245
+        </td>
+        <td>
+          1739
+          -
+          1763
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          backRank(Color.Black)(c)
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          244
+        </td>
+        <td>
+          1707
+          -
+          1764
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          241
+        </td>
+        <td>
+          1689
+          -
+          1765
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c)))
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          240
+        </td>
+        <td>
+          1689
+          -
+          1771
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          toMap
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))).toMap
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          243
+        </td>
+        <td>
+          1690
+          -
+          1691
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          intWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          246
+        </td>
+        <td>
+          1739
+          -
+          1760
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          backRank(Color.Black)
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          239
+        </td>
+        <td>
+          1689
+          -
+          1854
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))).toMap ++\r\n      (0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn)).toMap
+        </td>
+      </tr><tr>
+        <td>
+          46
+        </td>
+        <td>
+          242
+        </td>
+        <td>
+          1690
+          -
+          1696
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          to
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0 to 7
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          247
+        </td>
+        <td>
+          1782
+          -
+          1854
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          toMap
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn)).toMap
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          250
+        </td>
+        <td>
+          1783
+          -
+          1784
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          intWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          249
+        </td>
+        <td>
+          1783
+          -
+          1789
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          to
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          0 to 7
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          248
+        </td>
+        <td>
+          1782
+          -
+          1848
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          (0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn))
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          251
+        </td>
+        <td>
+          1800
+          -
+          1847
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn)
+        </td>
+      </tr><tr>
+        <td>
+          49
+        </td>
+        <td>
+          252
+        </td>
+        <td>
+          1868
+          -
+          1894
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          whitePieces ++ blackPieces
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          254
+        </td>
+        <td>
+          1926
+          -
+          1929
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Map
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          256
+        </td>
+        <td>
+          1901
+          -
+          1910
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          def empty
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          255
+        </td>
+        <td>
+          1926
+          -
+          1935
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Map.empty
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          259
+        </td>
+        <td>
+          2735
+          -
+          2738
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Nil
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Nil
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          260
+        </td>
+        <td>
+          2735
+          -
+          2735
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          $lessinit$greater$default$7
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          258
+        </td>
+        <td>
+          2782
+          -
+          2797
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          withHistory
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def withHistory
+        </td>
+      </tr><tr>
+        <td>
+          75
+        </td>
+        <td>
+          257
+        </td>
+        <td>
+          2826
+          -
+          2841
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          :+
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          history :+ this
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          267
+        </td>
+        <td>
+          2867
+          -
+          2878
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          initial
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def initial
+        </td>
+      </tr><tr>
+        <td>
+          79
+        </td>
+        <td>
+          261
+        </td>
+        <td>
+          2926
+          -
+          2939
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          initial
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Board.initial
+        </td>
+      </tr><tr>
+        <td>
+          81
+        </td>
+        <td>
+          262
+        </td>
+        <td>
+          3000
+          -
+          3014
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          $lessinit$greater$default$1
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          CastlingRights
+        </td>
+      </tr><tr>
+        <td>
+          81
+        </td>
+        <td>
+          265
+        </td>
+        <td>
+          3000
+          -
+          3014
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          $lessinit$greater$default$4
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          CastlingRights
+        </td>
+      </tr><tr>
+        <td>
+          81
+        </td>
+        <td>
+          264
+        </td>
+        <td>
+          3000
+          -
+          3014
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          $lessinit$greater$default$3
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          CastlingRights
+        </td>
+      </tr><tr>
+        <td>
+          81
+        </td>
+        <td>
+          263
+        </td>
+        <td>
+          3000
+          -
+          3014
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          $lessinit$greater$default$2
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          CastlingRights
+        </td>
+      </tr><tr>
+        <td>
+          85
+        </td>
+        <td>
+          266
+        </td>
+        <td>
+          3122
+          -
+          3125
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Nil
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Nil
+        </td>
+      </tr>
+    </table>
+          </div>
+        </div>
+      </body>
+    </html>
