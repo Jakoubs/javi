@@ -1,5 +1,0 @@
-#Successful Tests
-#Mon Mar 23 14:41:22 CET 2026
-chess.CommandParserTest=1774273282489
-chess.GameControllerTest=1774273282659
-chess.MoveGeneratorTest=1774273282602

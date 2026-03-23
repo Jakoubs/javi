@@ -1,5 +1,9 @@
 # ♟ Terminal Chess in Scala
 
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/chess/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/YOUR_USERNAME/chess)
+[![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://github.com/YOUR_USERNAME/chess/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/chess/Coverage%20Report)](https://github.com/YOUR_USERNAME/chess/actions/workflows/coverage.yml)
+
 A fully playable, legal-moves-only chess game for the terminal, built in pure Scala 3 with MVC architecture inspired by lichess.
 
 ---
@@ -79,15 +83,63 @@ sbt test
 
 ## Code Coverage
 
-Mit `sbt-scoverage` wird die Coverage mit Instrumentierung über `sbt coverage test` erzeugt.
+This project uses **scoverage** for test coverage reporting with automated GitHub Actions integration.
+
+### Coverage Badges
+
+- **Codecov**: ![codecov](https://codecov.io/gh/YOUR_USERNAME/chess/graph/badge.svg?token=YOUR_TOKEN)
+- **Coverage Status**: ![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)
+- **Build Status**: ![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/chess/Coverage%20Report)
+
+### Generate Coverage Locally
 
 ```bash
-sbt clean coverage test coverageReport
+# Run tests with coverage
+sbt clean coverage test
+
+# Generate HTML report
+sbt coverageReport
+
+# View the report
+open target/scala-3.3.1/scoverage-report/index.html
 ```
 
-Der HTML-Report wird unter `target/<scalaVersion>/scoverage-report/index.html` generiert (für dieses Projekt typischerweise `target/scala-3.3.1/scoverage-report/index.html`).
+### Coverage Goals
 
-In GitHub Actions wird der Report als Artefakt mit dem Namen `scoverage-report` hochgeladen.
+- **Statement Coverage**: 80% minimum target
+- **Branch Coverage**: 70% minimum target
+- **Excluded**: UI components (`.view.*`), web components (`.web.*`), main classes
+
+### Automated Coverage
+
+Coverage is automatically generated and reported on:
+
+- **Push** to `main` and `functional-improvements` branches
+- **Pull Requests** to `main` and `functional-improvements` branches
+
+### Coverage Reports
+
+- **Local**: `target/scala-3.3.1/scoverage-report/index.html`
+- **Codecov**: https://codecov.io/gh/YOUR_USERNAME/chess
+- **GitHub Actions**: Available as workflow artifacts
+
+### Coverage Configuration
+
+```scala
+// build.sbt
+coverageExcludedPackages := ".*\\.view\\..*;.*\\.web\\..*;.*\\.Main.*"
+coverageMinimumStmtTotal := 80
+coverageMinimumBranchTotal := 70
+coverageFailOnMinimum := false
+coverageHighlighting := true
+```
+
+### View Coverage Details
+
+1. **Local Report**: Open `target/scala-3.3.1/scoverage-report/index.html`
+2. **Codecov Dashboard**: Visit https://codecov.io/gh/YOUR_USERNAME/chess
+3. **GitHub Actions**: Check workflow runs for coverage summaries
+4. **Pull Requests**: Coverage diff in PR checks
 
 ## Build fat JAR
 
