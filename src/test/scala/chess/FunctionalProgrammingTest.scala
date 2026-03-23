@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import chess.model.*
 import chess.controller.*
+import chess.view.TerminalView
 
 class FunctionalProgrammingTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks:
 
@@ -68,7 +69,7 @@ class FunctionalProgrammingTest extends AnyFunSuite with Matchers with ScalaChec
     
     // Addition should create new instance
     val newPos = pos + (1, 2)
-    newPos should not be theSameInstanceAs pos
+    newPos should not be theSameInstanceAs(pos)
     
     // Should be immutable
     pos shouldBe Pos(4, 4)
@@ -93,7 +94,7 @@ class FunctionalProgrammingTest extends AnyFunSuite with Matchers with ScalaChec
     val game = GameState.initial
     
     // Compose functions functionally
-    val allMoves = MoveGenerator.pseudoLegalMoves(game)
+    val allMoves = MoveGenerator.legalMoves(game)
     val legalMoves = allMoves.filter(MoveGenerator.isLegal(game, _))
     
     // Should have moves

@@ -4,6 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
+import chess.view.TerminalView
 
 class IntegrationTest extends AnyFunSuite with Matchers:
 
