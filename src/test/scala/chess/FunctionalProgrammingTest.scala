@@ -93,10 +93,15 @@ class FunctionalProgrammingTest extends AnyFunSuite with Matchers with ScalaChec
   test("Functional composition should work") {
     val game = GameState.initial
     
-    // Compose functions functionally
-    val allMoves = MoveGenerator.legalMoves(game)
-    val legalMoves = allMoves.filter(MoveGenerator.isLegal(game, _))
+    // Get legal moves functionally
+    val legalMoves = MoveGenerator.legalMoves(game)
     
     // Should have moves
     legalMoves should not be empty
+    
+    // All moves should be from current player's pieces
+    legalMoves.foreach { move =>
+      game.board.get(move.from) should be(defined)
+      game.board.get(move.from).get.color shouldBe game.activeColor
+    }
   }
