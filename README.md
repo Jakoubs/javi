@@ -1,7 +1,9 @@
 # ♟ Terminal Chess in Scala
 [![Coverage Status](https://coveralls.io/repos/github/Jakoubs/javi/badge.svg?branch=tui)](https://coveralls.io/github/Jakoubs/javi?branch=tui)
-[![codecov](https://codecov.io/gh/YOUR_USERNAME/chess/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/YOUR_USERNAME/chess)
-[![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/chess/Coverage%20Report)](https://github.com/YOUR_USERNAME/chess/actions/workflows/coverage.yml)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Scala Version](https://img.shields.io/badge/scala-3.3.1-red)](https://scala-lang.org/)
+[![sbt Build](https://img.shields.io/badge/sbt-1.9+-blue)](https://scala-sbt.org/)
+[![CI](https://img.shields.io/github/actions/workflow/status/Jakoubs/javi/ci.yml)](https://github.com/Jakoubs/javi/actions/workflows/ci.yml)
 
 A fully playable, legal-moves-only chess game for the terminal, built in pure Scala 3 with MVC architecture inspired by lichess.
 
@@ -79,16 +81,6 @@ sbt run
 ```bash
 sbt test
 ```
-
-## Code Coverage
-
-This project uses **scoverage** for test coverage reporting with automated GitHub Actions integration.
-
-### Coverage Badges
-
-- **Coveralls**: ![Coverage](https://coveralls.io/repos/YOUR_USERNAME/chess/badge.svg?branch=main)
-- **Codecov**: ![codecov](https://codecov.io/gh/YOUR_USERNAME/chess/graph/badge.svg?token=YOUR_TOKEN)
-- **Build Status**: ![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USERNAME/chess/Coverage%20Report)
 
 ### Generate Coverage Locally
 
