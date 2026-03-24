@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.chess-functional-improvements-build.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.chess-functional-improvements-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.test.iml" />
+    </modules>
+  </component>
+</project>

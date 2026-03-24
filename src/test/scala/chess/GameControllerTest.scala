@@ -4,6 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
+import chess.view.TerminalView
+import scala.collection.mutable.ArrayBuffer
 
 class CommandParserTest extends AnyFunSuite with Matchers:
 
@@ -53,6 +55,23 @@ class CommandParserTest extends AnyFunSuite with Matchers:
   }
 
 class GameControllerTest extends AnyFunSuite with Matchers:
+
+  private final class FakeConsole(inputs: List[String]) extends ConsoleIO:
+    private val remaining = ArrayBuffer.from(inputs)
+    val printed: ArrayBuffer[String] = ArrayBuffer.empty
+    var clearCalls: Int = 0
+
+    def readLine(): Option[String] =
+      remaining.headOption.map { next =>
+        remaining.remove(0)
+        next
+      }
+
+    def print(text: String): Unit =
+      printed += text
+
+    def clear(): Unit =
+      clearCalls += 1
 
   def pos(s: String): Pos = Pos.fromAlgebraic(s).get
 
@@ -134,4 +153,25 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     offered.drawOffer shouldBe true
     val accepted = GameController.handleCommand(offered, Command.OfferDraw)
     accepted.status shouldBe GameStatus.Draw("agreement")
+  }
+
+  test("run stops cleanly on EOF after initial render") {
+    val console = new FakeConsole(Nil)
+
+    GameController.run(console)
+
+    console.clearCalls shouldBe 1
+    console.printed.exists(_.contains("White")) shouldBe true
+    console.printed.count(_ == TerminalView.prompt) shouldBe 1
+  }
+
+  test("run processes scripted input and re-renders until quit") {
+    val console = new FakeConsole(List("e2e4", "quit"))
+
+    GameController.run(console)
+
+    console.clearCalls shouldBe 3
+    console.printed.count(_ == TerminalView.prompt) shouldBe 2
+    console.printed.exists(_.contains("Move 1")) shouldBe true
+    console.printed.count(_.contains("Black")) should be >= 2
   }

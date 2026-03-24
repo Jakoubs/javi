@@ -3,6 +3,21 @@ package chess.controller
 import chess.model.*
 import chess.view.TerminalView
 
+trait ConsoleIO:
+  def readLine(): Option[String]
+  def print(text: String): Unit
+  def clear(): Unit
+
+object StdConsoleIO extends ConsoleIO:
+  def readLine(): Option[String] =
+    Option(scala.io.StdIn.readLine())
+
+  def print(text: String): Unit =
+    scala.Predef.print(text)
+
+  def clear(): Unit =
+    TerminalView.clear()
+
 // ─── Command ADT ─────────────────────────────────────────────────────────────
 
 enum Command:
@@ -92,29 +107,31 @@ object GameController:
 
   // ── Main loop ──────────────────────────────────────────────────────────────
 
-  def run(): Unit =
+  def run(console: ConsoleIO = StdConsoleIO): Unit =
     var app = AppState.initial
-    renderFull(app)
+    renderFull(app, console)
 
     while app.running do
-      print(TerminalView.prompt)
-      val input = scala.io.StdIn.readLine()
-      if input != null then
-        app = handleCommand(app, CommandParser.parse(input.trim))
-        renderFull(app)
+      console.print(TerminalView.prompt)
+      console.readLine() match
+        case Some(input) =>
+          app = handleCommand(app, CommandParser.parse(input.trim))
+          renderFull(app, console)
+        case None =>
+          app = app.copy(running = false)
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  private def renderFull(app: AppState): Unit =
-    TerminalView.clear()
-    print(TerminalView.render(
+  private def renderFull(app: AppState, console: ConsoleIO): Unit =
+    console.clear()
+    console.print(TerminalView.render(
       state      = app.game,
       status     = app.status,
       highlights = app.highlights,
       lastMove   = app.lastMove,
       flipped    = app.flipped
     ))
-    app.message.foreach(print)
+    app.message.foreach(console.print)
 
   // ── Command dispatch ───────────────────────────────────────────────────────
 

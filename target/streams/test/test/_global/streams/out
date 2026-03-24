@@ -1,0 +1,140 @@
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.IntegrationTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mIntegrationTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Game should start with correct initial state[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Initial FEN should parse back to the same game state[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Game status should be Playing initially[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- App should handle basic move sequence[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Command parser should handle all commands[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView should render without errors[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.GameControllerTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mGameControllerTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- initial app state is Playing[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- legal move updates board and switches active color[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- illegal move produces an error message and does not change board[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- undo after first move returns to initial board[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- undo on empty history shows error[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- ShowMoves highlights targets for a valid own piece[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- ShowMoves on empty square shows error[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Flip toggles flipped flag[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- NewGame resets the game state[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Quit sets running to false[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- draw offer then accept produces Draw status[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- run stops cleanly on EOF after initial render[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- run processes scripted input and re-renders until quit[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.CommandParserTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mCommandParserTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses a simple move[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses a move with promotion[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'moves e2'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'flip'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'undo'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'resign'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'new'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- parses 'quit'[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- unknown input produces Unknown command[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- invalid position in 'moves' produces Unknown[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chesscoverage.CoverageRegressionTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mCoverageRegressionTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Board initial and empty serialize to expected FEN placement[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Board fromFenPlacement rejects malformed ranks and invalid pieces[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameState fromFen rejects malformed metadata[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameState withHistory appends the current state[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- CastlingRights fromFen rejects duplicate rights[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Piece fromFenChar rejects non-letter characters[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules detects fifty-move rule[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules detects threefold repetition from history[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules detects insufficient material[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules detects king versus king as insufficient material[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- applyMove updates castling rights for king move, rook move and rook capture[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- applyMove updates promotion, en-passant target and clocks[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules reports check without immediate draw override[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- controller handles promotion-required, finished-game move, resign, help and unknown command[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- show moves rejects opponent piece and pieces without legal targets[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- command parser accepts aliases and rejects invalid promotion suffix[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator covers queen, black pawns and extra castling branches[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator attack detection covers missing king and blocked attacks[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView renders all footer states, highlights and flipped coordinates[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView helpers and StdConsoleIO are directly executable[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Main.main prints startup text and exits on quit input[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.PerformanceBenchmark, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mPerformanceBenchmark:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Functional GameController performance[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView rendering performance[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Command parsing performance[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Move generation performance[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.TypesTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mTypesTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Color.opposite should return opposite color[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Piece.symbol should return correct Unicode symbols[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Piece.letter should return correct algebraic notation[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Pos.isValid should validate board positions[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Pos.fromAlgebraic should parse valid notation[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Pos.fromAlgebraic should reject invalid notation[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Pos.toAlgebraic should convert back to algebraic notation[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Pos addition should work correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Move creation should work correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Piece.fromFenChar should parse valid FEN pieces[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- CastlingRights should round-trip FEN notation[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameState should parse and serialize FEN[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.MoveGeneratorTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mMoveGeneratorTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- white pawn on e2 can advance one or two squares[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- white pawn cannot advance if blocked[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- white pawn can capture diagonally[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- pawn promotion generates 4 moves on the promotion square[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- knight on e4 has 8 possible target squares in open position[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- knight on a1 has only 2 target squares[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- rook on e4 in open position has 14 moves[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- bishop on e4 in open position has 13 moves[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- king on e4 in open position has 8 moves[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- king cannot move into check[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- king in check must resolve the check[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- isInCheck is true when queen attacks king[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- en passant is legal when target square is set[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- en passant capture removes the captured pawn[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- castling is available when path is clear[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- castling is blocked when a square is under attack[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- FEN active color controls which side can move[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- missing castling rights in FEN disable castling[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.FunctionalProgrammingTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mFunctionalProgrammingTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameController should use immutable state[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView should be pure functional[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- CommandParser should be pure functional[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Piece operations should be functional[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Position operations should be functional[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Game operations should be functional[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Functional composition should work[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.CoverageImprovementTest, org.scalatest.tools.Framework$$anon$1@7df8b9b1, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mCoverageImprovementTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Board helpers and initial setup expose expected pieces[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Board put remove and movePiece cover replacement and missing-source cases[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Board fromFenPlacement parses valid mixed ranks[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Board toFenPlacement compresses leading middle and trailing empty squares[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameState initial and parsing cover valid metadata branches[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameState fromFen accepts black en-passant targets and preserves serialization[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- CastlingRights helpers toggle individual flags[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules computeStatus covers check[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules applyMove handles castling and en-passant capture state updates[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameRules applyMove updates black-side castling rights and corner captures[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- CommandParser accepts remaining aliases and promotion pieces[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameController exposes draw-offer and resign messaging for black to move[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- GameController handleMove emits a check message[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator covers direct attacks and pinned-piece filtering[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator covers blocked sliders, black promotion and black castling[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator rejects castling when transit squares are occupied or attacked[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mRun completed in 1 second, 631 milliseconds.[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mTotal number of tests run: 107[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mSuites: completed 9, aborted 0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mTests: succeeded 107, failed 0, canceled 0, ignored 0, pending 0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mAll tests passed.[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mPassed tests:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.IntegrationTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.GameControllerTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.CommandParserTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chesscoverage.CoverageRegressionTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.PerformanceBenchmark[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.TypesTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.MoveGeneratorTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.FunctionalProgrammingTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess.CoverageImprovementTest[0m

@@ -45,6 +45,24 @@ case class Piece(color: Color, pieceType: PieceType):
     case (Color.Black, PieceType.Knight) => "n"
     case (Color.Black, PieceType.Pawn)   => "p"
 
+object Piece:
+  def fromFenChar(char: Char): Option[Piece] =
+    val color =
+      if char.isUpper then Color.White
+      else if char.isLower then Color.Black
+      else return None
+
+    val pieceType = char.toLower match
+      case 'k' => Some(PieceType.King)
+      case 'q' => Some(PieceType.Queen)
+      case 'r' => Some(PieceType.Rook)
+      case 'b' => Some(PieceType.Bishop)
+      case 'n' => Some(PieceType.Knight)
+      case 'p' => Some(PieceType.Pawn)
+      case _   => None
+
+    pieceType.map(Piece(color, _))
+
 // ─── Position ────────────────────────────────────────────────────────────────
 
 /** Zero-based (col, row) where (0,0) = a1, (7,7) = h8 */
@@ -88,6 +106,30 @@ case class CastlingRights(
   def disableWhiteQueenSide: CastlingRights = copy(whiteQueenSide = false)
   def disableBlackKingSide:  CastlingRights = copy(blackKingSide  = false)
   def disableBlackQueenSide: CastlingRights = copy(blackQueenSide = false)
+
+  def toFen: String =
+    val rights =
+      List(
+        Option.when(whiteKingSide)("K"),
+        Option.when(whiteQueenSide)("Q"),
+        Option.when(blackKingSide)("k"),
+        Option.when(blackQueenSide)("q")
+      ).flatten.mkString
+    if rights.nonEmpty then rights else "-"
+
+object CastlingRights:
+  def fromFen(value: String): Option[CastlingRights] =
+    if value == "-" then Some(CastlingRights(false, false, false, false))
+    else if value.nonEmpty && value.forall("KQkq".contains(_)) && value.distinct.length == value.length then
+      Some(
+        CastlingRights(
+          whiteKingSide = value.contains('K'),
+          whiteQueenSide = value.contains('Q'),
+          blackKingSide = value.contains('k'),
+          blackQueenSide = value.contains('q')
+        )
+      )
+    else None
 
 // ─── GameStatus ──────────────────────────────────────────────────────────────
 

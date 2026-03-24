@@ -95,3 +95,33 @@ class TypesTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks:
     val moveWithPromotion = Move(Pos(4, 6), Pos(4, 7), Some(PieceType.Queen))
     moveWithPromotion.promotion shouldBe Some(PieceType.Queen)
   }
+
+  test("Piece.fromFenChar should parse valid FEN pieces") {
+    Piece.fromFenChar('K') shouldBe Some(Piece(Color.White, PieceType.King))
+    Piece.fromFenChar('q') shouldBe Some(Piece(Color.Black, PieceType.Queen))
+    Piece.fromFenChar('x') shouldBe None
+  }
+
+  test("CastlingRights should round-trip FEN notation") {
+    CastlingRights.fromFen("Kq") shouldBe Some(
+      CastlingRights(
+        whiteKingSide = true,
+        whiteQueenSide = false,
+        blackKingSide = false,
+        blackQueenSide = true
+      )
+    )
+    CastlingRights(
+      whiteKingSide = true,
+      whiteQueenSide = false,
+      blackKingSide = false,
+      blackQueenSide = true
+    ).toFen shouldBe "Kq"
+    CastlingRights(false, false, false, false).toFen shouldBe "-"
+  }
+
+  test("GameState should parse and serialize FEN") {
+    val fen = "r3k2r/pppq1ppp/2npbn2/4p3/2BPP3/2N2N2/PPP2PPP/R1BQ1RK1 b kq d3 4 8"
+    val state = GameState.fromFen(fen).fold(msg => fail(msg), identity)
+    state.toFen shouldBe fen
+  }

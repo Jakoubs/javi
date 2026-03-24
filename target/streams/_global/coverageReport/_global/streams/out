@@ -1,0 +1,13 @@
+[0m[[0m[0minfo[0m] [0m[0mWaiting for measurement data to sync...[0m
+[0m[[0m[0minfo[0m] [0m[0mReading scoverage instrumentation [D:\SoftwareEngineering\javi\target\scala-3.3.1\scoverage-data\scoverage.coverage][0m
+[0m[[0m[0minfo[0m] [0m[0mReading scoverage measurements...[0m
+[0m[[0m[0minfo[0m] [0m[0mGenerating scoverage reports...[0m
+[0m[[0m[0minfo[0m] [0m[0mWritten Cobertura report [D:\SoftwareEngineering\javi\target\scala-3.3.1\coverage-report/cobertura.xml][0m
+[0m[[0m[0minfo[0m] [0m[0mWritten XML coverage report [D:\SoftwareEngineering\javi\target\scala-3.3.1\scoverage-report/scoverage.xml][0m
+[0m[[0m[0minfo[0m] [0m[0mWritten HTML coverage report [D:\SoftwareEngineering\javi\target\scala-3.3.1\scoverage-report/index.html][0m
+[0m[[0m[0minfo[0m] [0m[0mStatement coverage.: 79.53%[0m
+[0m[[0m[0minfo[0m] [0m[0mBranch coverage....: 84.40%[0m
+[0m[[0m[0minfo[0m] [0m[0mCoverage reports completed[0m
+[0m[[0m[0mdebug[0m] [0m[0mCoverage is above minimum [84.40% >= 75.00%]: Branch:Total[0m
+[0m[[0m[31merror[0m] [0m[0mCoverage is below minimum [79.53% < 85.00%]: Stmt:Total[0m
+[0m[[0m[0minfo[0m] [0m[0mAll done. Coverage was stmt=[79.53%] branch=[84.40%][0m

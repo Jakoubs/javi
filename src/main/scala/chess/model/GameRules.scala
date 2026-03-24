@@ -124,9 +124,7 @@ object GameRules:
     (state :: state.history).count(positionKey(_) == key) >= 3
 
   private def positionKey(state: GameState): String =
-    val pieces = state.board.pieces.toList.sortBy((p, _) => (p.col, p.row))
-      .map((p, pc) => s"${p.col}${p.row}${pc.letter}").mkString
-    s"$pieces|${state.activeColor}|${state.castlingRights}|${state.enPassantTarget}"
+    s"${state.board.toFenPlacement} ${GameState.colorToFen(state.activeColor)} ${state.castlingRights.toFen} ${state.enPassantTarget.map(_.toAlgebraic).getOrElse("-")}"
 
   private def isInsufficientMaterial(state: GameState): Boolean =
     val pieces = state.board.pieces.values.toList

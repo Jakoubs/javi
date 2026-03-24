@@ -13,30 +13,12 @@ class IntegrationTest extends AnyFunSuite with Matchers:
     gameState.activeColor shouldBe Color.White
     gameState.fullMoveNumber shouldBe 1
     gameState.halfMoveClock shouldBe 0
+    gameState.toFen shouldBe GameState.initialFen
   }
 
-  test("Initial board should have pieces in correct positions") {
-    val board = GameState.initial.board
-    
-    // White pieces
-    board.get(Pos(4, 0)) shouldBe Some(Piece(Color.White, PieceType.King))
-    board.get(Pos(3, 0)) shouldBe Some(Piece(Color.White, PieceType.Queen))
-    board.get(Pos(0, 0)) shouldBe Some(Piece(Color.White, PieceType.Rook))
-    board.get(Pos(7, 0)) shouldBe Some(Piece(Color.White, PieceType.Rook))
-    
-    // White pawns
-    for col <- 0 to 7 do
-      board.get(Pos(col, 1)) shouldBe Some(Piece(Color.White, PieceType.Pawn))
-    
-    // Black pieces
-    board.get(Pos(4, 7)) shouldBe Some(Piece(Color.Black, PieceType.King))
-    board.get(Pos(3, 7)) shouldBe Some(Piece(Color.Black, PieceType.Queen))
-    board.get(Pos(0, 7)) shouldBe Some(Piece(Color.Black, PieceType.Rook))
-    board.get(Pos(7, 7)) shouldBe Some(Piece(Color.Black, PieceType.Rook))
-    
-    // Black pawns
-    for col <- 0 to 7 do
-      board.get(Pos(col, 6)) shouldBe Some(Piece(Color.Black, PieceType.Pawn))
+  test("Initial FEN should parse back to the same game state") {
+    val parsed = GameState.fromFen(GameState.initialFen).fold(msg => fail(msg), identity)
+    parsed shouldBe GameState.initial
   }
 
   test("Game status should be Playing initially") {

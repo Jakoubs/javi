@@ -1,0 +1,2823 @@
+<html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title id="title">
+          chess\model\Types.scala.html
+        </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/css/theme.default.min.css" type="text/css"/><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.min.js"></script><link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css"/><script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script><script type="text/javascript">
+        $(document).ready(function() {$(".tablesorter").tablesorter();});
+      </script>
+        <style>
+          table.codegrid { font-family: monospace; font-size: 12px; width: auto!important; }table.statementlist { width: auto!important; font-size: 13px; } table.codegrid td { padding: 0!important; border: 0!important } table td.linenumber { width: 40px!important; } 
+        </style>
+      </head>
+      <body style="font-family: monospace;">
+        <ul class="nav nav-tabs">
+          <li>
+            <a href="#codegrid" data-toggle="tab">Codegrid</a>
+          </li>
+          <li>
+            <a href="#statementlist" data-toggle="tab">Statement List</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane active" id="codegrid">
+            <pre style='font-size: 12pt; font-family: courier, monospace;'>1 <span style=''>package chess.model
+</span>2 <span style=''>
+</span>3 <span style=''>// ─── Colour ──────────────────────────────────────────────────────────────────
+</span>4 <span style=''>
+</span>5 <span style=''>enum Color:
+</span>6 <span style=''>  case White, Black
+</span>7 <span style=''>
+</span>8 <span style=''>  </span><span style='background: #AEF1AE'>def opposite</span><span style=''>: Color = this match
+</span>9 <span style=''>    </span><span style='background: #AEF1AE'>case White</span><span style=''> =&gt; Black
+</span>10 <span style=''>    </span><span style='background: #AEF1AE'>case Black</span><span style=''> =&gt; White
+</span>11 <span style=''>
+</span>12 <span style=''>// ─── Piece types ─────────────────────────────────────────────────────────────
+</span>13 <span style=''>
+</span>14 <span style=''>enum PieceType:
+</span>15 <span style=''>  case King, Queen, Rook, Bishop, Knight, Pawn
+</span>16 <span style=''>
+</span>17 <span style=''>// ─── Piece ───────────────────────────────────────────────────────────────────
+</span>18 <span style=''>
+</span>19 <span style=''>case class Piece(color: Color, pieceType: PieceType):
+</span>20 <span style=''>  </span><span style='background: #AEF1AE'>def symbol</span><span style=''>: String = (color, pieceType) match
+</span>21 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.King)</span><span style=''>   =&gt; &quot;♔&quot;
+</span>22 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Queen)</span><span style=''>  =&gt; &quot;♕&quot;
+</span>23 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Rook)</span><span style=''>   =&gt; &quot;♖&quot;
+</span>24 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Bishop)</span><span style=''> =&gt; &quot;♗&quot;
+</span>25 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Knight)</span><span style=''> =&gt; &quot;♘&quot;
+</span>26 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Pawn)</span><span style=''>   =&gt; &quot;♙&quot;
+</span>27 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.King)</span><span style=''>   =&gt; &quot;♚&quot;
+</span>28 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Queen)</span><span style=''>  =&gt; &quot;♛&quot;
+</span>29 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Rook)</span><span style=''>   =&gt; &quot;♜&quot;
+</span>30 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Bishop)</span><span style=''> =&gt; &quot;♝&quot;
+</span>31 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Knight)</span><span style=''> =&gt; &quot;♞&quot;
+</span>32 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Pawn)</span><span style=''>   =&gt; &quot;♟&quot;
+</span>33 <span style=''>
+</span>34 <span style=''>  </span><span style='background: #AEF1AE'>def letter</span><span style=''>: String = (color, pieceType) match
+</span>35 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.King)</span><span style=''>   =&gt; &quot;K&quot;
+</span>36 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Queen)</span><span style=''>  =&gt; &quot;Q&quot;
+</span>37 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Rook)</span><span style=''>   =&gt; &quot;R&quot;
+</span>38 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Bishop)</span><span style=''> =&gt; &quot;B&quot;
+</span>39 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Knight)</span><span style=''> =&gt; &quot;N&quot;
+</span>40 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Pawn)</span><span style=''>   =&gt; &quot;P&quot;
+</span>41 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.King)</span><span style=''>   =&gt; &quot;k&quot;
+</span>42 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Queen)</span><span style=''>  =&gt; &quot;q&quot;
+</span>43 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Rook)</span><span style=''>   =&gt; &quot;r&quot;
+</span>44 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Bishop)</span><span style=''> =&gt; &quot;b&quot;
+</span>45 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Knight)</span><span style=''> =&gt; &quot;n&quot;
+</span>46 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Pawn)</span><span style=''>   =&gt; &quot;p&quot;
+</span>47 <span style=''>
+</span>48 <span style=''>object Piece:
+</span>49 <span style=''>  </span><span style='background: #AEF1AE'>def fromFenChar</span><span style=''>(char: Char): Option[Piece] =
+</span>50 <span style=''>    val color =
+</span>51 <span style=''>      if </span><span style='background: #AEF1AE'>char.isUpper</span><span style=''> then </span><span style='background: #AEF1AE'>Color.White</span><span style=''>
+</span>52 <span style=''>      else </span><span style='background: #AEF1AE'>if char.isLower then Color.Black
+</span>53 <span style=''></span><span style='background: #AEF1AE'>      else return None</span><span style=''>
+</span>54 <span style=''>
+</span>55 <span style=''>    val pieceType = </span><span style='background: #AEF1AE'>char.toLower</span><span style=''> match
+</span>56 <span style=''>      </span><span style='background: #AEF1AE'>case 'k'</span><span style=''> =&gt; Some(PieceType.King)
+</span>57 <span style=''>      </span><span style='background: #AEF1AE'>case 'q'</span><span style=''> =&gt; Some(PieceType.Queen)
+</span>58 <span style=''>      </span><span style='background: #AEF1AE'>case 'r'</span><span style=''> =&gt; Some(PieceType.Rook)
+</span>59 <span style=''>      </span><span style='background: #AEF1AE'>case 'b'</span><span style=''> =&gt; Some(PieceType.Bishop)
+</span>60 <span style=''>      </span><span style='background: #AEF1AE'>case 'n'</span><span style=''> =&gt; Some(PieceType.Knight)
+</span>61 <span style=''>      </span><span style='background: #AEF1AE'>case 'p'</span><span style=''> =&gt; Some(PieceType.Pawn)
+</span>62 <span style=''>      </span><span style='background: #AEF1AE'>case _</span><span style=''>   =&gt; None
+</span>63 <span style=''>
+</span>64 <span style=''>    </span><span style='background: #AEF1AE'>pieceType.map(Piece(color, _))</span><span style=''>
+</span>65 <span style=''>
+</span>66 <span style=''>// ─── Position ────────────────────────────────────────────────────────────────
+</span>67 <span style=''>
+</span>68 <span style=''>/** Zero-based (col, row) where (0,0) = a1, (7,7) = h8 */
+</span>69 <span style=''>case class Pos(col: Int, row: Int):
+</span>70 <span style=''>  </span><span style='background: #AEF1AE'>def isValid</span><span style=''>: Boolean = col &gt;= 0 &amp;&amp; col &lt;= 7 &amp;&amp; row &gt;= 0 &amp;&amp; row &lt;= 7
+</span>71 <span style=''>
+</span>72 <span style=''>  </span><span style='background: #AEF1AE'>def +</span><span style=''>(dc: Int, dr: Int): Pos = Pos(col + dc, row + dr)
+</span>73 <span style=''>
+</span>74 <span style=''>  /** Algebraic notation, e.g. &quot;e4&quot; */
+</span>75 <span style=''>  </span><span style='background: #AEF1AE'>def toAlgebraic</span><span style=''>: String = </span><span style='background: #AEF1AE'>s&quot;${('a' + col).toChar}${row + 1}&quot;</span><span style=''>
+</span>76 <span style=''>
+</span>77 <span style=''>object Pos:
+</span>78 <span style=''>  /** Parse &quot;e4&quot; → Pos(4, 3) */
+</span>79 <span style=''>  </span><span style='background: #AEF1AE'>def fromAlgebraic</span><span style=''>(s: String): Option[Pos] =
+</span>80 <span style=''>    if </span><span style='background: #AEF1AE'>s.length</span><span style=''> != 2 then </span><span style='background: #AEF1AE'>None</span><span style=''>
+</span>81 <span style=''>    else
+</span>82 <span style=''>      </span><span style='background: #AEF1AE'>val col = s(0) - 'a'
+</span>83 <span style=''></span><span style='background: #AEF1AE'>      val row = s(1) - '1'
+</span>84 <span style=''></span><span style='background: #AEF1AE'>      val pos = Pos(col, row)
+</span>85 <span style=''></span><span style='background: #AEF1AE'>      if pos.isValid then Some(pos) else None</span><span style=''>
+</span>86 <span style=''>
+</span>87 <span style=''>// ─── Move ────────────────────────────────────────────────────────────────────
+</span>88 <span style=''>
+</span>89 <span style=''>case class Move(
+</span>90 <span style=''>  from: Pos,
+</span>91 <span style=''>  to: Pos,
+</span>92 <span style=''>  promotion: Option[PieceType] = None   // for pawn promotion
+</span>93 <span style=''>)
+</span>94 <span style=''>
+</span>95 <span style=''>// ─── CastlingRights ──────────────────────────────────────────────────────────
+</span>96 <span style=''>
+</span>97 <span style=''>case class CastlingRights(
+</span>98 <span style=''>  whiteKingSide:  Boolean = true,
+</span>99 <span style=''>  whiteQueenSide: Boolean = true,
+</span>100 <span style=''>  blackKingSide:  Boolean = true,
+</span>101 <span style=''>  blackQueenSide: Boolean = true
+</span>102 <span style=''>):
+</span>103 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhite</span><span style=''>: CastlingRights = copy(whiteKingSide = false, whiteQueenSide = false)
+</span>104 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlack</span><span style=''>: CastlingRights = copy(blackKingSide = false, blackQueenSide = false)
+</span>105 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhiteKingSide</span><span style=''>:  CastlingRights = copy(whiteKingSide  = false)
+</span>106 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhiteQueenSide</span><span style=''>: CastlingRights = copy(whiteQueenSide = false)
+</span>107 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlackKingSide</span><span style=''>:  CastlingRights = copy(blackKingSide  = false)
+</span>108 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlackQueenSide</span><span style=''>: CastlingRights = copy(blackQueenSide = false)
+</span>109 <span style=''>
+</span>110 <span style=''>  </span><span style='background: #AEF1AE'>def toFen</span><span style=''>: String =
+</span>111 <span style=''>    val rights =
+</span>112 <span style=''>      </span><span style='background: #F0ADAD'>List(
+</span>113 <span style=''></span><span style='background: #F0ADAD'>        Option.when(whiteKingSide)(&quot;K&quot;),
+</span>114 <span style=''></span><span style='background: #F0ADAD'>        Option.when(whiteQueenSide)(&quot;Q&quot;),
+</span>115 <span style=''></span><span style='background: #F0ADAD'>        Option.when(blackKingSide)(&quot;k&quot;),
+</span>116 <span style=''></span><span style='background: #F0ADAD'>        Option.when(blackQueenSide)(&quot;q&quot;)
+</span>117 <span style=''></span><span style='background: #F0ADAD'>      )</span><span style='background: #AEF1AE'>.flatten.mkString</span><span style=''>
+</span>118 <span style=''>    if </span><span style='background: #AEF1AE'>rights.nonEmpty</span><span style=''> then </span><span style='background: #AEF1AE'>rights</span><span style=''> else </span><span style='background: #AEF1AE'>&quot;-&quot;</span><span style=''>
+</span>119 <span style=''>
+</span>120 <span style=''>object CastlingRights:
+</span>121 <span style=''>  </span><span style='background: #AEF1AE'>def fromFen</span><span style=''>(value: String): Option[CastlingRights] =
+</span>122 <span style=''>    if value == &quot;-&quot; then </span><span style='background: #AEF1AE'>Some(CastlingRights(false, false, false, false))</span><span style=''>
+</span>123 <span style=''>    else </span><span style='background: #AEF1AE'>if value.nonEmpty &amp;&amp; value.forall(&quot;KQkq&quot;.contains(_)) &amp;&amp; value.distinct.length == value.length then
+</span>124 <span style=''></span><span style='background: #AEF1AE'>      Some(
+</span>125 <span style=''></span><span style='background: #AEF1AE'>        CastlingRights(
+</span>126 <span style=''></span><span style='background: #AEF1AE'>          whiteKingSide = value.contains('K'),
+</span>127 <span style=''></span><span style='background: #AEF1AE'>          whiteQueenSide = value.contains('Q'),
+</span>128 <span style=''></span><span style='background: #AEF1AE'>          blackKingSide = value.contains('k'),
+</span>129 <span style=''></span><span style='background: #AEF1AE'>          blackQueenSide = value.contains('q')
+</span>130 <span style=''></span><span style='background: #AEF1AE'>        )
+</span>131 <span style=''></span><span style='background: #AEF1AE'>      )
+</span>132 <span style=''></span><span style='background: #AEF1AE'>    else None</span><span style=''>
+</span>133 <span style=''>
+</span>134 <span style=''>// ─── GameStatus ──────────────────────────────────────────────────────────────
+</span>135 <span style=''>
+</span>136 <span style=''>enum GameStatus:
+</span>137 <span style=''>  case Playing
+</span>138 <span style=''>  case Check(color: Color)
+</span>139 <span style=''>  case Checkmate(loser: Color)
+</span>140 <span style=''>  case Stalemate
+</span>141 <span style=''>  case Draw(reason: String)
+</span></pre>
+          </div>
+          <div class="tab-pane" id="statementlist">
+            <table cellspacing="0" cellpadding="0" class="table statementlist">
+      <tr>
+        <th>Line</th>
+        <th>Stmt Id</th>
+        <th>Pos</th>
+        <th>Tree</th>
+        <th>Symbol</th>
+        <th>Tests</th>
+        <th>Code</th>
+      </tr><tr>
+        <td>
+          7
+        </td>
+        <td>
+          761
+        </td>
+        <td>
+          145
+          -
+          157
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def opposite
+        </td>
+      </tr><tr>
+        <td>
+          8
+        </td>
+        <td>
+          759
+        </td>
+        <td>
+          183
+          -
+          193
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case White
+        </td>
+      </tr><tr>
+        <td>
+          9
+        </td>
+        <td>
+          760
+        </td>
+        <td>
+          208
+          -
+          218
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Black
+        </td>
+      </tr><tr>
+        <td>
+          19
+        </td>
+        <td>
+          774
+        </td>
+        <td>
+          522
+          -
+          532
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          symbol
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def symbol
+        </td>
+      </tr><tr>
+        <td>
+          20
+        </td>
+        <td>
+          762
+        </td>
+        <td>
+          572
+          -
+          606
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.King)
+        </td>
+      </tr><tr>
+        <td>
+          21
+        </td>
+        <td>
+          763
+        </td>
+        <td>
+          621
+          -
+          656
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Queen)
+        </td>
+      </tr><tr>
+        <td>
+          22
+        </td>
+        <td>
+          764
+        </td>
+        <td>
+          670
+          -
+          704
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Rook)
+        </td>
+      </tr><tr>
+        <td>
+          23
+        </td>
+        <td>
+          765
+        </td>
+        <td>
+          719
+          -
+          755
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Bishop)
+        </td>
+      </tr><tr>
+        <td>
+          24
+        </td>
+        <td>
+          766
+        </td>
+        <td>
+          768
+          -
+          804
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Knight)
+        </td>
+      </tr><tr>
+        <td>
+          25
+        </td>
+        <td>
+          767
+        </td>
+        <td>
+          817
+          -
+          851
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Pawn)
+        </td>
+      </tr><tr>
+        <td>
+          26
+        </td>
+        <td>
+          768
+        </td>
+        <td>
+          866
+          -
+          900
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.King)
+        </td>
+      </tr><tr>
+        <td>
+          27
+        </td>
+        <td>
+          769
+        </td>
+        <td>
+          915
+          -
+          950
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Queen)
+        </td>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          770
+        </td>
+        <td>
+          964
+          -
+          998
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Rook)
+        </td>
+      </tr><tr>
+        <td>
+          29
+        </td>
+        <td>
+          771
+        </td>
+        <td>
+          1013
+          -
+          1049
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Bishop)
+        </td>
+      </tr><tr>
+        <td>
+          30
+        </td>
+        <td>
+          772
+        </td>
+        <td>
+          1062
+          -
+          1098
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Knight)
+        </td>
+      </tr><tr>
+        <td>
+          31
+        </td>
+        <td>
+          773
+        </td>
+        <td>
+          1111
+          -
+          1145
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Pawn)
+        </td>
+      </tr><tr>
+        <td>
+          33
+        </td>
+        <td>
+          787
+        </td>
+        <td>
+          1160
+          -
+          1170
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          letter
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def letter
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          775
+        </td>
+        <td>
+          1210
+          -
+          1244
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.King)
+        </td>
+      </tr><tr>
+        <td>
+          35
+        </td>
+        <td>
+          776
+        </td>
+        <td>
+          1259
+          -
+          1294
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Queen)
+        </td>
+      </tr><tr>
+        <td>
+          36
+        </td>
+        <td>
+          777
+        </td>
+        <td>
+          1308
+          -
+          1342
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Rook)
+        </td>
+      </tr><tr>
+        <td>
+          37
+        </td>
+        <td>
+          778
+        </td>
+        <td>
+          1357
+          -
+          1393
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Bishop)
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          779
+        </td>
+        <td>
+          1406
+          -
+          1442
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Knight)
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          780
+        </td>
+        <td>
+          1455
+          -
+          1489
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.White, PieceType.Pawn)
+        </td>
+      </tr><tr>
+        <td>
+          40
+        </td>
+        <td>
+          781
+        </td>
+        <td>
+          1504
+          -
+          1538
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.King)
+        </td>
+      </tr><tr>
+        <td>
+          41
+        </td>
+        <td>
+          782
+        </td>
+        <td>
+          1553
+          -
+          1588
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Queen)
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          783
+        </td>
+        <td>
+          1602
+          -
+          1636
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Rook)
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          784
+        </td>
+        <td>
+          1651
+          -
+          1687
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Bishop)
+        </td>
+      </tr><tr>
+        <td>
+          44
+        </td>
+        <td>
+          785
+        </td>
+        <td>
+          1700
+          -
+          1736
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Knight)
+        </td>
+      </tr><tr>
+        <td>
+          45
+        </td>
+        <td>
+          786
+        </td>
+        <td>
+          1748
+          -
+          1782
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case (Color.Black, PieceType.Pawn)
+        </td>
+      </tr><tr>
+        <td>
+          48
+        </td>
+        <td>
+          806
+        </td>
+        <td>
+          1809
+          -
+          1824
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          fromFenChar
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def fromFenChar
+        </td>
+      </tr><tr>
+        <td>
+          50
+        </td>
+        <td>
+          788
+        </td>
+        <td>
+          1879
+          -
+          1883
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          charWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char
+        </td>
+      </tr><tr>
+        <td>
+          50
+        </td>
+        <td>
+          790
+        </td>
+        <td>
+          1897
+          -
+          1908
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          White
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Color.White
+        </td>
+      </tr><tr>
+        <td>
+          50
+        </td>
+        <td>
+          789
+        </td>
+        <td>
+          1879
+          -
+          1891
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isUpper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char.isUpper
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          792
+        </td>
+        <td>
+          1923
+          -
+          1935
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isLower
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char.isLower
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          795
+        </td>
+        <td>
+          1920
+          -
+          1975
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if char.isLower then Color.Black\n      else return None
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          791
+        </td>
+        <td>
+          1923
+          -
+          1927
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          charWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          793
+        </td>
+        <td>
+          1941
+          -
+          1952
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          Black
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Color.Black
+        </td>
+      </tr><tr>
+        <td>
+          52
+        </td>
+        <td>
+          794
+        </td>
+        <td>
+          1964
+          -
+          1975
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          return None
+        </td>
+      </tr><tr>
+        <td>
+          54
+        </td>
+        <td>
+          797
+        </td>
+        <td>
+          1997
+          -
+          2009
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toLower
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char.toLower
+        </td>
+      </tr><tr>
+        <td>
+          54
+        </td>
+        <td>
+          796
+        </td>
+        <td>
+          1997
+          -
+          2001
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          charWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char
+        </td>
+      </tr><tr>
+        <td>
+          55
+        </td>
+        <td>
+          798
+        </td>
+        <td>
+          2022
+          -
+          2030
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case 'k'
+        </td>
+      </tr><tr>
+        <td>
+          56
+        </td>
+        <td>
+          799
+        </td>
+        <td>
+          2061
+          -
+          2069
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case 'q'
+        </td>
+      </tr><tr>
+        <td>
+          57
+        </td>
+        <td>
+          800
+        </td>
+        <td>
+          2101
+          -
+          2109
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case 'r'
+        </td>
+      </tr><tr>
+        <td>
+          58
+        </td>
+        <td>
+          801
+        </td>
+        <td>
+          2140
+          -
+          2148
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case 'b'
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          802
+        </td>
+        <td>
+          2181
+          -
+          2189
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case 'n'
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          803
+        </td>
+        <td>
+          2222
+          -
+          2230
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case 'p'
+        </td>
+      </tr><tr>
+        <td>
+          61
+        </td>
+        <td>
+          804
+        </td>
+        <td>
+          2261
+          -
+          2267
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case _
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          805
+        </td>
+        <td>
+          2283
+          -
+          2313
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieceType.map(Piece(color, _))
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          807
+        </td>
+        <td>
+          2498
+          -
+          2509
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def isValid
+        </td>
+      </tr><tr>
+        <td>
+          71
+        </td>
+        <td>
+          808
+        </td>
+        <td>
+          2571
+          -
+          2576
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def +
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          810
+        </td>
+        <td>
+          2671
+          -
+          2686
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          toAlgebraic
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def toAlgebraic
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          809
+        </td>
+        <td>
+          2697
+          -
+          2731
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;${('a' + col).toChar}${row + 1}&quot;
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          821
+        </td>
+        <td>
+          2783
+          -
+          2800
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          fromAlgebraic
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def fromAlgebraic
+        </td>
+      </tr><tr>
+        <td>
+          79
+        </td>
+        <td>
+          812
+        </td>
+        <td>
+          2854
+          -
+          2858
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          None
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          None
+        </td>
+      </tr><tr>
+        <td>
+          79
+        </td>
+        <td>
+          811
+        </td>
+        <td>
+          2835
+          -
+          2843
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s.length
+        </td>
+      </tr><tr>
+        <td>
+          81
+        </td>
+        <td>
+          813
+        </td>
+        <td>
+          2886
+          -
+          2890
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s(0)
+        </td>
+      </tr><tr>
+        <td>
+          81
+        </td>
+        <td>
+          820
+        </td>
+        <td>
+          2876
+          -
+          3002
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          val col = s(0) - 'a'\r\n      val row = s(1) - '1'\r\n      val pos = Pos(col, row)\r\n      if pos.isValid then Some(pos) else None
+        </td>
+      </tr><tr>
+        <td>
+          81
+        </td>
+        <td>
+          814
+        </td>
+        <td>
+          2886
+          -
+          2887
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s
+        </td>
+      </tr><tr>
+        <td>
+          82
+        </td>
+        <td>
+          815
+        </td>
+        <td>
+          2914
+          -
+          2918
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s(1)
+        </td>
+      </tr><tr>
+        <td>
+          82
+        </td>
+        <td>
+          816
+        </td>
+        <td>
+          2914
+          -
+          2915
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s
+        </td>
+      </tr><tr>
+        <td>
+          84
+        </td>
+        <td>
+          819
+        </td>
+        <td>
+          2998
+          -
+          3002
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          None
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          None
+        </td>
+      </tr><tr>
+        <td>
+          84
+        </td>
+        <td>
+          818
+        </td>
+        <td>
+          2983
+          -
+          2992
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Some(pos)
+        </td>
+      </tr><tr>
+        <td>
+          84
+        </td>
+        <td>
+          817
+        </td>
+        <td>
+          2966
+          -
+          2977
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos.isValid
+        </td>
+      </tr><tr>
+        <td>
+          91
+        </td>
+        <td>
+          822
+        </td>
+        <td>
+          3167
+          -
+          3167
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          $lessinit$greater$default$3
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          
+        </td>
+      </tr><tr>
+        <td>
+          97
+        </td>
+        <td>
+          842
+        </td>
+        <td>
+          3341
+          -
+          3341
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          $lessinit$greater$default$1
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          
+        </td>
+      </tr><tr>
+        <td>
+          98
+        </td>
+        <td>
+          843
+        </td>
+        <td>
+          3376
+          -
+          3376
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          $lessinit$greater$default$2
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          
+        </td>
+      </tr><tr>
+        <td>
+          99
+        </td>
+        <td>
+          844
+        </td>
+        <td>
+          3411
+          -
+          3411
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          $lessinit$greater$default$3
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          845
+        </td>
+        <td>
+          3446
+          -
+          3446
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          $lessinit$greater$default$4
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          823
+        </td>
+        <td>
+          3457
+          -
+          3473
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          disableWhite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def disableWhite
+        </td>
+      </tr><tr>
+        <td>
+          103
+        </td>
+        <td>
+          824
+        </td>
+        <td>
+          3546
+          -
+          3562
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          disableBlack
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def disableBlack
+        </td>
+      </tr><tr>
+        <td>
+          104
+        </td>
+        <td>
+          825
+        </td>
+        <td>
+          3635
+          -
+          3659
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          disableWhiteKingSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def disableWhiteKingSide
+        </td>
+      </tr><tr>
+        <td>
+          105
+        </td>
+        <td>
+          826
+        </td>
+        <td>
+          3710
+          -
+          3735
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          disableWhiteQueenSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def disableWhiteQueenSide
+        </td>
+      </tr><tr>
+        <td>
+          106
+        </td>
+        <td>
+          827
+        </td>
+        <td>
+          3785
+          -
+          3809
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          disableBlackKingSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def disableBlackKingSide
+        </td>
+      </tr><tr>
+        <td>
+          107
+        </td>
+        <td>
+          828
+        </td>
+        <td>
+          3860
+          -
+          3885
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          disableBlackQueenSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def disableBlackQueenSide
+        </td>
+      </tr><tr>
+        <td>
+          109
+        </td>
+        <td>
+          841
+        </td>
+        <td>
+          3936
+          -
+          3945
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          toFen
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def toFen
+        </td>
+      </tr><tr>
+        <td>
+          111
+        </td>
+        <td>
+          831
+        </td>
+        <td>
+          3979
+          -
+          3983
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          List
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          List
+        </td>
+      </tr><tr>
+        <td>
+          111
+        </td>
+        <td>
+          830
+        </td>
+        <td>
+          3979
+          -
+          4157
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          List(\n        Option.when(whiteKingSide)(&quot;K&quot;),\n        Option.when(whiteQueenSide)(&quot;Q&quot;),\n        Option.when(blackKingSide)(&quot;k&quot;),\n        Option.when(blackQueenSide)(&quot;q&quot;)\n      )
+        </td>
+      </tr><tr>
+        <td>
+          111
+        </td>
+        <td>
+          829
+        </td>
+        <td>
+          3979
+          -
+          4165
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          flatten
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          List(\n        Option.when(whiteKingSide)(&quot;K&quot;),\n        Option.when(whiteQueenSide)(&quot;Q&quot;),\n        Option.when(blackKingSide)(&quot;k&quot;),\n        Option.when(blackQueenSide)(&quot;q&quot;)\n      ).flatten
+        </td>
+      </tr><tr>
+        <td>
+          112
+        </td>
+        <td>
+          832
+        </td>
+        <td>
+          3993
+          -
+          4024
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          when
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Option.when(whiteKingSide)(&quot;K&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          113
+        </td>
+        <td>
+          833
+        </td>
+        <td>
+          4034
+          -
+          4066
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          when
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Option.when(whiteQueenSide)(&quot;Q&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          114
+        </td>
+        <td>
+          834
+        </td>
+        <td>
+          4076
+          -
+          4107
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          when
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Option.when(blackKingSide)(&quot;k&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          115
+        </td>
+        <td>
+          835
+        </td>
+        <td>
+          4117
+          -
+          4149
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          when
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Option.when(blackQueenSide)(&quot;q&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          116
+        </td>
+        <td>
+          836
+        </td>
+        <td>
+          3979
+          -
+          4174
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          mkString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          List(\n        Option.when(whiteKingSide)(&quot;K&quot;),\n        Option.when(whiteQueenSide)(&quot;Q&quot;),\n        Option.when(blackKingSide)(&quot;k&quot;),\n        Option.when(blackQueenSide)(&quot;q&quot;)\n      ).flatten.mkString
+        </td>
+      </tr><tr>
+        <td>
+          117
+        </td>
+        <td>
+          837
+        </td>
+        <td>
+          4182
+          -
+          4188
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights
+        </td>
+      </tr><tr>
+        <td>
+          117
+        </td>
+        <td>
+          839
+        </td>
+        <td>
+          4203
+          -
+          4209
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          rights
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights
+        </td>
+      </tr><tr>
+        <td>
+          117
+        </td>
+        <td>
+          838
+        </td>
+        <td>
+          4182
+          -
+          4197
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          nonEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights.nonEmpty
+        </td>
+      </tr><tr>
+        <td>
+          117
+        </td>
+        <td>
+          840
+        </td>
+        <td>
+          4215
+          -
+          4218
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;-&quot;
+        </td>
+      </tr><tr>
+        <td>
+          120
+        </td>
+        <td>
+          868
+        </td>
+        <td>
+          4245
+          -
+          4256
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          fromFen
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def fromFen
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          846
+        </td>
+        <td>
+          4323
+          -
+          4371
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Some(CastlingRights(false, false, false, false))
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          855
+        </td>
+        <td>
+          4438
+          -
+          4452
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          distinct
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.distinct
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          848
+        </td>
+        <td>
+          4384
+          -
+          4398
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          nonEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.nonEmpty
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          851
+        </td>
+        <td>
+          4415
+          -
+          4433
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;KQkq&quot;.contains(_)
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          854
+        </td>
+        <td>
+          4438
+          -
+          4443
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          853
+        </td>
+        <td>
+          4438
+          -
+          4459
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.distinct.length
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          847
+        </td>
+        <td>
+          4384
+          -
+          4389
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          856
+        </td>
+        <td>
+          4463
+          -
+          4475
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.length
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          850
+        </td>
+        <td>
+          4402
+          -
+          4407
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          867
+        </td>
+        <td>
+          4381
+          -
+          4737
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if value.nonEmpty &amp;&amp; value.forall(&quot;KQkq&quot;.contains(_)) &amp;&amp; value.distinct.length == value.length then\n      Some(\n        CastlingRights(\n          whiteKingSide = value.contains('K'),\n          whiteQueenSide = value.contains('Q'),\n          blackKingSide = value.contains('k'),\n          blackQueenSide = value.contains('q')\n        )\n      )\n    else None
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          849
+        </td>
+        <td>
+          4402
+          -
+          4434
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          forall
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.forall(&quot;KQkq&quot;.contains(_))
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          852
+        </td>
+        <td>
+          4415
+          -
+          4421
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;KQkq&quot;
+        </td>
+      </tr><tr>
+        <td>
+          123
+        </td>
+        <td>
+          865
+        </td>
+        <td>
+          4487
+          -
+          4723
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Some(\n        CastlingRights(\n          whiteKingSide = value.contains('K'),\n          whiteQueenSide = value.contains('Q'),\n          blackKingSide = value.contains('k'),\n          blackQueenSide = value.contains('q')\n        )\n      )
+        </td>
+      </tr><tr>
+        <td>
+          125
+        </td>
+        <td>
+          857
+        </td>
+        <td>
+          4543
+          -
+          4562
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.contains('K')
+        </td>
+      </tr><tr>
+        <td>
+          125
+        </td>
+        <td>
+          858
+        </td>
+        <td>
+          4543
+          -
+          4548
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          126
+        </td>
+        <td>
+          860
+        </td>
+        <td>
+          4591
+          -
+          4596
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          126
+        </td>
+        <td>
+          859
+        </td>
+        <td>
+          4591
+          -
+          4610
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.contains('Q')
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          862
+        </td>
+        <td>
+          4638
+          -
+          4643
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          861
+        </td>
+        <td>
+          4638
+          -
+          4657
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.contains('k')
+        </td>
+      </tr><tr>
+        <td>
+          128
+        </td>
+        <td>
+          864
+        </td>
+        <td>
+          4686
+          -
+          4691
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          128
+        </td>
+        <td>
+          863
+        </td>
+        <td>
+          4686
+          -
+          4705
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.contains('q')
+        </td>
+      </tr><tr>
+        <td>
+          131
+        </td>
+        <td>
+          866
+        </td>
+        <td>
+          4733
+          -
+          4737
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          None
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          None
+        </td>
+      </tr>
+    </table>
+          </div>
+        </div>
+      </body>
+    </html>
