@@ -18,8 +18,23 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
     val board = Board.initial
 
     board.get(pos("a1")) shouldBe Some(Piece(Color.White, PieceType.Rook))
+    board.get(pos("b1")) shouldBe Some(Piece(Color.White, PieceType.Knight))
+    board.get(pos("c1")) shouldBe Some(Piece(Color.White, PieceType.Bishop))
+    board.get(pos("d1")) shouldBe Some(Piece(Color.White, PieceType.Queen))
     board.get(pos("e1")) shouldBe Some(Piece(Color.White, PieceType.King))
+    board.get(pos("f1")) shouldBe Some(Piece(Color.White, PieceType.Bishop))
+    board.get(pos("g1")) shouldBe Some(Piece(Color.White, PieceType.Knight))
+    board.get(pos("h1")) shouldBe Some(Piece(Color.White, PieceType.Rook))
+    board.get(pos("a2")) shouldBe Some(Piece(Color.White, PieceType.Pawn))
     board.get(pos("d8")) shouldBe Some(Piece(Color.Black, PieceType.Queen))
+    board.get(pos("a8")) shouldBe Some(Piece(Color.Black, PieceType.Rook))
+    board.get(pos("b8")) shouldBe Some(Piece(Color.Black, PieceType.Knight))
+    board.get(pos("c8")) shouldBe Some(Piece(Color.Black, PieceType.Bishop))
+    board.get(pos("e8")) shouldBe Some(Piece(Color.Black, PieceType.King))
+    board.get(pos("f8")) shouldBe Some(Piece(Color.Black, PieceType.Bishop))
+    board.get(pos("g8")) shouldBe Some(Piece(Color.Black, PieceType.Knight))
+    board.get(pos("h8")) shouldBe Some(Piece(Color.Black, PieceType.Rook))
+    board.get(pos("h7")) shouldBe Some(Piece(Color.Black, PieceType.Pawn))
     board.isOccupied(pos("b1")) shouldBe true
     board.isOccupiedBy(pos("b1"), Color.White) shouldBe true
     board.isOccupiedBy(pos("b1"), Color.Black) shouldBe false
@@ -48,6 +63,20 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
     board.get(pos("c4")) shouldBe Some(Piece(Color.White, PieceType.Bishop))
     board.get(pos("g1")) shouldBe Some(Piece(Color.White, PieceType.King))
     board.get(pos("b1")) shouldBe None
+  }
+
+  test("Board fromFenPlacement parses fully populated and sparse rows") {
+    val fullBoard = Board.fromFenPlacement("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+      .fold(msg => fail(msg), identity)
+    fullBoard.get(pos("a8")) shouldBe Some(Piece(Color.Black, PieceType.Rook))
+    fullBoard.get(pos("h1")) shouldBe Some(Piece(Color.White, PieceType.Rook))
+
+    val sparseBoard = Board.fromFenPlacement("8/3k4/8/2P5/8/8/4K3/8")
+      .fold(msg => fail(msg), identity)
+    sparseBoard.get(pos("d7")) shouldBe Some(Piece(Color.Black, PieceType.King))
+    sparseBoard.get(pos("c5")) shouldBe Some(Piece(Color.White, PieceType.Pawn))
+    sparseBoard.get(pos("e2")) shouldBe Some(Piece(Color.White, PieceType.King))
+    sparseBoard.toFenPlacement shouldBe "8/3k4/8/2P5/8/8/4K3/8"
   }
 
   test("Board toFenPlacement compresses leading middle and trailing empty squares") {
@@ -82,6 +111,21 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
     state.toFen shouldBe "8/8/8/8/3p4/8/8/4K2k b - d3 9 17"
   }
 
+  test("GameState fromFen handles multiple valid metadata combinations") {
+    val noRights = stateFromFen("8/8/8/8/8/8/8/K6k w - - 0 3")
+    noRights.castlingRights.toFen shouldBe "-"
+    noRights.activeColor shouldBe Color.White
+
+    val blackToMove = stateFromFen("8/8/8/8/8/8/8/K6k b Kq - 4 9")
+    blackToMove.castlingRights shouldBe CastlingRights(
+      whiteKingSide = true,
+      whiteQueenSide = false,
+      blackKingSide = false,
+      blackQueenSide = true
+    )
+    blackToMove.toFen shouldBe "8/8/8/8/8/8/8/K6k b Kq - 4 9"
+  }
+
   test("CastlingRights helpers toggle individual flags") {
     CastlingRights().disableWhite shouldBe CastlingRights(false, false, true, true)
     CastlingRights().disableBlack shouldBe CastlingRights(true, true, false, false)
@@ -89,6 +133,15 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
     CastlingRights().disableWhiteQueenSide shouldBe CastlingRights(true, false, true, true)
     CastlingRights().disableBlackKingSide shouldBe CastlingRights(true, true, false, true)
     CastlingRights().disableBlackQueenSide shouldBe CastlingRights(true, true, true, false)
+  }
+
+  test("CastlingRights toFen covers each individual combination style") {
+    CastlingRights(whiteKingSide = true, whiteQueenSide = false, blackKingSide = false, blackQueenSide = false).toFen shouldBe "K"
+    CastlingRights(whiteKingSide = false, whiteQueenSide = true, blackKingSide = false, blackQueenSide = false).toFen shouldBe "Q"
+    CastlingRights(whiteKingSide = false, whiteQueenSide = false, blackKingSide = true, blackQueenSide = false).toFen shouldBe "k"
+    CastlingRights(whiteKingSide = false, whiteQueenSide = false, blackKingSide = false, blackQueenSide = true).toFen shouldBe "q"
+    CastlingRights(whiteKingSide = true, whiteQueenSide = true, blackKingSide = false, blackQueenSide = false).toFen shouldBe "KQ"
+    CastlingRights(whiteKingSide = false, whiteQueenSide = false, blackKingSide = true, blackQueenSide = true).toFen shouldBe "kq"
   }
 
   test("GameRules computeStatus covers check") {
@@ -186,6 +239,23 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
     ))
     MoveGenerator.isAttackedBy(rookAttack, pos("e4"), Color.Black) shouldBe true
 
+    val whitePawnAttack = Board(Map(
+      pos("d4") -> Piece(Color.White, PieceType.Pawn)
+    ))
+    MoveGenerator.isAttackedBy(whitePawnAttack, pos("e5"), Color.White) shouldBe true
+
+    val whiteKingAttack = Board(Map(
+      pos("d4") -> Piece(Color.White, PieceType.King)
+    ))
+    MoveGenerator.isAttackedBy(whiteKingAttack, pos("e5"), Color.White) shouldBe true
+
+    val noAttack = Board(Map(
+      pos("a1") -> Piece(Color.White, PieceType.King),
+      pos("h8") -> Piece(Color.Black, PieceType.King)
+    ))
+    MoveGenerator.isAttackedBy(noAttack, pos("e4"), Color.White) shouldBe false
+    MoveGenerator.isAttackedBy(noAttack, pos("e4"), Color.Black) shouldBe false
+
     val pinned = stateFromFen("4r2k/8/8/8/8/8/4B3/4K3 w - - 0 1")
     MoveGenerator.legalMovesFrom(pinned, pos("e2")) shouldBe empty
   }
@@ -215,4 +285,15 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
   test("MoveGenerator rejects castling when transit squares are occupied or attacked") {
     val occupiedTransit = stateFromFen("r3k2r/8/8/8/8/8/8/4KBNR w K - 0 1")
     MoveGenerator.legalMovesFrom(occupiedTransit, pos("e1")).map(_.to) should not contain pos("g1")
+  }
+
+  test("MoveGenerator rejects castling while in check and tolerates positions without own king") {
+    val checkedKing = stateFromFen("4k3/8/8/8/8/8/4r3/4K2R w K - 0 1")
+    MoveGenerator.legalMovesFrom(checkedKing, pos("e1")).map(_.to) should not contain pos("g1")
+
+    val noWhiteKing = stateFromFen("4k3/8/8/8/8/8/4P3/8 w - - 0 1")
+    MoveGenerator.legalMoves(noWhiteKing).map(_.to) should contain allOf (pos("e3"), pos("e4"))
+
+    val legalEnPassant = stateFromFen("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1")
+    MoveGenerator.legalMoves(legalEnPassant) should contain (Move(pos("e5"), pos("d6")))
   }

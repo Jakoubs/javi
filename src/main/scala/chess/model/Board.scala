@@ -33,36 +33,49 @@ case class Board(pieces: Map[Pos, Piece]):
     pieces.toList.filter(_._2.color == color)
 
   def toFenPlacement: String =
-    (7 to 0 by -1).map { row =>
-      val (parts, trailingEmpties) =
-        (0 to 7).foldLeft((List.empty[String], 0)) { case ((acc, emptyCount), col) =>
-          pieces.get(Pos(col, row)) match
-            case Some(piece) =>
-              val nextAcc = if emptyCount > 0 then acc :+ emptyCount.toString else acc
-              (nextAcc :+ piece.letter, 0)
-            case None =>
-              (acc, emptyCount + 1)
-        }
-      val completed = if trailingEmpties > 0 then parts :+ trailingEmpties.toString else parts
-      completed.mkString
-    }.mkString("/")
+    val ranks = scala.collection.mutable.ListBuffer.empty[String]
+    var row = 7
+    while row >= 0 do
+      val parts = scala.collection.mutable.ListBuffer.empty[String]
+      var emptyCount = 0
+      var col = 0
+      while col < 8 do
+        pieces.get(Pos(col, row)) match
+          case Some(piece) =>
+            if emptyCount > 0 then
+              parts += emptyCount.toString
+              emptyCount = 0
+            parts += piece.letter
+          case None =>
+            emptyCount += 1
+        col += 1
+      if emptyCount > 0 then parts += emptyCount.toString
+      ranks += parts.mkString
+      row -= 1
+    ranks.mkString("/")
 
 object Board:
   /** Standard starting position */
   def initial: Board =
-    val backRank: Color => List[PieceType] = _ =>
-      List(PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen,
-           PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook)
-
-    val whitePieces =
-      (0 to 7).map(c => Pos(c, 0) -> Piece(Color.White, backRank(Color.White)(c))).toMap ++
-      (0 to 7).map(c => Pos(c, 1) -> Piece(Color.White, PieceType.Pawn)).toMap
-
-    val blackPieces =
-      (0 to 7).map(c => Pos(c, 7) -> Piece(Color.Black, backRank(Color.Black)(c))).toMap ++
-      (0 to 7).map(c => Pos(c, 6) -> Piece(Color.Black, PieceType.Pawn)).toMap
-
-    Board(whitePieces ++ blackPieces)
+    val backRank = List(
+      PieceType.Rook,
+      PieceType.Knight,
+      PieceType.Bishop,
+      PieceType.Queen,
+      PieceType.King,
+      PieceType.Bishop,
+      PieceType.Knight,
+      PieceType.Rook
+    )
+    var allPieces = Map.empty[Pos, Piece]
+    var col = 0
+    while col < 8 do
+      allPieces += Pos(col, 0) -> Piece(Color.White, backRank(col))
+      allPieces += Pos(col, 1) -> Piece(Color.White, PieceType.Pawn)
+      allPieces += Pos(col, 7) -> Piece(Color.Black, backRank(col))
+      allPieces += Pos(col, 6) -> Piece(Color.Black, PieceType.Pawn)
+      col += 1
+    Board(allPieces)
 
   def empty: Board = Board(Map.empty)
 
@@ -70,31 +83,41 @@ object Board:
     val ranks = placement.split("/")
     if ranks.length != 8 then Left("FEN placement must contain 8 ranks")
     else
-      ranks.zipWithIndex.foldLeft[Either[String, Map[Pos, Piece]]](Right(Map.empty)) {
-        case (Left(error), _) => Left(error)
-        case (Right(acc), (rank, rankIndex)) =>
-          parseRank(rank, 7 - rankIndex).map(acc ++ _)
-      }.map(Board(_))
+      var pieces = Map.empty[Pos, Piece]
+      var rankIndex = 0
+      while rankIndex < ranks.length do
+        parseRank(ranks(rankIndex), 7 - rankIndex) match
+          case Left(error) => return Left(error)
+          case Right(parsedRank) =>
+            pieces ++= parsedRank
+        rankIndex += 1
+      Right(Board(pieces))
 
   private def parseRank(rank: String, row: Int): Either[String, Map[Pos, Piece]] =
-    rank.foldLeft[Either[String, (Int, Map[Pos, Piece])]](Right((0, Map.empty))) {
-      case (Left(error), _) => Left(error)
-      case (Right((col, acc)), char) =>
-        if char.isDigit then
-          val emptySquares = char.asDigit
-          if emptySquares < 1 || emptySquares > 8 then Left(s"Invalid empty-square count '$char' in FEN")
-          else if col + emptySquares > 8 then Left(s"Rank '$rank' exceeds 8 files in FEN")
-          else Right((col + emptySquares, acc))
-        else
-          Piece.fromFenChar(char) match
-            case None => Left(s"Invalid piece '$char' in FEN")
-            case Some(piece) =>
-              if col >= 8 then Left(s"Rank '$rank' exceeds 8 files in FEN")
-              else Right((col + 1, acc + (Pos(col, row) -> piece)))
-    }.flatMap { (fileCount, pieces) =>
-      if fileCount == 8 then Right(pieces)
-      else Left(s"Rank '$rank' must describe exactly 8 files in FEN")
-    }
+    var col = 0
+    var pieces = Map.empty[Pos, Piece]
+    var index = 0
+    while index < rank.length do
+      val char = rank(index)
+      if char.isDigit then
+        val emptySquares = char.asDigit
+        if emptySquares < 1 || emptySquares > 8 then
+          return Left(s"Invalid empty-square count '$char' in FEN")
+        if col + emptySquares > 8 then
+          return Left(s"Rank '$rank' exceeds 8 files in FEN")
+        col += emptySquares
+      else
+        Piece.fromFenChar(char) match
+          case None =>
+            return Left(s"Invalid piece '$char' in FEN")
+          case Some(piece) =>
+            if col >= 8 then
+              return Left(s"Rank '$rank' exceeds 8 files in FEN")
+            pieces += Pos(col, row) -> piece
+            col += 1
+      index += 1
+    if col == 8 then Right(pieces)
+    else Left(s"Rank '$rank' must describe exactly 8 files in FEN")
 
 // ─── GameState ───────────────────────────────────────────────────────────────
 
@@ -140,21 +163,32 @@ object GameState:
   def fromFen(fen: String): Either[String, GameState] =
     fen.trim.split("\\s+") match
       case Array(placement, active, castling, enPassant, halfMove, fullMove) =>
-        for
-          board <- Board.fromFenPlacement(placement)
-          activeColor <- colorFromFen(active)
-          castlingRights <- CastlingRights.fromFen(castling).toRight("Invalid castling rights in FEN")
-          enPassantTarget <- parseEnPassant(enPassant)
-          halfMoveClock <- parseNonNegativeInt(halfMove, "halfmove clock")
-          fullMoveNumber <- parsePositiveInt(fullMove, "fullmove number")
-        yield GameState(
-          board = board,
-          activeColor = activeColor,
-          castlingRights = castlingRights,
-          enPassantTarget = enPassantTarget,
-          halfMoveClock = halfMoveClock,
-          fullMoveNumber = fullMoveNumber
-        )
+        Board.fromFenPlacement(placement) match
+          case Left(error) => Left(error)
+          case Right(board) =>
+            colorFromFen(active) match
+              case Left(error) => Left(error)
+              case Right(activeColor) =>
+                CastlingRights.fromFen(castling) match
+                  case None => Left("Invalid castling rights in FEN")
+                  case Some(castlingRights) =>
+                    parseEnPassant(enPassant) match
+                      case Left(error) => Left(error)
+                      case Right(enPassantTarget) =>
+                        parseNonNegativeInt(halfMove, "halfmove clock") match
+                          case Left(error) => Left(error)
+                          case Right(halfMoveClock) =>
+                            parsePositiveInt(fullMove, "fullmove number") match
+                              case Left(error) => Left(error)
+                              case Right(fullMoveNumber) =>
+                                Right(GameState(
+                                  board = board,
+                                  activeColor = activeColor,
+                                  castlingRights = castlingRights,
+                                  enPassantTarget = enPassantTarget,
+                                  halfMoveClock = halfMoveClock,
+                                  fullMoveNumber = fullMoveNumber
+                                ))
       case _ => Left("FEN must contain 6 space-separated fields")
 
   private[model] def colorToFen(color: Color): String = color match
@@ -175,7 +209,11 @@ object GameState:
         case None    => Left("Invalid en passant target square in FEN")
 
   private def parseNonNegativeInt(value: String, label: String): Either[String, Int] =
-    value.toIntOption.filter(_ >= 0).toRight(s"Invalid $label in FEN")
+    value.toIntOption match
+      case Some(number) if number >= 0 => Right(number)
+      case _                           => Left(s"Invalid $label in FEN")
 
   private def parsePositiveInt(value: String, label: String): Either[String, Int] =
-    value.toIntOption.filter(_ > 0).toRight(s"Invalid $label in FEN")
+    value.toIntOption match
+      case Some(number) if number > 0 => Right(number)
+      case _                          => Left(s"Invalid $label in FEN")

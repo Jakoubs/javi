@@ -9,8 +9,8 @@ object TerminalView:
   private val BOLD = "\u001b[1m"
   private val DIM = "\u001b[2m"
 
-  private val FG_WHITE = "\u001b[97m"
-  private val FG_BLACK = "\u001b[30m"
+  private val FG_WHITE = "\u001b[38;5;231m"
+  private val FG_BLACK = "\u001b[38;5;16m"
   private val FG_GRAY = "\u001b[37m"
   private val FG_YELLOW = "\u001b[33m"
   private val FG_CYAN = "\u001b[36m"
@@ -91,8 +91,8 @@ object TerminalView:
               if highlights.contains(pos) then s"$bg ${"•"}  $RESET"
               else s"$bg    $RESET"
             case Some(piece) =>
-              val fg = if piece.color == Color.White then FG_WHITE else s"$FG_BLACK$BOLD"
-              s"$bg$fg ${piece.symbol} $RESET"
+              val fg = if piece.color == Color.White then s"$FG_WHITE$BOLD" else FG_BLACK
+              s"$bg$fg ${piece.symbol}  $RESET"
 
         sb.append(cell)
       }

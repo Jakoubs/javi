@@ -14,14 +14,14 @@ class TypesTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks:
 
   test("Piece.symbol should return correct Unicode symbols") {
     val whiteKing = Piece(Color.White, PieceType.King)
-    whiteKing.symbol shouldBe "♔"
-    
+    whiteKing.symbol shouldBe "♚"
+
     val blackQueen = Piece(Color.Black, PieceType.Queen)
     blackQueen.symbol shouldBe "♛"
-    
+
     val whitePawn = Piece(Color.White, PieceType.Pawn)
-    whitePawn.symbol shouldBe "♙"
-    
+    whitePawn.symbol shouldBe "♟"
+
     val blackPawn = Piece(Color.Black, PieceType.Pawn)
     blackPawn.symbol shouldBe "♟"
   }
@@ -29,24 +29,22 @@ class TypesTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks:
   test("Piece.letter should return correct algebraic notation") {
     val whiteKing = Piece(Color.White, PieceType.King)
     whiteKing.letter shouldBe "K"
-    
+
     val blackQueen = Piece(Color.Black, PieceType.Queen)
     blackQueen.letter shouldBe "q"
-    
+
     val whitePawn = Piece(Color.White, PieceType.Pawn)
     whitePawn.letter shouldBe "P"
-    
+
     val blackPawn = Piece(Color.Black, PieceType.Pawn)
     blackPawn.letter shouldBe "p"
   }
 
   test("Pos.isValid should validate board positions") {
-    // Valid positions
     Pos(0, 0).isValid shouldBe true
     Pos(7, 7).isValid shouldBe true
     Pos(3, 4).isValid shouldBe true
-    
-    // Invalid positions
+
     Pos(-1, 0).isValid shouldBe false
     Pos(0, -1).isValid shouldBe false
     Pos(8, 0).isValid shouldBe false
@@ -91,7 +89,7 @@ class TypesTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks:
     move.from shouldBe Pos(4, 1)
     move.to shouldBe Pos(4, 3)
     move.promotion shouldBe None
-    
+
     val moveWithPromotion = Move(Pos(4, 6), Pos(4, 7), Some(PieceType.Queen))
     moveWithPromotion.promotion shouldBe Some(PieceType.Queen)
   }

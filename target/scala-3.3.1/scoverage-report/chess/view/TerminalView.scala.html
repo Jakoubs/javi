@@ -33,8 +33,8 @@
 </span>9 <span style=''>  private val BOLD = &quot;\u001b[1m&quot;
 </span>10 <span style=''>  private val DIM = &quot;\u001b[2m&quot;
 </span>11 <span style=''>
-</span>12 <span style=''>  private val FG_WHITE = &quot;\u001b[97m&quot;
-</span>13 <span style=''>  private val FG_BLACK = &quot;\u001b[30m&quot;
+</span>12 <span style=''>  private val FG_WHITE = &quot;\u001b[38;5;231m&quot;
+</span>13 <span style=''>  private val FG_BLACK = &quot;\u001b[38;5;16m&quot;
 </span>14 <span style=''>  private val FG_GRAY = &quot;\u001b[37m&quot;
 </span>15 <span style=''>  private val FG_YELLOW = &quot;\u001b[33m&quot;
 </span>16 <span style=''>  private val FG_CYAN = &quot;\u001b[36m&quot;
@@ -115,8 +115,8 @@
 </span>91 <span style=''></span><span style='background: #AEF1AE'>              if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;
 </span>92 <span style=''></span><span style='background: #AEF1AE'>              else s&quot;$bg    $RESET&quot;
 </span>93 <span style=''></span><span style='background: #AEF1AE'>            case Some(piece) =&gt;
-</span>94 <span style=''></span><span style='background: #AEF1AE'>              val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;
-</span>95 <span style=''></span><span style='background: #AEF1AE'>              s&quot;$bg$fg ${piece.symbol} $RESET&quot;
+</span>94 <span style=''></span><span style='background: #AEF1AE'>              val fg = if piece.color == Color.White then s&quot;$FG_WHITE$BOLD&quot; else FG_BLACK
+</span>95 <span style=''></span><span style='background: #AEF1AE'>              s&quot;$bg$fg ${piece.symbol}  $RESET&quot;
 </span>96 <span style=''></span><span style='background: #AEF1AE'>
 </span>97 <span style=''></span><span style='background: #AEF1AE'>        sb.append(cell)
 </span>98 <span style=''></span><span style='background: #AEF1AE'>      }
@@ -185,7 +185,6 @@
 </span>161 <span style=''>  val prompt: String = </span><span style='background: #AEF1AE'>s&quot;  ${DIM}&gt; ${RESET}&quot;</span><span style=''>
 </span>162 <span style=''>
 </span>163 <span style=''>  </span><span style='background: #AEF1AE'>def clear</span><span style=''>(): Unit = </span><span style='background: #AEF1AE'>print(&quot;\u001b[H\u001b[2J&quot;)</span><span style=''>
-</span>164 <span style=''>
 </span></pre>
           </div>
           <div class="tab-pane" id="statementlist">
@@ -203,12 +202,12 @@
           25
         </td>
         <td>
-          878
+          829
         </td>
         <td>
-          817
+          803
           -
-          827
+          813
         </td>
         <td>
           DefDef
@@ -227,36 +226,12 @@
           28
         </td>
         <td>
-          881
+          831
         </td>
         <td>
-          911
+          894
           -
-          911
-        </td>
-        <td>
-          DefDef
-        </td>
-        <td>
-          render$default$3
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          
-        </td>
-      </tr><tr>
-        <td>
-          28
-        </td>
-        <td>
-          880
-        </td>
-        <td>
-          911
-          -
-          920
+          903
         </td>
         <td>
           Select
@@ -275,12 +250,12 @@
           28
         </td>
         <td>
-          879
+          830
         </td>
         <td>
-          911
+          894
           -
-          914
+          897
         </td>
         <td>
           Ident
@@ -296,15 +271,39 @@
         </td>
       </tr><tr>
         <td>
+          28
+        </td>
+        <td>
+          832
+        </td>
+        <td>
+          894
+          -
+          894
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          render$default$3
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          
+        </td>
+      </tr><tr>
+        <td>
           29
         </td>
         <td>
-          882
+          833
         </td>
         <td>
-          976
+          958
           -
-          976
+          958
         </td>
         <td>
           DefDef
@@ -323,12 +322,12 @@
           30
         </td>
         <td>
-          883
+          834
         </td>
         <td>
-          1008
+          989
           -
-          1008
+          989
         </td>
         <td>
           DefDef
@@ -347,12 +346,12 @@
           32
         </td>
         <td>
-          869
+          820
         </td>
         <td>
-          1043
+          1022
           -
-          1060
+          1039
         </td>
         <td>
           Apply
@@ -371,12 +370,12 @@
           33
         </td>
         <td>
-          871
+          822
         </td>
         <td>
-          1076
+          1054
           -
-          1097
+          1075
         </td>
         <td>
           Apply
@@ -395,12 +394,12 @@
           33
         </td>
         <td>
-          870
+          821
         </td>
         <td>
-          1066
+          1044
           -
-          1098
+          1076
         </td>
         <td>
           Apply
@@ -419,12 +418,12 @@
           34
         </td>
         <td>
-          872
+          823
         </td>
         <td>
-          1104
+          1081
           -
-          1119
+          1096
         </td>
         <td>
           Apply
@@ -443,12 +442,12 @@
           35
         </td>
         <td>
-          873
+          824
         </td>
         <td>
-          1125
+          1101
           -
-          1187
+          1163
         </td>
         <td>
           Apply
@@ -467,12 +466,12 @@
           35
         </td>
         <td>
-          874
+          825
         </td>
         <td>
-          1135
+          1111
           -
-          1186
+          1162
         </td>
         <td>
           Apply
@@ -491,36 +490,12 @@
           36
         </td>
         <td>
-          875
+          827
         </td>
         <td>
-          1193
+          1178
           -
-          1225
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          append
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          sb.append(footer(state, status))
-        </td>
-      </tr><tr>
-        <td>
-          36
-        </td>
-        <td>
-          876
-        </td>
-        <td>
-          1203
-          -
-          1224
+          1199
         </td>
         <td>
           Apply
@@ -536,15 +511,39 @@
         </td>
       </tr><tr>
         <td>
+          36
+        </td>
+        <td>
+          826
+        </td>
+        <td>
+          1168
+          -
+          1200
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          append
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          sb.append(footer(state, status))
+        </td>
+      </tr><tr>
+        <td>
           37
         </td>
         <td>
-          877
+          828
         </td>
         <td>
-          1231
+          1205
           -
-          1242
+          1216
         </td>
         <td>
           Apply
@@ -563,12 +562,12 @@
           39
         </td>
         <td>
-          891
+          842
         </td>
         <td>
-          1248
+          1220
           -
-          1266
+          1238
         </td>
         <td>
           DefDef
@@ -587,36 +586,12 @@
           44
         </td>
         <td>
-          884
+          836
         </td>
         <td>
-          1406
+          1401
           -
-          1430
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case GameStatus.Check(_)
-        </td>
-      </tr><tr>
-        <td>
-          44
-        </td>
-        <td>
-          885
-        </td>
-        <td>
-          1434
-          -
-          1468
+          1435
         </td>
         <td>
           Apply
@@ -632,39 +607,39 @@
         </td>
       </tr><tr>
         <td>
-          45
+          44
         </td>
         <td>
-          887
+          835
         </td>
         <td>
-          1508
+          1373
           -
-          1545
+          1397
         </td>
         <td>
-          Apply
+          Block
         </td>
         <td>
-          s
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          s&quot; ${FG_RED}${BOLD}CHECKMATE${RESET}&quot;
+          case GameStatus.Check(_)
         </td>
       </tr><tr>
         <td>
           45
         </td>
         <td>
-          886
+          837
         </td>
         <td>
-          1476
+          1442
           -
-          1504
+          1470
         </td>
         <td>
           Block
@@ -680,15 +655,39 @@
         </td>
       </tr><tr>
         <td>
+          45
+        </td>
+        <td>
+          838
+        </td>
+        <td>
+          1474
+          -
+          1511
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot; ${FG_RED}${BOLD}CHECKMATE${RESET}&quot;
+        </td>
+      </tr><tr>
+        <td>
           46
         </td>
         <td>
-          888
+          839
         </td>
         <td>
-          1553
+          1518
           -
-          1559
+          1524
         </td>
         <td>
           Block
@@ -707,12 +706,12 @@
           48
         </td>
         <td>
-          889
+          840
         </td>
         <td>
-          1587
+          1550
           -
-          1632
+          1595
         </td>
         <td>
           Apply
@@ -731,12 +730,12 @@
           49
         </td>
         <td>
-          890
+          841
         </td>
         <td>
-          1638
+          1600
           -
-          1687
+          1649
         </td>
         <td>
           Apply
@@ -755,12 +754,12 @@
           51
         </td>
         <td>
-          947
+          898
         </td>
         <td>
-          1693
+          1653
           -
-          1710
+          1670
         </td>
         <td>
           DefDef
@@ -779,60 +778,12 @@
           59
         </td>
         <td>
-          893
+          846
         </td>
         <td>
-          1906
+          1876
           -
-          1942
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          lastMove.map(m =&gt; Set(m.from, m.to))
-        </td>
-      </tr><tr>
-        <td>
-          59
-        </td>
-        <td>
-          896
-        </td>
-        <td>
-          1953
-          -
-          1956
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Set
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          Set
-        </td>
-      </tr><tr>
-        <td>
-          59
-        </td>
-        <td>
-          895
-        </td>
-        <td>
-          1924
-          -
-          1927
+          1879
         </td>
         <td>
           Ident
@@ -851,36 +802,36 @@
           59
         </td>
         <td>
-          892
+          848
         </td>
         <td>
-          1906
+          1905
           -
-          1963
+          1914
         </td>
         <td>
-          Apply
+          Select
         </td>
         <td>
-          getOrElse
+          empty
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          lastMove.map(m =&gt; Set(m.from, m.to)).getOrElse(Set.empty)
+          Set.empty
         </td>
       </tr><tr>
         <td>
           59
         </td>
         <td>
-          894
+          845
         </td>
         <td>
-          1924
+          1876
           -
-          1941
+          1893
         </td>
         <td>
           Apply
@@ -899,108 +850,84 @@
           59
         </td>
         <td>
-          897
+          844
         </td>
         <td>
-          1953
+          1858
           -
-          1962
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          empty
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          Set.empty
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          899
-        </td>
-        <td>
-          2084
-          -
-          2090
+          1894
         </td>
         <td>
           Apply
         </td>
         <td>
-          to
+          map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          lastMove.map(m =&gt; Set(m.from, m.to))
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          847
+        </td>
+        <td>
+          1905
+          -
+          1908
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Set
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          7 to 0
+          Set
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          843
+        </td>
+        <td>
+          1858
+          -
+          1915
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          getOrElse
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          lastMove.map(m =&gt; Set(m.from, m.to)).getOrElse(Set.empty)
         </td>
       </tr><tr>
         <td>
           62
         </td>
         <td>
-          902
+          855
         </td>
         <td>
-          2083
+          2060
           -
-          2104
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          toList
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (7 to 0 by -1).toList
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          905
-        </td>
-        <td>
-          2110
-          -
-          2125
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          toList
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (0 to 7).toList
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          904
-        </td>
-        <td>
-          2111
-          -
-          2112
+          2061
         </td>
         <td>
           Apply
@@ -1019,36 +946,12 @@
           62
         </td>
         <td>
-          898
+          857
         </td>
         <td>
-          2084
+          2059
           -
-          2096
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          by
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          7 to 0 by -1
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          901
-        </td>
-        <td>
-          2083
-          -
-          2104
+          2074
         </td>
         <td>
           Select
@@ -1060,19 +963,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          (7 to 0 by -1).toList
+          (0 to 7).toList
         </td>
       </tr><tr>
         <td>
           62
         </td>
         <td>
-          900
+          851
         </td>
         <td>
-          2084
+          2033
           -
-          2085
+          2034
         </td>
         <td>
           Apply
@@ -1091,12 +994,12 @@
           62
         </td>
         <td>
-          903
+          854
         </td>
         <td>
-          2111
+          2060
           -
-          2117
+          2066
         </td>
         <td>
           Apply
@@ -1115,12 +1018,36 @@
           62
         </td>
         <td>
-          906
+          853
         </td>
         <td>
-          2110
+          2032
           -
-          2125
+          2053
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (7 to 0 by -1).toList
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          856
+        </td>
+        <td>
+          2059
+          -
+          2074
         </td>
         <td>
           Select
@@ -1136,15 +1063,87 @@
         </td>
       </tr><tr>
         <td>
+          62
+        </td>
+        <td>
+          850
+        </td>
+        <td>
+          2033
+          -
+          2039
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          to
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          7 to 0
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          849
+        </td>
+        <td>
+          2033
+          -
+          2045
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          by
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          7 to 0 by -1
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          852
+        </td>
+        <td>
+          2032
+          -
+          2053
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (7 to 0 by -1).toList
+        </td>
+      </tr><tr>
+        <td>
           64
         </td>
         <td>
-          907
+          858
         </td>
         <td>
-          2142
+          2089
           -
-          2159
+          2106
         </td>
         <td>
           Apply
@@ -1163,12 +1162,12 @@
           66
         </td>
         <td>
-          908
+          859
         </td>
         <td>
-          2167
+          2112
           -
-          3265
+          3177
         </td>
         <td>
           Apply
@@ -1180,43 +1179,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          rows.foreach { row =&gt;\r\n      sb.append(s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;)\r\n\r\n      cols.foreach { col =&gt;\r\n        val pos = Pos(col, row)\r\n        val isLight = (col + row) % 2 == 1\r\n\r\n        val inCheck =\r\n          state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\r\n            (status match\r\n              case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true\r\n              case _ =&gt; false\r\n            )\r\n\r\n        val bg =\r\n          if inCheck then BG_RED\r\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos) then BG_GREEN\r\n          else if isLight then BG_LIGHT\r\n          else BG_DARK\r\n\r\n        val cell =\r\n          state.board.get(pos) match\r\n            case None =&gt;\r\n              if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\r\n              else s&quot;$bg    $RESET&quot;\r\n            case Some(piece) =&gt;\r\n              val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;\r\n              s&quot;$bg$fg ${piece.symbol} $RESET&quot;\r\n\r\n        sb.append(cell)\r\n      }\r\n\r\n      sb.append(&quot;\\n&quot;)\r\n    }
+          rows.foreach { row =&gt;\n      sb.append(s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;)\n\n      cols.foreach { col =&gt;\n        val pos = Pos(col, row)\n        val isLight = (col + row) % 2 == 1\n\n        val inCheck =\n          state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\n            (status match\n              case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true\n              case _ =&gt; false\n            )\n\n        val bg =\n          if inCheck then BG_RED\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\n          else if highlights.contains(pos) then BG_GREEN\n          else if isLight then BG_LIGHT\n          else BG_DARK\n\n        val cell =\n          state.board.get(pos) match\n            case None =&gt;\n              if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\n              else s&quot;$bg    $RESET&quot;\n            case Some(piece) =&gt;\n              val fg = if piece.color == Color.White then s&quot;$FG_WHITE$BOLD&quot; else FG_BLACK\n              s&quot;$bg$fg ${piece.symbol}  $RESET&quot;\n\n        sb.append(cell)\n      }\n\n      sb.append(&quot;\\n&quot;)\n    }
         </td>
       </tr><tr>
         <td>
           67
         </td>
         <td>
-          910
+          860
         </td>
         <td>
-          2206
+          2140
           -
-          2243
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          s
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;
-        </td>
-      </tr><tr>
-        <td>
-          67
-        </td>
-        <td>
-          909
-        </td>
-        <td>
-          2196
-          -
-          2244
+          2188
         </td>
         <td>
           Apply
@@ -1232,15 +1207,39 @@
         </td>
       </tr><tr>
         <td>
+          67
+        </td>
+        <td>
+          861
+        </td>
+        <td>
+          2150
+          -
+          2187
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;$FG_GRAY${BOLD} ${row + 1}  $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
           69
         </td>
         <td>
-          911
+          862
         </td>
         <td>
-          2254
+          2196
           -
-          3233
+          3148
         </td>
         <td>
           Apply
@@ -1252,19 +1251,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          cols.foreach { col =&gt;\r\n        val pos = Pos(col, row)\r\n        val isLight = (col + row) % 2 == 1\r\n\r\n        val inCheck =\r\n          state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\r\n            (status match\r\n              case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true\r\n              case _ =&gt; false\r\n            )\r\n\r\n        val bg =\r\n          if inCheck then BG_RED\r\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos) then BG_GREEN\r\n          else if isLight then BG_LIGHT\r\n          else BG_DARK\r\n\r\n        val cell =\r\n          state.board.get(pos) match\r\n            case None =&gt;\r\n              if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\r\n              else s&quot;$bg    $RESET&quot;\r\n            case Some(piece) =&gt;\r\n              val fg = if piece.color == Color.White then FG_WHITE else s&quot;$FG_BLACK$BOLD&quot;\r\n              s&quot;$bg$fg ${piece.symbol} $RESET&quot;\r\n\r\n        sb.append(cell)\r\n      }
+          cols.foreach { col =&gt;\n        val pos = Pos(col, row)\n        val isLight = (col + row) % 2 == 1\n\n        val inCheck =\n          state.board.findKing(state.activeColor).contains(pos) &amp;&amp;\n            (status match\n              case GameStatus.Check(_) | GameStatus.Checkmate(_) =&gt; true\n              case _ =&gt; false\n            )\n\n        val bg =\n          if inCheck then BG_RED\n          else if lastMovePosSet.contains(pos) then BG_YELLOW\n          else if highlights.contains(pos) then BG_GREEN\n          else if isLight then BG_LIGHT\n          else BG_DARK\n\n        val cell =\n          state.board.get(pos) match\n            case None =&gt;\n              if highlights.contains(pos) then s&quot;$bg ${&quot;•&quot;}  $RESET&quot;\n              else s&quot;$bg    $RESET&quot;\n            case Some(piece) =&gt;\n              val fg = if piece.color == Color.White then s&quot;$FG_WHITE$BOLD&quot; else FG_BLACK\n              s&quot;$bg$fg ${piece.symbol}  $RESET&quot;\n\n        sb.append(cell)\n      }
         </td>
       </tr><tr>
         <td>
           74
         </td>
         <td>
-          913
+          864
         </td>
         <td>
-          2389
+          2326
           -
-          2428
+          2365
         </td>
         <td>
           Apply
@@ -1283,12 +1282,12 @@
           74
         </td>
         <td>
-          912
+          863
         </td>
         <td>
-          2389
+          2326
           -
-          2442
+          2379
         </td>
         <td>
           Apply
@@ -1307,12 +1306,12 @@
           76
         </td>
         <td>
-          914
+          865
         </td>
         <td>
-          2488
+          2423
           -
-          2538
+          2473
         </td>
         <td>
           Block
@@ -1331,12 +1330,12 @@
           77
         </td>
         <td>
-          915
+          866
         </td>
         <td>
-          2562
+          2496
           -
-          2568
+          2502
         </td>
         <td>
           Block
@@ -1355,12 +1354,12 @@
           81
         </td>
         <td>
-          916
+          867
         </td>
         <td>
-          2640
+          2570
           -
-          2646
+          2576
         </td>
         <td>
           Ident
@@ -1379,12 +1378,36 @@
           82
         </td>
         <td>
-          917
+          869
         </td>
         <td>
-          2666
+          2629
           -
-          2694
+          2638
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          BG_YELLOW
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          BG_YELLOW
+        </td>
+      </tr><tr>
+        <td>
+          82
+        </td>
+        <td>
+          868
+        </td>
+        <td>
+          2595
+          -
+          2623
         </td>
         <td>
           Apply
@@ -1403,12 +1426,12 @@
           82
         </td>
         <td>
-          925
+          876
         </td>
         <td>
-          2663
+          2592
           -
-          2832
+          2758
         </td>
         <td>
           If
@@ -1420,43 +1443,43 @@
           
         </td>
         <td style="background: #AEF1AE">
-          if lastMovePosSet.contains(pos) then BG_YELLOW\r\n          else if highlights.contains(pos) then BG_GREEN\r\n          else if isLight then BG_LIGHT\r\n          else BG_DARK
-        </td>
-      </tr><tr>
-        <td>
-          82
-        </td>
-        <td>
-          918
-        </td>
-        <td>
-          2700
-          -
-          2709
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          BG_YELLOW
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          BG_YELLOW
+          if lastMovePosSet.contains(pos) then BG_YELLOW\n          else if highlights.contains(pos) then BG_GREEN\n          else if isLight then BG_LIGHT\n          else BG_DARK
         </td>
       </tr><tr>
         <td>
           83
         </td>
         <td>
-          920
+          875
         </td>
         <td>
-          2759
+          2654
           -
-          2767
+          2758
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if highlights.contains(pos) then BG_GREEN\n          else if isLight then BG_LIGHT\n          else BG_DARK
+        </td>
+      </tr><tr>
+        <td>
+          83
+        </td>
+        <td>
+          871
+        </td>
+        <td>
+          2687
+          -
+          2695
         </td>
         <td>
           Ident
@@ -1475,12 +1498,12 @@
           83
         </td>
         <td>
-          919
+          870
         </td>
         <td>
-          2729
+          2657
           -
-          2753
+          2681
         </td>
         <td>
           Apply
@@ -1496,63 +1519,15 @@
         </td>
       </tr><tr>
         <td>
-          83
-        </td>
-        <td>
-          924
-        </td>
-        <td>
-          2726
-          -
-          2832
-        </td>
-        <td>
-          If
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          if highlights.contains(pos) then BG_GREEN\r\n          else if isLight then BG_LIGHT\r\n          else BG_DARK
-        </td>
-      </tr><tr>
-        <td>
           84
         </td>
         <td>
-          923
+          872
         </td>
         <td>
-          2784
+          2727
           -
-          2832
-        </td>
-        <td>
-          If
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          if isLight then BG_LIGHT\r\n          else BG_DARK
-        </td>
-      </tr><tr>
-        <td>
-          84
-        </td>
-        <td>
-          921
-        </td>
-        <td>
-          2800
-          -
-          2808
+          2735
         </td>
         <td>
           Ident
@@ -1568,15 +1543,39 @@
         </td>
       </tr><tr>
         <td>
+          84
+        </td>
+        <td>
+          874
+        </td>
+        <td>
+          2711
+          -
+          2758
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if isLight then BG_LIGHT\n          else BG_DARK
+        </td>
+      </tr><tr>
+        <td>
           85
         </td>
         <td>
-          922
+          873
         </td>
         <td>
-          2825
+          2751
           -
-          2832
+          2758
         </td>
         <td>
           Ident
@@ -1595,12 +1594,12 @@
           88
         </td>
         <td>
-          926
+          877
         </td>
         <td>
-          2866
+          2789
           -
-          2886
+          2809
         </td>
         <td>
           Apply
@@ -1619,12 +1618,12 @@
           89
         </td>
         <td>
-          927
+          878
         </td>
         <td>
-          2906
+          2828
           -
-          2915
+          2837
         </td>
         <td>
           Block
@@ -1643,12 +1642,12 @@
           90
         </td>
         <td>
-          929
+          881
         </td>
         <td>
-          2967
+          2888
           -
-          2988
+          2909
         </td>
         <td>
           Apply
@@ -1667,12 +1666,36 @@
           90
         </td>
         <td>
-          928
+          880
         </td>
         <td>
-          2937
+          2888
           -
-          2961
+          2909
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;$bg ${&quot;•&quot;}  $RESET&quot;
+        </td>
+      </tr><tr>
+        <td>
+          90
+        </td>
+        <td>
+          879
+        </td>
+        <td>
+          2858
+          -
+          2882
         </td>
         <td>
           Apply
@@ -1688,39 +1711,15 @@
         </td>
       </tr><tr>
         <td>
-          90
-        </td>
-        <td>
-          930
-        </td>
-        <td>
-          2967
-          -
-          2988
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          s
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          s&quot;$bg ${&quot;•&quot;}  $RESET&quot;
-        </td>
-      </tr><tr>
-        <td>
           91
         </td>
         <td>
-          932
+          882
         </td>
         <td>
-          3009
+          2929
           -
-          3025
+          2945
         </td>
         <td>
           Apply
@@ -1739,12 +1738,12 @@
           91
         </td>
         <td>
-          931
+          883
         </td>
         <td>
-          3009
+          2929
           -
-          3025
+          2945
         </td>
         <td>
           Apply
@@ -1763,12 +1762,12 @@
           92
         </td>
         <td>
-          933
+          884
         </td>
         <td>
-          3039
+          2958
           -
-          3055
+          2974
         </td>
         <td>
           Block
@@ -1787,60 +1786,36 @@
           93
         </td>
         <td>
-          935
+          887
         </td>
         <td>
-          3132
+          3059
           -
-          3149
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          s
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          s&quot;$FG_BLACK$BOLD&quot;
-        </td>
-      </tr><tr>
-        <td>
-          93
-        </td>
-        <td>
-          934
-        </td>
-        <td>
-          3118
-          -
-          3126
+          3067
         </td>
         <td>
           Ident
         </td>
         <td>
-          FG_WHITE
+          FG_BLACK
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          FG_WHITE
+          FG_BLACK
         </td>
       </tr><tr>
         <td>
           93
         </td>
         <td>
-          936
+          886
         </td>
         <td>
-          3132
+          3036
           -
-          3149
+          3053
         </td>
         <td>
           Apply
@@ -1852,19 +1827,43 @@
           
         </td>
         <td style="background: #AEF1AE">
-          s&quot;$FG_BLACK$BOLD&quot;
+          s&quot;$FG_WHITE$BOLD&quot;
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          885
+        </td>
+        <td>
+          3036
+          -
+          3053
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;$FG_WHITE$BOLD&quot;
         </td>
       </tr><tr>
         <td>
           94
         </td>
         <td>
-          938
+          889
         </td>
         <td>
-          3176
+          3093
           -
-          3188
+          3105
         </td>
         <td>
           Select
@@ -1883,12 +1882,12 @@
           94
         </td>
         <td>
-          937
+          888
         </td>
         <td>
-          3165
+          3082
           -
-          3197
+          3115
         </td>
         <td>
           Apply
@@ -1900,19 +1899,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          s&quot;$bg$fg ${piece.symbol} $RESET&quot;
+          s&quot;$bg$fg ${piece.symbol}  $RESET&quot;
         </td>
       </tr><tr>
         <td>
           96
         </td>
         <td>
-          939
+          890
         </td>
         <td>
-          3209
+          3125
           -
-          3224
+          3140
         </td>
         <td>
           Apply
@@ -1931,12 +1930,12 @@
           99
         </td>
         <td>
-          940
+          891
         </td>
         <td>
-          3243
+          3156
           -
-          3258
+          3171
         </td>
         <td>
           Apply
@@ -1955,12 +1954,12 @@
           103
         </td>
         <td>
-          941
+          892
         </td>
         <td>
-          3347
+          3256
           -
-          3364
+          3273
         </td>
         <td>
           Apply
@@ -1979,12 +1978,12 @@
           104
         </td>
         <td>
-          942
+          893
         </td>
         <td>
-          3370
+          3278
           -
-          3465
+          3371
         </td>
         <td>
           Apply
@@ -1996,19 +1995,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          cols.foreach { col =&gt;\r\n      sb.append(s&quot;$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET&quot;)\r\n    }
+          cols.foreach { col =&gt;\n      sb.append(s&quot;$FG_GRAY${BOLD}  ${('a' + col).toChar} $RESET&quot;)\n    }
         </td>
       </tr><tr>
         <td>
           105
         </td>
         <td>
-          944
+          895
         </td>
         <td>
-          3409
+          3316
           -
-          3457
+          3364
         </td>
         <td>
           Apply
@@ -2027,12 +2026,12 @@
           105
         </td>
         <td>
-          943
+          894
         </td>
         <td>
-          3399
+          3306
           -
-          3458
+          3365
         </td>
         <td>
           Apply
@@ -2051,12 +2050,12 @@
           107
         </td>
         <td>
-          945
+          896
         </td>
         <td>
-          3471
+          3376
           -
-          3486
+          3391
         </td>
         <td>
           Apply
@@ -2075,12 +2074,12 @@
           108
         </td>
         <td>
-          946
+          897
         </td>
         <td>
-          3492
+          3396
           -
-          3503
+          3407
         </td>
         <td>
           Apply
@@ -2099,12 +2098,12 @@
           110
         </td>
         <td>
-          971
+          922
         </td>
         <td>
-          3509
+          3411
           -
-          3527
+          3429
         </td>
         <td>
           DefDef
@@ -2123,36 +2122,12 @@
           112
         </td>
         <td>
-          949
+          899
         </td>
         <td>
-          3643
+          3523
           -
-          3677
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          s
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;
-        </td>
-      </tr><tr>
-        <td>
-          112
-        </td>
-        <td>
-          948
-        </td>
-        <td>
-          3623
-          -
-          3639
+          3539
         </td>
         <td>
           Block
@@ -2168,39 +2143,39 @@
         </td>
       </tr><tr>
         <td>
-          113
+          112
         </td>
         <td>
-          950
+          900
         </td>
         <td>
-          3685
+          3543
           -
-          3701
+          3577
         </td>
         <td>
-          Block
+          Apply
         </td>
         <td>
-          &lt;none&gt;
+          s
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          case Color.Black
+          s&quot;${FG_WHITE}${BOLD}White${RESET}&quot;
         </td>
       </tr><tr>
         <td>
           113
         </td>
         <td>
-          951
+          902
         </td>
         <td>
-          3705
+          3604
           -
-          3738
+          3637
         </td>
         <td>
           Apply
@@ -2216,15 +2191,39 @@
         </td>
       </tr><tr>
         <td>
+          113
+        </td>
+        <td>
+          901
+        </td>
+        <td>
+          3584
+          -
+          3600
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Color.Black
+        </td>
+      </tr><tr>
+        <td>
           116
         </td>
         <td>
-          952
+          903
         </td>
         <td>
-          3783
+          3679
           -
-          3806
+          3702
         </td>
         <td>
           Block
@@ -2243,12 +2242,12 @@
           117
         </td>
         <td>
-          953
+          904
         </td>
         <td>
-          3819
+          3714
           -
-          3839
+          3734
         </td>
         <td>
           Apply
@@ -2267,12 +2266,12 @@
           118
         </td>
         <td>
-          954
+          905
         </td>
         <td>
-          3847
+          3741
           -
-          3871
+          3765
         </td>
         <td>
           Block
@@ -2291,12 +2290,12 @@
           120
         </td>
         <td>
-          956
+          907
         </td>
         <td>
-          3930
+          3822
           -
-          3964
+          3856
         </td>
         <td>
           Apply
@@ -2315,12 +2314,12 @@
           120
         </td>
         <td>
-          955
+          906
         </td>
         <td>
-          3930
+          3822
           -
-          3964
+          3856
         </td>
         <td>
           Apply
@@ -2339,12 +2338,12 @@
           121
         </td>
         <td>
-          958
+          908
         </td>
         <td>
-          3981
+          3872
           -
-          4014
+          3905
         </td>
         <td>
           Apply
@@ -2363,12 +2362,12 @@
           121
         </td>
         <td>
-          957
+          909
         </td>
         <td>
-          3981
+          3872
           -
-          4014
+          3905
         </td>
         <td>
           Apply
@@ -2387,12 +2386,12 @@
           122
         </td>
         <td>
-          959
+          910
         </td>
         <td>
-          4024
+          3914
           -
-          4063
+          3953
         </td>
         <td>
           Apply
@@ -2411,12 +2410,12 @@
           123
         </td>
         <td>
-          960
+          911
         </td>
         <td>
-          4071
+          3960
           -
-          4103
+          3992
         </td>
         <td>
           Block
@@ -2435,12 +2434,12 @@
           125
         </td>
         <td>
-          962
+          913
         </td>
         <td>
-          4169
+          4056
           -
-          4202
+          4089
         </td>
         <td>
           Apply
@@ -2459,12 +2458,12 @@
           125
         </td>
         <td>
-          961
+          912
         </td>
         <td>
-          4169
+          4056
           -
-          4202
+          4089
         </td>
         <td>
           Apply
@@ -2483,12 +2482,12 @@
           126
         </td>
         <td>
-          964
+          914
         </td>
         <td>
-          4219
+          4105
           -
-          4253
+          4139
         </td>
         <td>
           Apply
@@ -2507,12 +2506,12 @@
           126
         </td>
         <td>
-          963
+          915
         </td>
         <td>
-          4219
+          4105
           -
-          4253
+          4139
         </td>
         <td>
           Apply
@@ -2531,12 +2530,12 @@
           127
         </td>
         <td>
-          965
+          916
         </td>
         <td>
-          4263
+          4148
           -
-          4318
+          4203
         </td>
         <td>
           Apply
@@ -2555,12 +2554,12 @@
           128
         </td>
         <td>
-          966
+          917
         </td>
         <td>
-          4326
+          4210
           -
-          4351
+          4235
         </td>
         <td>
           Block
@@ -2579,12 +2578,12 @@
           129
         </td>
         <td>
-          967
+          918
         </td>
         <td>
-          4364
+          4247
           -
-          4431
+          4314
         </td>
         <td>
           Apply
@@ -2603,12 +2602,12 @@
           130
         </td>
         <td>
-          968
+          919
         </td>
         <td>
-          4439
+          4321
           -
-          4467
+          4349
         </td>
         <td>
           Block
@@ -2627,12 +2626,12 @@
           131
         </td>
         <td>
-          969
+          920
         </td>
         <td>
-          4480
+          4361
           -
-          4533
+          4414
         </td>
         <td>
           Apply
@@ -2651,12 +2650,12 @@
           133
         </td>
         <td>
-          970
+          921
         </td>
         <td>
-          4541
+          4420
           -
-          4558
+          4437
         </td>
         <td>
           Apply
@@ -2675,12 +2674,12 @@
           138
         </td>
         <td>
-          972
+          923
         </td>
         <td>
-          4675
+          4549
           -
-          5352
+          5212
         </td>
         <td>
           Apply
@@ -2692,19 +2691,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          s&quot;&quot;&quot;\r\n  ${BOLD}${FG_CYAN}Chess Commands${RESET}\r\n  ${DIM}─────────────────────────────────────${RESET}\r\n  ${BOLD}e2e4${RESET}          Move piece (from→to)\r\n  ${BOLD}e7e8q${RESET}         Move with promotion (q/r/b/n)\r\n  ${BOLD}moves e2${RESET}      Show legal moves for piece on e2\r\n  ${BOLD}flip${RESET}          Flip board perspective\r\n  ${BOLD}undo${RESET}          Undo last move\r\n  ${BOLD}resign${RESET}        Resign the game\r\n  ${BOLD}draw${RESET}          Offer / accept draw\r\n  ${BOLD}new${RESET}           Start a new game\r\n  ${BOLD}help${RESET}          Show this help\r\n  ${BOLD}quit${RESET}          Quit\r\n  ${DIM}─────────────────────────────────────${RESET}\r\n&quot;&quot;&quot;
+          s&quot;&quot;&quot;\n  ${BOLD}${FG_CYAN}Chess Commands${RESET}\n  ${DIM}─────────────────────────────────────${RESET}\n  ${BOLD}e2e4${RESET}          Move piece (from→to)\n  ${BOLD}e7e8q${RESET}         Move with promotion (q/r/b/n)\n  ${BOLD}moves e2${RESET}      Show legal moves for piece on e2\n  ${BOLD}flip${RESET}          Flip board perspective\n  ${BOLD}undo${RESET}          Undo last move\n  ${BOLD}resign${RESET}        Resign the game\n  ${BOLD}draw${RESET}          Offer / accept draw\n  ${BOLD}new${RESET}           Start a new game\n  ${BOLD}help${RESET}          Show this help\n  ${BOLD}quit${RESET}          Quit\n  ${DIM}─────────────────────────────────────${RESET}\n&quot;&quot;&quot;
         </td>
       </tr><tr>
         <td>
           156
         </td>
         <td>
-          974
+          925
         </td>
         <td>
-          5441
+          5297
           -
-          5450
+          5306
         </td>
         <td>
           DefDef
@@ -2723,12 +2722,12 @@
           156
         </td>
         <td>
-          973
+          924
         </td>
         <td>
-          5474
+          5330
           -
-          5511
+          5367
         </td>
         <td>
           Apply
@@ -2747,36 +2746,12 @@
           157
         </td>
         <td>
-          976
+          926
         </td>
         <td>
-          5515
+          5405
           -
-          5526
-        </td>
-        <td>
-          DefDef
-        </td>
-        <td>
-          success
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          def success
-        </td>
-      </tr><tr>
-        <td>
-          157
-        </td>
-        <td>
-          975
-        </td>
-        <td>
-          5550
-          -
-          5589
+          5444
         </td>
         <td>
           Apply
@@ -2792,39 +2767,39 @@
         </td>
       </tr><tr>
         <td>
-          158
+          157
         </td>
         <td>
-          977
+          927
         </td>
         <td>
-          5625
+          5370
           -
-          5656
+          5381
         </td>
         <td>
-          Apply
+          DefDef
         </td>
         <td>
-          s
+          success
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          s&quot;  ${FG_YELLOW}$msg${RESET}\\n&quot;
+          def success
         </td>
       </tr><tr>
         <td>
           158
         </td>
         <td>
-          978
+          929
         </td>
         <td>
-          5593
+          5447
           -
-          5601
+          5455
         </td>
         <td>
           DefDef
@@ -2840,15 +2815,39 @@
         </td>
       </tr><tr>
         <td>
+          158
+        </td>
+        <td>
+          928
+        </td>
+        <td>
+          5479
+          -
+          5510
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;  ${FG_YELLOW}$msg${RESET}\\n&quot;
+        </td>
+      </tr><tr>
+        <td>
           160
         </td>
         <td>
-          979
+          930
         </td>
         <td>
-          5683
+          5535
           -
-          5704
+          5556
         </td>
         <td>
           Apply
@@ -2867,36 +2866,12 @@
           162
         </td>
         <td>
-          980
+          932
         </td>
         <td>
-          5730
+          5560
           -
-          5756
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          print
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          print(&quot;\\u001b[H\\u001b[2J&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          162
-        </td>
-        <td>
-          981
-        </td>
-        <td>
-          5710
-          -
-          5719
+          5569
         </td>
         <td>
           DefDef
@@ -2909,6 +2884,30 @@
         </td>
         <td style="background: #AEF1AE">
           def clear
+        </td>
+      </tr><tr>
+        <td>
+          162
+        </td>
+        <td>
+          931
+        </td>
+        <td>
+          5580
+          -
+          5606
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          print
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          print(&quot;\\u001b[H\\u001b[2J&quot;)
         </td>
       </tr>
     </table>

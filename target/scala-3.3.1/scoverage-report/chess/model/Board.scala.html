@@ -57,152 +57,190 @@
 </span>33 <span style=''>    </span><span style='background: #AEF1AE'>pieces.toList.filter(_._2.color == color)</span><span style=''>
 </span>34 <span style=''>
 </span>35 <span style=''>  </span><span style='background: #AEF1AE'>def toFenPlacement</span><span style=''>: String =
-</span>36 <span style=''>    </span><span style='background: #AEF1AE'>(</span><span style='background: #F0ADAD'>7 to 0 by -1</span><span style='background: #AEF1AE'>).map { row =&gt;
-</span>37 <span style=''></span><span style='background: #AEF1AE'>      val (parts, trailingEmpties) =
-</span>38 <span style=''></span><span style='background: #AEF1AE'>        (</span><span style='background: #F0ADAD'>0 to 7</span><span style='background: #AEF1AE'>).foldLeft((List.empty[String], 0)) { case ((acc, emptyCount), col) =&gt;
-</span>39 <span style=''></span><span style='background: #AEF1AE'>          pieces.get(Pos(col, row)) match
-</span>40 <span style=''></span><span style='background: #AEF1AE'>            case Some(piece) =&gt;
-</span>41 <span style=''></span><span style='background: #AEF1AE'>              val nextAcc = if emptyCount &gt; 0 then acc :+ emptyCount.toString else acc
-</span>42 <span style=''></span><span style='background: #AEF1AE'>              (nextAcc :+ piece.letter, 0)
-</span>43 <span style=''></span><span style='background: #AEF1AE'>            case None =&gt;
-</span>44 <span style=''></span><span style='background: #AEF1AE'>              (acc, emptyCount + 1)
-</span>45 <span style=''></span><span style='background: #AEF1AE'>        }
-</span>46 <span style=''></span><span style='background: #AEF1AE'>      val completed = if trailingEmpties &gt; 0 then parts :+ trailingEmpties.toString else parts
-</span>47 <span style=''></span><span style='background: #AEF1AE'>      completed.mkString
-</span>48 <span style=''></span><span style='background: #AEF1AE'>    }.mkString(&quot;/&quot;)</span><span style=''>
-</span>49 <span style=''>
-</span>50 <span style=''>object Board:
-</span>51 <span style=''>  /** Standard starting position */
-</span>52 <span style=''>  </span><span style='background: #AEF1AE'>def initial</span><span style=''>: Board =
-</span>53 <span style=''>    val backRank: Color =&gt; List[PieceType] = _ =&gt;
-</span>54 <span style=''>      </span><span style='background: #F0ADAD'>List</span><span style='background: #AEF1AE'>(PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen,
-</span>55 <span style=''></span><span style='background: #AEF1AE'>           PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook)</span><span style=''>
+</span>36 <span style=''>    val ranks = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[String]
+</span>37 <span style=''>    var row = 7
+</span>38 <span style=''>    while row &gt;= 0 do
+</span>39 <span style=''>      val parts = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[String]
+</span>40 <span style=''>      var emptyCount = 0
+</span>41 <span style=''>      var col = 0
+</span>42 <span style=''>      while col &lt; 8 do
+</span>43 <span style=''>        </span><span style='background: #AEF1AE'>pieces.get(Pos(col, row))</span><span style=''> match
+</span>44 <span style=''>          </span><span style='background: #AEF1AE'>case Some(piece)</span><span style=''> =&gt;
+</span>45 <span style=''>            if emptyCount &gt; 0 then
+</span>46 <span style=''>              </span><span style='background: #AEF1AE'>parts += emptyCount.toString
+</span>47 <span style=''></span><span style='background: #AEF1AE'>              emptyCount = 0</span><span style=''>
+</span>48 <span style=''>            </span><span style='background: #AEF1AE'>parts += piece.letter</span><span style=''>
+</span>49 <span style=''>          </span><span style='background: #AEF1AE'>case None</span><span style=''> =&gt;
+</span>50 <span style=''>            emptyCount += 1
+</span>51 <span style=''>        col += 1
+</span>52 <span style=''>      if emptyCount &gt; 0 then parts += emptyCount.toString
+</span>53 <span style=''>      </span><span style='background: #AEF1AE'>ranks += parts.mkString</span><span style=''>
+</span>54 <span style=''>      row -= 1
+</span>55 <span style=''>    </span><span style='background: #AEF1AE'>ranks.mkString(&quot;/&quot;)</span><span style=''>
 </span>56 <span style=''>
-</span>57 <span style=''>    val whitePieces =
-</span>58 <span style=''>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))).toMap</span><span style='background: #AEF1AE'> ++
-</span>59 <span style=''></span><span style='background: #AEF1AE'>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn))</span><span style='background: #AEF1AE'>.toMap</span><span style=''>
-</span>60 <span style=''>
-</span>61 <span style=''>    val blackPieces =
-</span>62 <span style=''>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))).toMap</span><span style='background: #AEF1AE'> ++
-</span>63 <span style=''></span><span style='background: #AEF1AE'>      </span><span style='background: #F0ADAD'>(0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn))</span><span style='background: #AEF1AE'>.toMap</span><span style=''>
-</span>64 <span style=''>
-</span>65 <span style=''>    Board(</span><span style='background: #AEF1AE'>whitePieces ++ blackPieces</span><span style=''>)
-</span>66 <span style=''>
-</span>67 <span style=''>  </span><span style='background: #AEF1AE'>def empty</span><span style=''>: Board = Board(</span><span style='background: #AEF1AE'>Map.empty</span><span style=''>)
-</span>68 <span style=''>
-</span>69 <span style=''>  </span><span style='background: #AEF1AE'>def fromFenPlacement</span><span style=''>(placement: String): Either[String, Board] =
-</span>70 <span style=''>    val ranks = </span><span style='background: #AEF1AE'>placement.split(&quot;/&quot;)</span><span style=''>
-</span>71 <span style=''>    if </span><span style='background: #AEF1AE'>ranks.length</span><span style=''> != 8 then </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(&quot;FEN placement must contain 8 ranks&quot;)</span><span style=''>
-</span>72 <span style=''>    else
-</span>73 <span style=''>      </span><span style='background: #F0ADAD'>ranks.zipWithIndex.foldLeft[Either[String, Map[Pos, Piece]]](Right(Map.empty)) {
-</span>74 <span style=''></span><span style='background: #F0ADAD'>        case (Left(error), _) =&gt; Left(error)
-</span>75 <span style=''></span><span style='background: #F0ADAD'>        case (Right(acc), (rank, rankIndex)) =&gt;
-</span>76 <span style=''></span><span style='background: #F0ADAD'>          parseRank(rank, 7 - rankIndex).map(acc ++ _)
-</span>77 <span style=''></span><span style='background: #F0ADAD'>      }</span><span style='background: #AEF1AE'>.map(Board(_))</span><span style=''>
-</span>78 <span style=''>
-</span>79 <span style=''>  </span><span style='background: #AEF1AE'>private def parseRank</span><span style=''>(rank: String, row: Int): Either[String, Map[Pos, Piece]] =
-</span>80 <span style=''>    </span><span style='background: #F0ADAD'>rank.foldLeft[Either[String, (Int, Map[Pos, Piece])]](Right((0, Map.empty))) {
-</span>81 <span style=''></span><span style='background: #F0ADAD'>      case (Left(error), _) =&gt; Left(error)
-</span>82 <span style=''></span><span style='background: #F0ADAD'>      case (Right((col, acc)), char) =&gt;
-</span>83 <span style=''></span><span style='background: #F0ADAD'>        if char.isDigit then
-</span>84 <span style=''></span><span style='background: #F0ADAD'>          val emptySquares = char.asDigit
-</span>85 <span style=''></span><span style='background: #F0ADAD'>          if emptySquares &lt; 1 || emptySquares &gt; 8 then Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)
-</span>86 <span style=''></span><span style='background: #F0ADAD'>          else if col + emptySquares &gt; 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)
-</span>87 <span style=''></span><span style='background: #F0ADAD'>          else Right((col + emptySquares, acc))
-</span>88 <span style=''></span><span style='background: #F0ADAD'>        else
-</span>89 <span style=''></span><span style='background: #F0ADAD'>          Piece.fromFenChar(char) match
-</span>90 <span style=''></span><span style='background: #F0ADAD'>            case None =&gt; Left(s&quot;Invalid piece '$char' in FEN&quot;)
-</span>91 <span style=''></span><span style='background: #F0ADAD'>            case Some(piece) =&gt;
-</span>92 <span style=''></span><span style='background: #F0ADAD'>              if col &gt;= 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)
-</span>93 <span style=''></span><span style='background: #F0ADAD'>              else Right((col + 1, acc + (Pos(col, row) -&gt; piece)))
-</span>94 <span style=''></span><span style='background: #F0ADAD'>    }</span><span style='background: #AEF1AE'>.flatMap { (fileCount, pieces) =&gt;
-</span>95 <span style=''></span><span style='background: #AEF1AE'>      if fileCount == 8 then </span><span style='background: #F0ADAD'>Right</span><span style='background: #AEF1AE'>(pieces)
-</span>96 <span style=''></span><span style='background: #AEF1AE'>      else </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(s&quot;Rank '$rank' must describe exactly 8 files in FEN&quot;)
-</span>97 <span style=''></span><span style='background: #AEF1AE'>    }</span><span style=''>
-</span>98 <span style=''>
-</span>99 <span style=''>// ─── GameState ───────────────────────────────────────────────────────────────
-</span>100 <span style=''>
-</span>101 <span style=''>/**
-</span>102 <span style=''> * Complete, immutable game state.
-</span>103 <span style=''> *
-</span>104 <span style=''> * @param board          current board
-</span>105 <span style=''> * @param activeColor    whose turn it is
-</span>106 <span style=''> * @param castlingRights remaining castling rights
-</span>107 <span style=''> * @param enPassantTarget square a pawn may capture en-passant, if any
-</span>108 <span style=''> * @param halfMoveClock  half-moves since last capture or pawn move (for 50-move rule)
-</span>109 <span style=''> * @param fullMoveNumber increments after Black's move
-</span>110 <span style=''> * @param history        previous states for threefold-repetition detection
-</span>111 <span style=''> */
-</span>112 <span style=''>case class GameState(
-</span>113 <span style=''>  board:           Board,
-</span>114 <span style=''>  activeColor:     Color,
-</span>115 <span style=''>  castlingRights:  CastlingRights,
-</span>116 <span style=''>  enPassantTarget: Option[Pos],
-</span>117 <span style=''>  halfMoveClock:   Int,
-</span>118 <span style=''>  fullMoveNumber:  Int,
-</span>119 <span style=''>  history:         List[GameState] = </span><span style='background: #AEF1AE'>Nil</span><span style=''>   // oldest first, current excluded
-</span>120 <span style=''>):
-</span>121 <span style=''>  </span><span style='background: #AEF1AE'>def withHistory</span><span style=''>: GameState = copy(history = </span><span style='background: #AEF1AE'>history :+ this</span><span style=''>)
-</span>122 <span style=''>
-</span>123 <span style=''>  </span><span style='background: #AEF1AE'>def toFen</span><span style=''>: String =
-</span>124 <span style=''>    val enPassant = </span><span style='background: #F0ADAD'>enPassantTarget.map(_.toAlgebraic)</span><span style='background: #AEF1AE'>.getOrElse(&quot;-&quot;)</span><span style=''>
-</span>125 <span style=''>    </span><span style='background: #AEF1AE'>s&quot;${board.toFenPlacement} ${GameState.colorToFen(activeColor)} ${castlingRights.toFen} $enPassant $halfMoveClock $fullMoveNumber&quot;</span><span style=''>
-</span>126 <span style=''>
-</span>127 <span style=''>object GameState:
-</span>128 <span style=''>  val initialFen: String = &quot;rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1&quot;
-</span>129 <span style=''>
-</span>130 <span style=''>  </span><span style='background: #AEF1AE'>def initial</span><span style=''>: GameState = GameState(
-</span>131 <span style=''>    board           = </span><span style='background: #AEF1AE'>Board.initial</span><span style=''>,
-</span>132 <span style=''>    activeColor     = Color.White,
-</span>133 <span style=''>    castlingRights  = </span><span style='background: #AEF1AE'>CastlingRights</span><span style=''>(),
-</span>134 <span style=''>    enPassantTarget = None,
-</span>135 <span style=''>    halfMoveClock   = 0,
-</span>136 <span style=''>    fullMoveNumber  = 1,
-</span>137 <span style=''>    history         = </span><span style='background: #AEF1AE'>Nil</span><span style=''>
-</span>138 <span style=''>  )
-</span>139 <span style=''>
-</span>140 <span style=''>  </span><span style='background: #AEF1AE'>def fromFen</span><span style=''>(fen: String): Either[String, GameState] =
-</span>141 <span style=''>    </span><span style='background: #AEF1AE'>fen.trim.split(&quot;\\s+&quot;)</span><span style=''> match
-</span>142 <span style=''>      </span><span style='background: #AEF1AE'>case Array(placement, active, castling, enPassant, halfMove, fullMove)</span><span style=''> =&gt;
-</span>143 <span style=''>        </span><span style='background: #AEF1AE'>for
-</span>144 <span style=''></span><span style='background: #AEF1AE'>          board &lt;- </span><span style='background: #F0ADAD'>Board.fromFenPlacement(placement)</span><span style='background: #AEF1AE'>
-</span>145 <span style=''></span><span style='background: #AEF1AE'>          activeColor &lt;- </span><span style='background: #F0ADAD'>colorFromFen(active)</span><span style='background: #AEF1AE'>
-</span>146 <span style=''></span><span style='background: #AEF1AE'>          castlingRights &lt;- </span><span style='background: #F0ADAD'>CastlingRights.fromFen(castling).toRight(&quot;Invalid castling rights in FEN&quot;)</span><span style='background: #AEF1AE'>
-</span>147 <span style=''></span><span style='background: #AEF1AE'>          enPassantTarget &lt;- </span><span style='background: #F0ADAD'>parseEnPassant(enPassant)</span><span style='background: #AEF1AE'>
-</span>148 <span style=''></span><span style='background: #AEF1AE'>          halfMoveClock &lt;- </span><span style='background: #F0ADAD'>parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)</span><span style='background: #AEF1AE'>
-</span>149 <span style=''></span><span style='background: #AEF1AE'>          fullMoveNumber &lt;- </span><span style='background: #F0ADAD'>parsePositiveInt(fullMove, &quot;fullmove number&quot;)</span><span style='background: #AEF1AE'>
-</span>150 <span style=''></span><span style='background: #AEF1AE'>        yield GameState(
-</span>151 <span style=''></span><span style='background: #AEF1AE'>          board = board,
-</span>152 <span style=''></span><span style='background: #AEF1AE'>          activeColor = activeColor,
-</span>153 <span style=''></span><span style='background: #AEF1AE'>          castlingRights = castlingRights,
-</span>154 <span style=''></span><span style='background: #AEF1AE'>          enPassantTarget = enPassantTarget,
-</span>155 <span style=''></span><span style='background: #AEF1AE'>          halfMoveClock = halfMoveClock,
-</span>156 <span style=''></span><span style='background: #AEF1AE'>          fullMoveNumber = fullMoveNumber
-</span>157 <span style=''></span><span style='background: #AEF1AE'>        )</span><span style=''>
-</span>158 <span style=''>      </span><span style='background: #AEF1AE'>case _</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(&quot;FEN must contain 6 space-separated fields&quot;)
-</span>159 <span style=''>
-</span>160 <span style=''>  </span><span style='background: #AEF1AE'>private[model] def colorToFen</span><span style=''>(color: Color): String = color match
-</span>161 <span style=''>    </span><span style='background: #AEF1AE'>case Color.White</span><span style=''> =&gt; &quot;w&quot;
-</span>162 <span style=''>    </span><span style='background: #AEF1AE'>case Color.Black</span><span style=''> =&gt; &quot;b&quot;
-</span>163 <span style=''>
-</span>164 <span style=''>  </span><span style='background: #AEF1AE'>private def colorFromFen</span><span style=''>(value: String): Either[String, Color] = value match
-</span>165 <span style=''>    </span><span style='background: #AEF1AE'>case &quot;w&quot;</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Right</span><span style=''>(Color.White)
-</span>166 <span style=''>    </span><span style='background: #AEF1AE'>case &quot;b&quot;</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Right</span><span style=''>(Color.Black)
-</span>167 <span style=''>    </span><span style='background: #AEF1AE'>case _</span><span style=''>   =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(&quot;Invalid active color in FEN&quot;)
-</span>168 <span style=''>
-</span>169 <span style=''>  </span><span style='background: #AEF1AE'>private def parseEnPassant</span><span style=''>(value: String): Either[String, Option[Pos]] =
-</span>170 <span style=''>    if value == &quot;-&quot; then </span><span style='background: #F0ADAD'>Right</span><span style='background: #AEF1AE'>(None)</span><span style=''>
-</span>171 <span style=''>    else
-</span>172 <span style=''>      </span><span style='background: #AEF1AE'>Pos.fromAlgebraic(value) match
-</span>173 <span style=''></span><span style='background: #AEF1AE'>        case Some(pos) if pos.row == 2 || pos.row == 5 =&gt; </span><span style='background: #F0ADAD'>Right</span><span style='background: #AEF1AE'>(Some(pos))
-</span>174 <span style=''></span><span style='background: #AEF1AE'>        case Some(_) =&gt; </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(&quot;Invalid en passant target rank in FEN&quot;)
-</span>175 <span style=''></span><span style='background: #AEF1AE'>        </span><span style='background: #F0ADAD'>case None</span><span style='background: #AEF1AE'>    =&gt; </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(&quot;Invalid en passant target square in FEN&quot;)</span><span style=''>
-</span>176 <span style=''>
-</span>177 <span style=''>  </span><span style='background: #AEF1AE'>private def parseNonNegativeInt</span><span style=''>(value: String, label: String): Either[String, Int] =
-</span>178 <span style=''>    </span><span style='background: #F0ADAD'>value.toIntOption.filter(_ &gt;= 0)</span><span style='background: #AEF1AE'>.toRight(s&quot;Invalid $label in FEN&quot;)</span><span style=''>
-</span>179 <span style=''>
-</span>180 <span style=''>  </span><span style='background: #AEF1AE'>private def parsePositiveInt</span><span style=''>(value: String, label: String): Either[String, Int] =
-</span>181 <span style=''>    </span><span style='background: #F0ADAD'>value.toIntOption.filter(_ &gt; 0)</span><span style='background: #AEF1AE'>.toRight(s&quot;Invalid $label in FEN&quot;)</span><span style=''>
+</span>57 <span style=''>object Board:
+</span>58 <span style=''>  /** Standard starting position */
+</span>59 <span style=''>  </span><span style='background: #AEF1AE'>def initial</span><span style=''>: Board =
+</span>60 <span style=''>    val backRank = </span><span style='background: #F0ADAD'>List</span><span style='background: #AEF1AE'>(
+</span>61 <span style=''></span><span style='background: #AEF1AE'>      PieceType.Rook,
+</span>62 <span style=''></span><span style='background: #AEF1AE'>      PieceType.Knight,
+</span>63 <span style=''></span><span style='background: #AEF1AE'>      PieceType.Bishop,
+</span>64 <span style=''></span><span style='background: #AEF1AE'>      PieceType.Queen,
+</span>65 <span style=''></span><span style='background: #AEF1AE'>      PieceType.King,
+</span>66 <span style=''></span><span style='background: #AEF1AE'>      PieceType.Bishop,
+</span>67 <span style=''></span><span style='background: #AEF1AE'>      PieceType.Knight,
+</span>68 <span style=''></span><span style='background: #AEF1AE'>      PieceType.Rook
+</span>69 <span style=''></span><span style='background: #AEF1AE'>    )</span><span style=''>
+</span>70 <span style=''>    var allPieces = </span><span style='background: #AEF1AE'>Map.empty</span><span style=''>[Pos, Piece]
+</span>71 <span style=''>    var col = 0
+</span>72 <span style=''>    while col &lt; 8 do
+</span>73 <span style=''>      </span><span style='background: #AEF1AE'>allPieces += Pos(col, 0) -&gt; Piece(Color.White, backRank(col))</span><span style=''>
+</span>74 <span style=''>      </span><span style='background: #AEF1AE'>allPieces += Pos(col, 1) -&gt; Piece(Color.White, PieceType.Pawn)</span><span style=''>
+</span>75 <span style=''>      </span><span style='background: #AEF1AE'>allPieces += Pos(col, 7) -&gt; Piece(Color.Black, backRank(col))</span><span style=''>
+</span>76 <span style=''>      </span><span style='background: #AEF1AE'>allPieces += Pos(col, 6) -&gt; Piece(Color.Black, PieceType.Pawn)</span><span style=''>
+</span>77 <span style=''>      col += 1
+</span>78 <span style=''>    Board(allPieces)
+</span>79 <span style=''>
+</span>80 <span style=''>  </span><span style='background: #AEF1AE'>def empty</span><span style=''>: Board = Board(</span><span style='background: #AEF1AE'>Map.empty</span><span style=''>)
+</span>81 <span style=''>
+</span>82 <span style=''>  </span><span style='background: #AEF1AE'>def fromFenPlacement</span><span style=''>(placement: String): Either[String, Board] =
+</span>83 <span style=''>    val ranks = </span><span style='background: #AEF1AE'>placement.split(&quot;/&quot;)</span><span style=''>
+</span>84 <span style=''>    if </span><span style='background: #AEF1AE'>ranks.length</span><span style=''> != 8 then </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(&quot;FEN placement must contain 8 ranks&quot;)</span><span style=''>
+</span>85 <span style=''>    else
+</span>86 <span style=''>      </span><span style='background: #AEF1AE'>var pieces = Map.empty[Pos, Piece]
+</span>87 <span style=''></span><span style='background: #AEF1AE'>      var rankIndex = 0
+</span>88 <span style=''></span><span style='background: #AEF1AE'>      while rankIndex &lt; ranks.length do
+</span>89 <span style=''></span><span style='background: #AEF1AE'>        parseRank(ranks(rankIndex), 7 - rankIndex) match
+</span>90 <span style=''></span><span style='background: #AEF1AE'>          case Left(error) =&gt; return </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(error)
+</span>91 <span style=''></span><span style='background: #AEF1AE'>          case Right(parsedRank) =&gt;
+</span>92 <span style=''></span><span style='background: #AEF1AE'>            pieces ++= parsedRank
+</span>93 <span style=''></span><span style='background: #AEF1AE'>        rankIndex += 1
+</span>94 <span style=''></span><span style='background: #AEF1AE'>      </span><span style='background: #F0ADAD'>Right</span><span style='background: #AEF1AE'>(Board(pieces))</span><span style=''>
+</span>95 <span style=''>
+</span>96 <span style=''>  </span><span style='background: #AEF1AE'>private def parseRank</span><span style=''>(rank: String, row: Int): Either[String, Map[Pos, Piece]] =
+</span>97 <span style=''>    var col = 0
+</span>98 <span style=''>    var pieces = </span><span style='background: #AEF1AE'>Map.empty</span><span style=''>[Pos, Piece]
+</span>99 <span style=''>    var index = 0
+</span>100 <span style=''>    while index &lt; </span><span style='background: #AEF1AE'>rank.length</span><span style=''> do
+</span>101 <span style=''>      val char = </span><span style='background: #AEF1AE'>rank(index)</span><span style=''>
+</span>102 <span style=''>      if </span><span style='background: #AEF1AE'>char.isDigit</span><span style=''> then
+</span>103 <span style=''>        </span><span style='background: #AEF1AE'>val emptySquares = char.asDigit
+</span>104 <span style=''></span><span style='background: #AEF1AE'>        if emptySquares &lt; 1 || emptySquares &gt; 8 then
+</span>105 <span style=''></span><span style='background: #AEF1AE'>          </span><span style='background: #F0ADAD'>return Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)</span><span style='background: #AEF1AE'>
+</span>106 <span style=''></span><span style='background: #AEF1AE'>        if col + emptySquares &gt; 8 then
+</span>107 <span style=''></span><span style='background: #AEF1AE'>          return </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)
+</span>108 <span style=''></span><span style='background: #AEF1AE'>        col += emptySquares</span><span style=''>
+</span>109 <span style=''>      else
+</span>110 <span style=''>        </span><span style='background: #AEF1AE'>Piece.fromFenChar(char) match
+</span>111 <span style=''></span><span style='background: #AEF1AE'>          case None =&gt;
+</span>112 <span style=''></span><span style='background: #AEF1AE'>            return </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(s&quot;Invalid piece '$char' in FEN&quot;)
+</span>113 <span style=''></span><span style='background: #AEF1AE'>          case Some(piece) =&gt;
+</span>114 <span style=''></span><span style='background: #AEF1AE'>            if col &gt;= 8 then
+</span>115 <span style=''></span><span style='background: #AEF1AE'>              </span><span style='background: #F0ADAD'>return Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)</span><span style='background: #AEF1AE'>
+</span>116 <span style=''></span><span style='background: #AEF1AE'>            pieces += Pos(col, row) -&gt; piece
+</span>117 <span style=''></span><span style='background: #AEF1AE'>            col += 1</span><span style=''>
+</span>118 <span style=''>      index += 1
+</span>119 <span style=''>    if col == 8 then </span><span style='background: #F0ADAD'>Right</span><span style='background: #AEF1AE'>(pieces)</span><span style=''>
+</span>120 <span style=''>    else </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(s&quot;Rank '$rank' must describe exactly 8 files in FEN&quot;)</span><span style=''>
+</span>121 <span style=''>
+</span>122 <span style=''>// ─── GameState ───────────────────────────────────────────────────────────────
+</span>123 <span style=''>
+</span>124 <span style=''>/**
+</span>125 <span style=''> * Complete, immutable game state.
+</span>126 <span style=''> *
+</span>127 <span style=''> * @param board          current board
+</span>128 <span style=''> * @param activeColor    whose turn it is
+</span>129 <span style=''> * @param castlingRights remaining castling rights
+</span>130 <span style=''> * @param enPassantTarget square a pawn may capture en-passant, if any
+</span>131 <span style=''> * @param halfMoveClock  half-moves since last capture or pawn move (for 50-move rule)
+</span>132 <span style=''> * @param fullMoveNumber increments after Black's move
+</span>133 <span style=''> * @param history        previous states for threefold-repetition detection
+</span>134 <span style=''> */
+</span>135 <span style=''>case class GameState(
+</span>136 <span style=''>  board:           Board,
+</span>137 <span style=''>  activeColor:     Color,
+</span>138 <span style=''>  castlingRights:  CastlingRights,
+</span>139 <span style=''>  enPassantTarget: Option[Pos],
+</span>140 <span style=''>  halfMoveClock:   Int,
+</span>141 <span style=''>  fullMoveNumber:  Int,
+</span>142 <span style=''>  history:         List[GameState] = </span><span style='background: #AEF1AE'>Nil</span><span style=''>   // oldest first, current excluded
+</span>143 <span style=''>):
+</span>144 <span style=''>  </span><span style='background: #AEF1AE'>def withHistory</span><span style=''>: GameState = copy(history = </span><span style='background: #AEF1AE'>history :+ this</span><span style=''>)
+</span>145 <span style=''>
+</span>146 <span style=''>  </span><span style='background: #AEF1AE'>def toFen</span><span style=''>: String =
+</span>147 <span style=''>    val enPassant = </span><span style='background: #F0ADAD'>enPassantTarget.map(_.toAlgebraic)</span><span style='background: #AEF1AE'>.getOrElse(&quot;-&quot;)</span><span style=''>
+</span>148 <span style=''>    </span><span style='background: #AEF1AE'>s&quot;${board.toFenPlacement} ${GameState.colorToFen(activeColor)} ${castlingRights.toFen} $enPassant $halfMoveClock $fullMoveNumber&quot;</span><span style=''>
+</span>149 <span style=''>
+</span>150 <span style=''>object GameState:
+</span>151 <span style=''>  val initialFen: String = &quot;rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1&quot;
+</span>152 <span style=''>
+</span>153 <span style=''>  </span><span style='background: #AEF1AE'>def initial</span><span style=''>: GameState = GameState(
+</span>154 <span style=''>    board           = </span><span style='background: #AEF1AE'>Board.initial</span><span style=''>,
+</span>155 <span style=''>    activeColor     = Color.White,
+</span>156 <span style=''>    castlingRights  = </span><span style='background: #AEF1AE'>CastlingRights</span><span style=''>(),
+</span>157 <span style=''>    enPassantTarget = None,
+</span>158 <span style=''>    halfMoveClock   = 0,
+</span>159 <span style=''>    fullMoveNumber  = 1,
+</span>160 <span style=''>    history         = </span><span style='background: #AEF1AE'>Nil</span><span style=''>
+</span>161 <span style=''>  )
+</span>162 <span style=''>
+</span>163 <span style=''>  </span><span style='background: #AEF1AE'>def fromFen</span><span style=''>(fen: String): Either[String, GameState] =
+</span>164 <span style=''>    </span><span style='background: #AEF1AE'>fen.trim.split(&quot;\\s+&quot;)</span><span style=''> match
+</span>165 <span style=''>      </span><span style='background: #AEF1AE'>case Array(placement, active, castling, enPassant, halfMove, fullMove)</span><span style=''> =&gt;
+</span>166 <span style=''>        </span><span style='background: #AEF1AE'>Board.fromFenPlacement(placement)</span><span style=''> match
+</span>167 <span style=''>          </span><span style='background: #F0ADAD'>case Left(error)</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(error)
+</span>168 <span style=''>          </span><span style='background: #AEF1AE'>case Right(board)</span><span style=''> =&gt;
+</span>169 <span style=''>            </span><span style='background: #AEF1AE'>colorFromFen(active)</span><span style=''> match
+</span>170 <span style=''>              </span><span style='background: #AEF1AE'>case Left(error)</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(error)
+</span>171 <span style=''>              </span><span style='background: #AEF1AE'>case Right(activeColor)</span><span style=''> =&gt;
+</span>172 <span style=''>                </span><span style='background: #AEF1AE'>CastlingRights.fromFen(castling)</span><span style=''> match
+</span>173 <span style=''>                  </span><span style='background: #AEF1AE'>case None</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(&quot;Invalid castling rights in FEN&quot;)
+</span>174 <span style=''>                  </span><span style='background: #AEF1AE'>case Some(castlingRights)</span><span style=''> =&gt;
+</span>175 <span style=''>                    </span><span style='background: #AEF1AE'>parseEnPassant(enPassant)</span><span style=''> match
+</span>176 <span style=''>                      </span><span style='background: #AEF1AE'>case Left(error)</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(error)
+</span>177 <span style=''>                      </span><span style='background: #AEF1AE'>case Right(enPassantTarget)</span><span style=''> =&gt;
+</span>178 <span style=''>                        </span><span style='background: #AEF1AE'>parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)</span><span style=''> match
+</span>179 <span style=''>                          </span><span style='background: #AEF1AE'>case Left(error)</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(error)
+</span>180 <span style=''>                          </span><span style='background: #AEF1AE'>case Right(halfMoveClock)</span><span style=''> =&gt;
+</span>181 <span style=''>                            </span><span style='background: #AEF1AE'>parsePositiveInt(fullMove, &quot;fullmove number&quot;)</span><span style=''> match
+</span>182 <span style=''>                              </span><span style='background: #AEF1AE'>case Left(error)</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(error)
+</span>183 <span style=''>                              </span><span style='background: #AEF1AE'>case Right(fullMoveNumber)</span><span style=''> =&gt;
+</span>184 <span style=''>                                </span><span style='background: #F0ADAD'>Right</span><span style=''>(</span><span style='background: #AEF1AE'>GameState</span><span style=''>(
+</span>185 <span style=''>                                  board = board,
+</span>186 <span style=''>                                  activeColor = activeColor,
+</span>187 <span style=''>                                  castlingRights = castlingRights,
+</span>188 <span style=''>                                  enPassantTarget = enPassantTarget,
+</span>189 <span style=''>                                  halfMoveClock = halfMoveClock,
+</span>190 <span style=''>                                  fullMoveNumber = fullMoveNumber
+</span>191 <span style=''>                                ))
+</span>192 <span style=''>      </span><span style='background: #AEF1AE'>case _</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(&quot;FEN must contain 6 space-separated fields&quot;)
+</span>193 <span style=''>
+</span>194 <span style=''>  </span><span style='background: #AEF1AE'>private[model] def colorToFen</span><span style=''>(color: Color): String = color match
+</span>195 <span style=''>    </span><span style='background: #AEF1AE'>case Color.White</span><span style=''> =&gt; &quot;w&quot;
+</span>196 <span style=''>    </span><span style='background: #AEF1AE'>case Color.Black</span><span style=''> =&gt; &quot;b&quot;
+</span>197 <span style=''>
+</span>198 <span style=''>  </span><span style='background: #AEF1AE'>private def colorFromFen</span><span style=''>(value: String): Either[String, Color] = value match
+</span>199 <span style=''>    </span><span style='background: #AEF1AE'>case &quot;w&quot;</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Right</span><span style=''>(Color.White)
+</span>200 <span style=''>    </span><span style='background: #AEF1AE'>case &quot;b&quot;</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Right</span><span style=''>(Color.Black)
+</span>201 <span style=''>    </span><span style='background: #AEF1AE'>case _</span><span style=''>   =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(&quot;Invalid active color in FEN&quot;)
+</span>202 <span style=''>
+</span>203 <span style=''>  </span><span style='background: #AEF1AE'>private def parseEnPassant</span><span style=''>(value: String): Either[String, Option[Pos]] =
+</span>204 <span style=''>    if value == &quot;-&quot; then </span><span style='background: #F0ADAD'>Right</span><span style='background: #AEF1AE'>(None)</span><span style=''>
+</span>205 <span style=''>    else
+</span>206 <span style=''>      </span><span style='background: #AEF1AE'>Pos.fromAlgebraic(value) match
+</span>207 <span style=''></span><span style='background: #AEF1AE'>        case Some(pos) if pos.row == 2 || pos.row == 5 =&gt; </span><span style='background: #F0ADAD'>Right</span><span style='background: #AEF1AE'>(Some(pos))
+</span>208 <span style=''></span><span style='background: #AEF1AE'>        case Some(_) =&gt; </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(&quot;Invalid en passant target rank in FEN&quot;)
+</span>209 <span style=''></span><span style='background: #AEF1AE'>        </span><span style='background: #F0ADAD'>case None</span><span style='background: #AEF1AE'>    =&gt; </span><span style='background: #F0ADAD'>Left</span><span style='background: #AEF1AE'>(&quot;Invalid en passant target square in FEN&quot;)</span><span style=''>
+</span>210 <span style=''>
+</span>211 <span style=''>  </span><span style='background: #AEF1AE'>private def parseNonNegativeInt</span><span style=''>(value: String, label: String): Either[String, Int] =
+</span>212 <span style=''>    </span><span style='background: #AEF1AE'>value.toIntOption</span><span style=''> match
+</span>213 <span style=''>      </span><span style='background: #AEF1AE'>case Some(number) if number &gt;= 0</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Right</span><span style=''>(number)
+</span>214 <span style=''>      </span><span style='background: #AEF1AE'>case _</span><span style=''>                           =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(</span><span style='background: #AEF1AE'>s&quot;Invalid $label in FEN&quot;</span><span style=''>)
+</span>215 <span style=''>
+</span>216 <span style=''>  </span><span style='background: #AEF1AE'>private def parsePositiveInt</span><span style=''>(value: String, label: String): Either[String, Int] =
+</span>217 <span style=''>    </span><span style='background: #AEF1AE'>value.toIntOption</span><span style=''> match
+</span>218 <span style=''>      </span><span style='background: #AEF1AE'>case Some(number) if number &gt; 0</span><span style=''> =&gt; </span><span style='background: #F0ADAD'>Right</span><span style=''>(number)
+</span>219 <span style=''>      </span><span style='background: #AEF1AE'>case _</span><span style=''>                          =&gt; </span><span style='background: #F0ADAD'>Left</span><span style=''>(</span><span style='background: #AEF1AE'>s&quot;Invalid $label in FEN&quot;</span><span style=''>)
 </span></pre>
           </div>
           <div class="tab-pane" id="statementlist">
@@ -892,7 +930,7 @@
           34
         </td>
         <td>
-          241
+          233
         </td>
         <td>
           1168
@@ -916,252 +954,12 @@
           35
         </td>
         <td>
-          223
+          221
         </td>
         <td>
-          1202
+          1213
           -
-          1214
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          by
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          7 to 0 by -1
-        </td>
-      </tr><tr>
-        <td>
-          35
-        </td>
-        <td>
-          225
-        </td>
-        <td>
-          1202
-          -
-          1203
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          intWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          7
-        </td>
-      </tr><tr>
-        <td>
-          35
-        </td>
-        <td>
-          222
-        </td>
-        <td>
-          1201
-          -
-          1752
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (7 to 0 by -1).map { row =&gt;\n      val (parts, trailingEmpties) =\n        (0 to 7).foldLeft((List.empty[String], 0)) { case ((acc, emptyCount), col) =&gt;\n          pieces.get(Pos(col, row)) match\n            case Some(piece) =&gt;\n              val nextAcc = if emptyCount &gt; 0 then acc :+ emptyCount.toString else acc\n              (nextAcc :+ piece.letter, 0)\n            case None =&gt;\n              (acc, emptyCount + 1)\n        }\n      val completed = if trailingEmpties &gt; 0 then parts :+ trailingEmpties.toString else parts\n      completed.mkString\n    }
-        </td>
-      </tr><tr>
-        <td>
-          35
-        </td>
-        <td>
-          224
-        </td>
-        <td>
-          1202
-          -
-          1208
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          to
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          7 to 0
-        </td>
-      </tr><tr>
-        <td>
-          36
-        </td>
-        <td>
-          238
-        </td>
-        <td>
-          1239
-          -
-          1263
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (parts, trailingEmpties)
-        </td>
-      </tr><tr>
-        <td>
-          37
-        </td>
-        <td>
-          227
-        </td>
-        <td>
-          1275
-          -
-          1281
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          to
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0 to 7
-        </td>
-      </tr><tr>
-        <td>
-          37
-        </td>
-        <td>
-          226
-        </td>
-        <td>
-          1274
-          -
-          1626
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          foldLeft
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (0 to 7).foldLeft((List.empty[String], 0)) { case ((acc, emptyCount), col) =&gt;\n          pieces.get(Pos(col, row)) match\n            case Some(piece) =&gt;\n              val nextAcc = if emptyCount &gt; 0 then acc :+ emptyCount.toString else acc\n              (nextAcc :+ piece.letter, 0)\n            case None =&gt;\n              (acc, emptyCount + 1)\n        }
-        </td>
-      </tr><tr>
-        <td>
-          37
-        </td>
-        <td>
-          229
-        </td>
-        <td>
-          1293
-          -
-          1297
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          List
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          List
-        </td>
-      </tr><tr>
-        <td>
-          37
-        </td>
-        <td>
-          228
-        </td>
-        <td>
-          1275
-          -
-          1276
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          intWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0
-        </td>
-      </tr><tr>
-        <td>
-          37
-        </td>
-        <td>
-          231
-        </td>
-        <td>
-          1319
-          -
-          1348
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case ((acc, emptyCount), col)
-        </td>
-      </tr><tr>
-        <td>
-          37
-        </td>
-        <td>
-          230
-        </td>
-        <td>
-          1293
-          -
-          1303
+          1254
         </td>
         <td>
           Select
@@ -1173,19 +971,43 @@
           
         </td>
         <td style="background: #AEF1AE">
-          List.empty
+          scala.collection.mutable.ListBuffer.empty
         </td>
       </tr><tr>
         <td>
           38
         </td>
         <td>
-          232
+          222
         </td>
         <td>
-          1362
+          1319
           -
-          1387
+          1360
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.ListBuffer.empty
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          223
+        </td>
+        <td>
+          1443
+          -
+          1468
         </td>
         <td>
           Apply
@@ -1201,15 +1023,15 @@
         </td>
       </tr><tr>
         <td>
-          39
+          43
         </td>
         <td>
-          233
+          224
         </td>
         <td>
-          1406
+          1485
           -
-          1422
+          1501
         </td>
         <td>
           Block
@@ -1225,39 +1047,87 @@
         </td>
       </tr><tr>
         <td>
-          40
+          45
         </td>
         <td>
-          234
+          226
         </td>
         <td>
-          1509
+          1554
           -
-          1512
+          1611
         </td>
         <td>
-          Ident
+          Block
         </td>
         <td>
-          acc
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          acc
+          parts += emptyCount.toString\n              emptyCount = 0
         </td>
       </tr><tr>
         <td>
-          41
+          45
         </td>
         <td>
-          236
+          225
         </td>
         <td>
-          1539
+          1554
           -
-          1551
+          1582
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          parts += emptyCount.toString
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          227
+        </td>
+        <td>
+          1624
+          -
+          1645
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          parts += piece.letter
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          228
+        </td>
+        <td>
+          1633
+          -
+          1645
         </td>
         <td>
           Select
@@ -1273,39 +1143,15 @@
         </td>
       </tr><tr>
         <td>
-          41
+          48
         </td>
         <td>
-          235
+          229
         </td>
         <td>
-          1528
+          1656
           -
-          1551
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          :+
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          nextAcc :+ piece.letter
-        </td>
-      </tr><tr>
-        <td>
-          42
-        </td>
-        <td>
-          237
-        </td>
-        <td>
-          1568
-          -
-          1577
+          1665
         </td>
         <td>
           Block
@@ -1321,39 +1167,15 @@
         </td>
       </tr><tr>
         <td>
-          45
+          52
         </td>
         <td>
-          239
+          231
         </td>
         <td>
-          1716
+          1787
           -
-          1721
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          parts
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          parts
-        </td>
-      </tr><tr>
-        <td>
-          46
-        </td>
-        <td>
-          240
-        </td>
-        <td>
-          1728
-          -
-          1746
+          1801
         </td>
         <td>
           Select
@@ -1365,19 +1187,43 @@
           
         </td>
         <td style="background: #AEF1AE">
-          completed.mkString
+          parts.mkString
         </td>
       </tr><tr>
         <td>
-          47
+          52
         </td>
         <td>
-          221
+          230
         </td>
         <td>
-          1201
+          1778
           -
-          1766
+          1801
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          ranks += parts.mkString
+        </td>
+      </tr><tr>
+        <td>
+          54
+        </td>
+        <td>
+          232
+        </td>
+        <td>
+          1821
+          -
+          1840
         </td>
         <td>
           Apply
@@ -1389,19 +1235,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          (7 to 0 by -1).map { row =&gt;\n      val (parts, trailingEmpties) =\n        (0 to 7).foldLeft((List.empty[String], 0)) { case ((acc, emptyCount), col) =&gt;\n          pieces.get(Pos(col, row)) match\n            case Some(piece) =&gt;\n              val nextAcc = if emptyCount &gt; 0 then acc :+ emptyCount.toString else acc\n              (nextAcc :+ piece.letter, 0)\n            case None =&gt;\n              (acc, emptyCount + 1)\n        }\n      val completed = if trailingEmpties &gt; 0 then parts :+ trailingEmpties.toString else parts\n      completed.mkString\n    }.mkString(&quot;/&quot;)
+          ranks.mkString(&quot;/&quot;)
         </td>
       </tr><tr>
         <td>
-          51
+          58
         </td>
         <td>
-          271
+          248
         </td>
         <td>
-          1822
+          1895
           -
-          1833
+          1906
         </td>
         <td>
           DefDef
@@ -1417,15 +1263,15 @@
         </td>
       </tr><tr>
         <td>
-          53
+          59
         </td>
         <td>
-          243
+          235
         </td>
         <td>
-          1901
+          1935
           -
-          1905
+          1939
         </td>
         <td>
           Ident
@@ -1441,135 +1287,279 @@
         </td>
       </tr><tr>
         <td>
-          53
+          59
+        </td>
+        <td>
+          234
+        </td>
+        <td>
+          1935
+          -
+          2130
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          List(\n      PieceType.Rook,\n      PieceType.Knight,\n      PieceType.Bishop,\n      PieceType.Queen,\n      PieceType.King,\n      PieceType.Bishop,\n      PieceType.Knight,\n      PieceType.Rook\n    )
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          236
+        </td>
+        <td>
+          2151
+          -
+          2154
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Map
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          237
+        </td>
+        <td>
+          2151
+          -
+          2160
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Map.empty
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          238
+        </td>
+        <td>
+          2216
+          -
+          2277
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          allPieces += Pos(col, 0) -&gt; Piece(Color.White, backRank(col))
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          240
+        </td>
+        <td>
+          2263
+          -
+          2276
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          backRank(col)
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          239
+        </td>
+        <td>
+          2229
+          -
+          2277
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          -&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Pos(col, 0) -&gt; Piece(Color.White, backRank(col))
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          241
+        </td>
+        <td>
+          2284
+          -
+          2346
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          allPieces += Pos(col, 1) -&gt; Piece(Color.White, PieceType.Pawn)
+        </td>
+      </tr><tr>
+        <td>
+          73
         </td>
         <td>
           242
         </td>
         <td>
-          1901
+          2297
           -
-          2054
+          2346
         </td>
         <td>
           Apply
         </td>
         <td>
-          apply
+          -&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          List(PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen,\r\n           PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook)
+          Pos(col, 1) -&gt; Piece(Color.White, PieceType.Pawn)
         </td>
       </tr><tr>
         <td>
-          57
+          74
         </td>
         <td>
           245
         </td>
         <td>
-          2087
+          2400
           -
-          2169
+          2413
         </td>
         <td>
           Apply
         </td>
         <td>
-          toMap
+          apply
         </td>
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          (0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))).toMap
+        <td style="background: #AEF1AE">
+          backRank(col)
         </td>
       </tr><tr>
         <td>
-          57
+          74
         </td>
         <td>
           244
         </td>
         <td>
-          2087
+          2366
           -
-          2252
+          2414
         </td>
         <td>
           Apply
         </td>
         <td>
-          ++
+          -&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          (0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))).toMap ++\r\n      (0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn)).toMap
+          Pos(col, 7) -&gt; Piece(Color.Black, backRank(col))
         </td>
       </tr><tr>
         <td>
-          57
+          74
+        </td>
+        <td>
+          243
+        </td>
+        <td>
+          2353
+          -
+          2414
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          allPieces += Pos(col, 7) -&gt; Piece(Color.Black, backRank(col))
+        </td>
+      </tr><tr>
+        <td>
+          75
         </td>
         <td>
           247
         </td>
         <td>
-          2088
+          2434
           -
-          2094
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          to
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0 to 7
-        </td>
-      </tr><tr>
-        <td>
-          57
-        </td>
-        <td>
-          250
-        </td>
-        <td>
-          2137
-          -
-          2161
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          backRank(Color.White)(c)
-        </td>
-      </tr><tr>
-        <td>
-          57
-        </td>
-        <td>
-          249
-        </td>
-        <td>
-          2105
-          -
-          2162
+          2483
         </td>
         <td>
           Apply
@@ -1580,548 +1570,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c))
+        <td style="background: #AEF1AE">
+          Pos(col, 6) -&gt; Piece(Color.Black, PieceType.Pawn)
         </td>
       </tr><tr>
         <td>
-          57
+          75
         </td>
         <td>
           246
         </td>
         <td>
-          2087
+          2421
           -
-          2163
+          2483
         </td>
         <td>
           Apply
         </td>
         <td>
-          map
+          +
         </td>
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          (0 to 7).map(c =&gt; Pos(c, 0) -&gt; Piece(Color.White, backRank(Color.White)(c)))
+        <td style="background: #AEF1AE">
+          allPieces += Pos(col, 6) -&gt; Piece(Color.Black, PieceType.Pawn)
         </td>
       </tr><tr>
         <td>
-          57
+          79
         </td>
         <td>
-          248
+          250
         </td>
         <td>
-          2088
+          2549
           -
-          2089
+          2558
         </td>
         <td>
-          Apply
+          Select
         </td>
         <td>
-          intWrapper
+          empty
         </td>
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          0
+        <td style="background: #AEF1AE">
+          Map.empty
         </td>
       </tr><tr>
         <td>
-          57
+          79
+        </td>
+        <td>
+          249
+        </td>
+        <td>
+          2549
+          -
+          2552
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Map
+        </td>
+      </tr><tr>
+        <td>
+          79
         </td>
         <td>
           251
         </td>
         <td>
-          2137
+          2524
           -
-          2158
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          backRank(Color.White)
-        </td>
-      </tr><tr>
-        <td>
-          58
-        </td>
-        <td>
-          254
-        </td>
-        <td>
-          2181
-          -
-          2187
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          to
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0 to 7
-        </td>
-      </tr><tr>
-        <td>
-          58
-        </td>
-        <td>
-          253
-        </td>
-        <td>
-          2180
-          -
-          2246
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          (0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn))
-        </td>
-      </tr><tr>
-        <td>
-          58
-        </td>
-        <td>
-          256
-        </td>
-        <td>
-          2198
-          -
-          2245
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          -&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn)
-        </td>
-      </tr><tr>
-        <td>
-          58
-        </td>
-        <td>
-          252
-        </td>
-        <td>
-          2180
-          -
-          2252
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          toMap
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (0 to 7).map(c =&gt; Pos(c, 1) -&gt; Piece(Color.White, PieceType.Pawn)).toMap
-        </td>
-      </tr><tr>
-        <td>
-          58
-        </td>
-        <td>
-          255
-        </td>
-        <td>
-          2181
-          -
-          2182
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          intWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          262
-        </td>
-        <td>
-          2303
-          -
-          2360
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          -&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          259
-        </td>
-        <td>
-          2285
-          -
-          2361
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          (0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c)))
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          258
-        </td>
-        <td>
-          2285
-          -
-          2367
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          toMap
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          (0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))).toMap
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          261
-        </td>
-        <td>
-          2286
-          -
-          2287
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          intWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          264
-        </td>
-        <td>
-          2335
-          -
-          2356
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          backRank(Color.Black)
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          263
-        </td>
-        <td>
-          2335
-          -
-          2359
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          backRank(Color.Black)(c)
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          257
-        </td>
-        <td>
-          2285
-          -
-          2450
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          ++
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (0 to 7).map(c =&gt; Pos(c, 7) -&gt; Piece(Color.Black, backRank(Color.Black)(c))).toMap ++\r\n      (0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn)).toMap
-        </td>
-      </tr><tr>
-        <td>
-          61
-        </td>
-        <td>
-          260
-        </td>
-        <td>
-          2286
-          -
-          2292
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          to
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0 to 7
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          265
-        </td>
-        <td>
-          2378
-          -
-          2450
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          toMap
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          (0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn)).toMap
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          268
-        </td>
-        <td>
-          2379
-          -
-          2380
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          intWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          267
-        </td>
-        <td>
-          2379
-          -
-          2385
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          to
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          0 to 7
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          266
-        </td>
-        <td>
-          2378
-          -
-          2444
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          (0 to 7).map(c =&gt; Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn))
-        </td>
-      </tr><tr>
-        <td>
-          62
-        </td>
-        <td>
-          269
-        </td>
-        <td>
-          2396
-          -
-          2443
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          -&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Pos(c, 6) -&gt; Piece(Color.Black, PieceType.Pawn)
-        </td>
-      </tr><tr>
-        <td>
-          64
-        </td>
-        <td>
-          270
-        </td>
-        <td>
-          2464
-          -
-          2490
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          ++
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          whitePieces ++ blackPieces
-        </td>
-      </tr><tr>
-        <td>
-          66
-        </td>
-        <td>
-          274
-        </td>
-        <td>
-          2497
-          -
-          2506
+          2533
         </td>
         <td>
           DefDef
@@ -2137,63 +1671,15 @@
         </td>
       </tr><tr>
         <td>
-          66
+          81
         </td>
         <td>
-          273
+          267
         </td>
         <td>
-          2522
+          2563
           -
-          2531
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          empty
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          Map.empty
-        </td>
-      </tr><tr>
-        <td>
-          66
-        </td>
-        <td>
-          272
-        </td>
-        <td>
-          2522
-          -
-          2525
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          Map
-        </td>
-      </tr><tr>
-        <td>
-          68
-        </td>
-        <td>
-          294
-        </td>
-        <td>
-          2536
-          -
-          2556
+          2583
         </td>
         <td>
           DefDef
@@ -2209,15 +1695,15 @@
         </td>
       </tr><tr>
         <td>
-          69
+          82
         </td>
         <td>
-          275
+          252
         </td>
         <td>
-          2617
+          2644
           -
-          2637
+          2664
         </td>
         <td>
           Apply
@@ -2233,15 +1719,15 @@
         </td>
       </tr><tr>
         <td>
-          70
+          83
         </td>
         <td>
-          277
+          254
         </td>
         <td>
-          2668
+          2695
           -
-          2672
+          2699
         </td>
         <td>
           Ident
@@ -2257,15 +1743,15 @@
         </td>
       </tr><tr>
         <td>
-          70
+          83
         </td>
         <td>
-          276
+          253
         </td>
         <td>
-          2645
+          2672
           -
-          2657
+          2684
         </td>
         <td>
           Select
@@ -2281,15 +1767,15 @@
         </td>
       </tr><tr>
         <td>
-          70
+          83
         </td>
         <td>
-          278
+          255
         </td>
         <td>
-          2668
+          2695
           -
-          2710
+          2737
         </td>
         <td>
           Apply
@@ -2305,15 +1791,39 @@
         </td>
       </tr><tr>
         <td>
-          72
+          85
         </td>
         <td>
-          286
+          256
         </td>
         <td>
-          2793
+          2766
           -
-          2802
+          2769
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Map
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Map
+        </td>
+      </tr><tr>
+        <td>
+          85
+        </td>
+        <td>
+          257
+        </td>
+        <td>
+          2766
+          -
+          2775
         </td>
         <td>
           Select
@@ -2324,260 +1834,68 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           Map.empty
         </td>
       </tr><tr>
         <td>
-          72
+          85
         </td>
         <td>
-          280
+          266
         </td>
         <td>
-          2726
+          2753
           -
-          2962
+          3077
         </td>
         <td>
-          Apply
+          Block
         </td>
         <td>
-          foldLeft
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          ranks.zipWithIndex.foldLeft[Either[String, Map[Pos, Piece]]](Right(Map.empty)) {\n        case (Left(error), _) =&gt; Left(error)\n        case (Right(acc), (rank, rankIndex)) =&gt;\n          parseRank(rank, 7 - rankIndex).map(acc ++ _)\n      }
+        <td style="background: #AEF1AE">
+          var pieces = Map.empty[Pos, Piece]\n      var rankIndex = 0\n      while rankIndex &lt; ranks.length do\n        parseRank(ranks(rankIndex), 7 - rankIndex) match\n          case Left(error) =&gt; return Left(error)\n          case Right(parsedRank) =&gt;\n            pieces ++= parsedRank\n        rankIndex += 1\n      Right(Board(pieces))
         </td>
       </tr><tr>
         <td>
-          72
+          87
         </td>
         <td>
-          283
+          258
         </td>
         <td>
-          2726
+          2836
           -
-          2744
+          2848
         </td>
         <td>
           Select
         </td>
         <td>
-          zipWithIndex
+          length
         </td>
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          ranks.zipWithIndex
+        <td style="background: #AEF1AE">
+          ranks.length
         </td>
       </tr><tr>
         <td>
-          72
+          88
         </td>
         <td>
-          285
-        </td>
-        <td>
-          2793
-          -
-          2796
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Map
-        </td>
-      </tr><tr>
-        <td>
-          72
-        </td>
-        <td>
-          282
-        </td>
-        <td>
-          2726
-          -
-          2731
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          refArrayOps
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          ranks
-        </td>
-      </tr><tr>
-        <td>
-          72
-        </td>
-        <td>
-          281
-        </td>
-        <td>
-          2726
-          -
-          2744
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          refArrayOps
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          ranks.zipWithIndex
-        </td>
-      </tr><tr>
-        <td>
-          72
-        </td>
-        <td>
-          284
-        </td>
-        <td>
-          2787
-          -
-          2792
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Right
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Right
-        </td>
-      </tr><tr>
-        <td>
-          73
-        </td>
-        <td>
-          288
-        </td>
-        <td>
-          2840
-          -
-          2844
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Left
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Left
-        </td>
-      </tr><tr>
-        <td>
-          73
-        </td>
-        <td>
-          287
-        </td>
-        <td>
-          2815
-          -
-          2836
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          case (Left(error), _)
-        </td>
-      </tr><tr>
-        <td>
-          74
-        </td>
-        <td>
-          289
+          259
         </td>
         <td>
           2860
           -
-          2896
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          case (Right(acc), (rank, rankIndex))
-        </td>
-      </tr><tr>
-        <td>
-          75
-        </td>
-        <td>
-          292
-        </td>
-        <td>
-          2945
-          -
-          2953
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          ++
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          acc ++ _
-        </td>
-      </tr><tr>
-        <td>
-          75
-        </td>
-        <td>
-          291
-        </td>
-        <td>
-          2910
-          -
-          2940
+          2902
         </td>
         <td>
           Apply
@@ -2588,92 +1906,164 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          parseRank(rank, 7 - rankIndex)
+        <td style="background: #AEF1AE">
+          parseRank(ranks(rankIndex), 7 - rankIndex)
         </td>
       </tr><tr>
         <td>
-          75
+          88
         </td>
         <td>
-          290
+          260
         </td>
         <td>
-          2910
+          2870
           -
-          2954
+          2886
         </td>
         <td>
           Apply
         </td>
         <td>
-          map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          parseRank(rank, 7 - rankIndex).map(acc ++ _)
-        </td>
-      </tr><tr>
-        <td>
-          76
-        </td>
-        <td>
-          279
-        </td>
-        <td>
-          2726
-          -
-          2976
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          map
+          apply
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          ranks.zipWithIndex.foldLeft[Either[String, Map[Pos, Piece]]](Right(Map.empty)) {\n        case (Left(error), _) =&gt; Left(error)\n        case (Right(acc), (rank, rankIndex)) =&gt;\n          parseRank(rank, 7 - rankIndex).map(acc ++ _)\n      }.map(Board(_))
+          ranks(rankIndex)
         </td>
       </tr><tr>
         <td>
-          76
+          89
         </td>
         <td>
-          293
+          262
         </td>
         <td>
-          2726
+          2946
           -
-          2976
+          2950
         </td>
         <td>
-          Apply
+          Ident
         </td>
         <td>
-          map
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          89
+        </td>
+        <td>
+          261
+        </td>
+        <td>
+          2919
+          -
+          2935
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          ranks.zipWithIndex.foldLeft[Either[String, Map[Pos, Piece]]](Right(Map.empty)) {\n        case (Left(error), _) =&gt; Left(error)\n        case (Right(acc), (rank, rankIndex)) =&gt;\n          parseRank(rank, 7 - rankIndex).map(acc ++ _)\n      }.map(Board(_))
+          case Left(error)
         </td>
       </tr><tr>
         <td>
-          78
+          90
         </td>
         <td>
-          336
+          263
         </td>
         <td>
-          2980
+          2968
           -
-          3001
+          2990
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Right(parsedRank)
+        </td>
+      </tr><tr>
+        <td>
+          91
+        </td>
+        <td>
+          264
+        </td>
+        <td>
+          3006
+          -
+          3027
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces ++= parsedRank
+        </td>
+      </tr><tr>
+        <td>
+          93
+        </td>
+        <td>
+          265
+        </td>
+        <td>
+          3057
+          -
+          3062
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Right
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Right
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          300
+        </td>
+        <td>
+          3081
+          -
+          3102
         </td>
         <td>
           DefDef
@@ -2689,39 +2079,39 @@
         </td>
       </tr><tr>
         <td>
-          79
+          97
         </td>
         <td>
-          298
+          268
         </td>
         <td>
-          3119
+          3195
           -
-          3124
+          3198
         </td>
         <td>
           Ident
         </td>
         <td>
-          Right
+          Map
         </td>
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          Right
+        <td style="background: #AEF1AE">
+          Map
         </td>
       </tr><tr>
         <td>
-          79
+          97
         </td>
         <td>
-          300
+          269
         </td>
         <td>
-          3129
+          3195
           -
-          3138
+          3204
         </td>
         <td>
           Select
@@ -2732,284 +2122,44 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           Map.empty
         </td>
       </tr><tr>
         <td>
-          79
+          99
         </td>
         <td>
-          297
+          270
         </td>
         <td>
-          3065
+          3253
           -
-          3069
+          3264
         </td>
         <td>
           Apply
         </td>
         <td>
-          augmentString
+          length
         </td>
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          rank
+        <td style="background: #AEF1AE">
+          rank.length
         </td>
       </tr><tr>
         <td>
-          79
+          100
         </td>
         <td>
-          299
-        </td>
-        <td>
-          3129
-          -
-          3132
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Map
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Map
-        </td>
-      </tr><tr>
-        <td>
-          79
-        </td>
-        <td>
-          296
-        </td>
-        <td>
-          3065
-          -
-          3840
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          foldLeft
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          rank.foldLeft[Either[String, (Int, Map[Pos, Piece])]](Right((0, Map.empty))) {\n      case (Left(error), _) =&gt; Left(error)\n      case (Right((col, acc)), char) =&gt;\n        if char.isDigit then\n          val emptySquares = char.asDigit\n          if emptySquares &lt; 1 || emptySquares &gt; 8 then Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)\n          else if col + emptySquares &gt; 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n          else Right((col + emptySquares, acc))\n        else\n          Piece.fromFenChar(char) match\n            case None =&gt; Left(s&quot;Invalid piece '$char' in FEN&quot;)\n            case Some(piece) =&gt;\n              if col &gt;= 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n              else Right((col + 1, acc + (Pos(col, row) -&gt; piece)))\n    }
-        </td>
-      </tr><tr>
-        <td>
-          80
-        </td>
-        <td>
-          301
-        </td>
-        <td>
-          3150
-          -
-          3171
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          case (Left(error), _)
-        </td>
-      </tr><tr>
-        <td>
-          80
-        </td>
-        <td>
-          302
-        </td>
-        <td>
-          3175
-          -
-          3179
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Left
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Left
-        </td>
-      </tr><tr>
-        <td>
-          81
-        </td>
-        <td>
-          303
-        </td>
-        <td>
-          3193
-          -
-          3223
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          case (Right((col, acc)), char)
-        </td>
-      </tr><tr>
-        <td>
-          82
-        </td>
-        <td>
-          304
-        </td>
-        <td>
-          3238
-          -
-          3242
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          charWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          char
-        </td>
-      </tr><tr>
-        <td>
-          82
-        </td>
-        <td>
-          305
-        </td>
-        <td>
-          3238
-          -
-          3250
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          isDigit
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          char.isDigit
-        </td>
-      </tr><tr>
-        <td>
-          83
-        </td>
-        <td>
-          307
+          271
         </td>
         <td>
           3285
           -
-          3297
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          asDigit
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          char.asDigit
-        </td>
-      </tr><tr>
-        <td>
-          83
-        </td>
-        <td>
-          306
-        </td>
-        <td>
-          3285
-          -
-          3289
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          charWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          char
-        </td>
-      </tr><tr>
-        <td>
-          83
-        </td>
-        <td>
-          317
-        </td>
-        <td>
-          3266
-          -
-          3542
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          val emptySquares = char.asDigit\n          if emptySquares &lt; 1 || emptySquares &gt; 8 then Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)\n          else if col + emptySquares &gt; 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n          else Right((col + emptySquares, acc))
-        </td>
-      </tr><tr>
-        <td>
-          84
-        </td>
-        <td>
-          310
-        </td>
-        <td>
-          3353
-          -
-          3403
+          3296
         </td>
         <td>
           Apply
@@ -3020,20 +2170,212 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)
+        <td style="background: #AEF1AE">
+          rank(index)
         </td>
       </tr><tr>
         <td>
-          84
+          100
         </td>
         <td>
-          309
+          272
         </td>
         <td>
-          3358
+          3285
           -
-          3402
+          3289
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rank
+        </td>
+      </tr><tr>
+        <td>
+          101
+        </td>
+        <td>
+          274
+        </td>
+        <td>
+          3306
+          -
+          3318
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isDigit
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char.isDigit
+        </td>
+      </tr><tr>
+        <td>
+          101
+        </td>
+        <td>
+          273
+        </td>
+        <td>
+          3306
+          -
+          3310
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          charWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          283
+        </td>
+        <td>
+          3332
+          -
+          3613
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          val emptySquares = char.asDigit\n        if emptySquares &lt; 1 || emptySquares &gt; 8 then\n          return Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)\n        if col + emptySquares &gt; 8 then\n          return Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n        col += emptySquares
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          276
+        </td>
+        <td>
+          3351
+          -
+          3363
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          asDigit
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char.asDigit
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          275
+        </td>
+        <td>
+          3351
+          -
+          3355
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          charWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char
+        </td>
+      </tr><tr>
+        <td>
+          104
+        </td>
+        <td>
+          277
+        </td>
+        <td>
+          3434
+          -
+          3438
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          104
+        </td>
+        <td>
+          279
+        </td>
+        <td>
+          3427
+          -
+          3484
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          return Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          104
+        </td>
+        <td>
+          278
+        </td>
+        <td>
+          3439
+          -
+          3483
         </td>
         <td>
           Apply
@@ -3049,15 +2391,15 @@
         </td>
       </tr><tr>
         <td>
-          84
+          106
         </td>
         <td>
-          308
+          280
         </td>
         <td>
-          3353
+          3541
           -
-          3357
+          3545
         </td>
         <td>
           Ident
@@ -3073,42 +2415,18 @@
         </td>
       </tr><tr>
         <td>
-          85
+          106
         </td>
         <td>
-          313
+          282
         </td>
         <td>
-          3450
+          3534
           -
-          3494
+          3585
         </td>
         <td>
-          Apply
-        </td>
-        <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          85
-        </td>
-        <td>
-          316
-        </td>
-        <td>
-          3419
-          -
-          3542
-        </td>
-        <td>
-          If
+          Return
         </td>
         <td>
           &lt;none&gt;
@@ -3116,20 +2434,20 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          if col + emptySquares &gt; 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n          else Right((col + emptySquares, acc))
+        <td style="background: #AEF1AE">
+          return Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)
         </td>
       </tr><tr>
         <td>
-          85
+          106
         </td>
         <td>
-          312
+          281
         </td>
         <td>
-          3455
+          3546
           -
-          3493
+          3584
         </td>
         <td>
           Apply
@@ -3140,116 +2458,20 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           s&quot;Rank '$rank' exceeds 8 files in FEN&quot;
         </td>
       </tr><tr>
         <td>
-          85
+          109
         </td>
         <td>
-          311
+          294
         </td>
         <td>
-          3450
+          3633
           -
-          3454
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Left
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Left
-        </td>
-      </tr><tr>
-        <td>
-          86
-        </td>
-        <td>
-          315
-        </td>
-        <td>
-          3510
-          -
-          3542
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Right((col + emptySquares, acc))
-        </td>
-      </tr><tr>
-        <td>
-          86
-        </td>
-        <td>
-          314
-        </td>
-        <td>
-          3510
-          -
-          3515
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Right
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Right
-        </td>
-      </tr><tr>
-        <td>
-          88
-        </td>
-        <td>
-          318
-        </td>
-        <td>
-          3566
-          -
-          3589
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          fromFenChar
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Piece.fromFenChar(char)
-        </td>
-      </tr><tr>
-        <td>
-          88
-        </td>
-        <td>
-          330
-        </td>
-        <td>
-          3566
-          -
-          3834
+          3933
         </td>
         <td>
           Match
@@ -3260,20 +2482,44 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          Piece.fromFenChar(char) match\n            case None =&gt; Left(s&quot;Invalid piece '$char' in FEN&quot;)\n            case Some(piece) =&gt;\n              if col &gt;= 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n              else Right((col + 1, acc + (Pos(col, row) -&gt; piece)))
+        <td style="background: #AEF1AE">
+          Piece.fromFenChar(char) match\n          case None =&gt;\n            return Left(s&quot;Invalid piece '$char' in FEN&quot;)\n          case Some(piece) =&gt;\n            if col &gt;= 8 then\n              return Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n            pieces += Pos(col, row) -&gt; piece\n            col += 1
         </td>
       </tr><tr>
         <td>
-          89
+          109
         </td>
         <td>
-          319
+          284
         </td>
         <td>
-          3608
+          3633
           -
-          3617
+          3656
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          fromFenChar
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Piece.fromFenChar(char)
+        </td>
+      </tr><tr>
+        <td>
+          110
+        </td>
+        <td>
+          285
+        </td>
+        <td>
+          3673
+          -
+          3682
         </td>
         <td>
           Block
@@ -3284,44 +2530,20 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           case None
         </td>
       </tr><tr>
         <td>
-          89
+          111
         </td>
         <td>
-          321
+          286
         </td>
         <td>
-          3626
+          3705
           -
-          3657
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          s
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          s&quot;Invalid piece '$char' in FEN&quot;
-        </td>
-      </tr><tr>
-        <td>
-          89
-        </td>
-        <td>
-          320
-        </td>
-        <td>
-          3621
-          -
-          3625
+          3709
         </td>
         <td>
           Ident
@@ -3337,15 +2559,39 @@
         </td>
       </tr><tr>
         <td>
-          90
+          111
         </td>
         <td>
-          322
+          287
         </td>
         <td>
-          3671
+          3710
           -
-          3687
+          3741
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          s
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s&quot;Invalid piece '$char' in FEN&quot;
+        </td>
+      </tr><tr>
+        <td>
+          112
+        </td>
+        <td>
+          288
+        </td>
+        <td>
+          3753
+          -
+          3769
         </td>
         <td>
           Block
@@ -3356,44 +2602,68 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           case Some(piece)
         </td>
       </tr><tr>
         <td>
-          91
+          114
         </td>
         <td>
-          325
+          289
         </td>
         <td>
-          3722
+          3823
           -
-          3766
+          3827
         </td>
         <td>
-          Apply
+          Ident
         </td>
         <td>
-          apply
+          Left
         </td>
         <td>
           
         </td>
         <td style="background: #F0ADAD">
-          Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)
+          Left
         </td>
       </tr><tr>
         <td>
-          91
+          114
         </td>
         <td>
-          324
+          291
         </td>
         <td>
-          3727
+          3816
           -
-          3765
+          3867
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          return Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)
+        </td>
+      </tr><tr>
+        <td>
+          114
+        </td>
+        <td>
+          290
+        </td>
+        <td>
+          3828
+          -
+          3866
         </td>
         <td>
           Apply
@@ -3409,63 +2679,15 @@
         </td>
       </tr><tr>
         <td>
-          91
+          115
         </td>
         <td>
-          323
+          292
         </td>
         <td>
-          3722
+          3880
           -
-          3726
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Left
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Left
-        </td>
-      </tr><tr>
-        <td>
-          92
-        </td>
-        <td>
-          328
-        </td>
-        <td>
-          3809
-          -
-          3831
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          -&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Pos(col, row) -&gt; piece
-        </td>
-      </tr><tr>
-        <td>
-          92
-        </td>
-        <td>
-          327
-        </td>
-        <td>
-          3802
-          -
-          3831
+          3912
         </td>
         <td>
           Apply
@@ -3476,92 +2698,44 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
-          acc + (Pos(col, row) -&gt; piece
+        <td style="background: #AEF1AE">
+          pieces += Pos(col, row) -&gt; piece
         </td>
       </tr><tr>
         <td>
-          92
+          115
         </td>
         <td>
-          326
+          293
         </td>
         <td>
-          3786
+          3890
           -
-          3791
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          Right
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Right
-        </td>
-      </tr><tr>
-        <td>
-          92
-        </td>
-        <td>
-          329
-        </td>
-        <td>
-          3786
-          -
-          3834
+          3912
         </td>
         <td>
           Apply
         </td>
         <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Right((col + 1, acc + (Pos(col, row) -&gt; piece)))
-        </td>
-      </tr><tr>
-        <td>
-          93
-        </td>
-        <td>
-          295
-        </td>
-        <td>
-          3065
-          -
-          3992
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          flatMap
+          -&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          rank.foldLeft[Either[String, (Int, Map[Pos, Piece])]](Right((0, Map.empty))) {\n      case (Left(error), _) =&gt; Left(error)\n      case (Right((col, acc)), char) =&gt;\n        if char.isDigit then\n          val emptySquares = char.asDigit\n          if emptySquares &lt; 1 || emptySquares &gt; 8 then Left(s&quot;Invalid empty-square count '$char' in FEN&quot;)\n          else if col + emptySquares &gt; 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n          else Right((col + emptySquares, acc))\n        else\n          Piece.fromFenChar(char) match\n            case None =&gt; Left(s&quot;Invalid piece '$char' in FEN&quot;)\n            case Some(piece) =&gt;\n              if col &gt;= 8 then Left(s&quot;Rank '$rank' exceeds 8 files in FEN&quot;)\n              else Right((col + 1, acc + (Pos(col, row) -&gt; piece)))\n    }.flatMap { (fileCount, pieces) =&gt;\n      if fileCount == 8 then Right(pieces)\n      else Left(s&quot;Rank '$rank' must describe exactly 8 files in FEN&quot;)\n    }
+          Pos(col, row) -&gt; piece
         </td>
       </tr><tr>
         <td>
-          94
+          118
         </td>
         <td>
-          331
+          295
         </td>
         <td>
-          3903
+          3972
           -
-          3908
+          3977
         </td>
         <td>
           Ident
@@ -3577,15 +2751,15 @@
         </td>
       </tr><tr>
         <td>
-          94
+          118
         </td>
         <td>
-          332
+          296
         </td>
         <td>
-          3903
+          3972
           -
-          3916
+          3985
         </td>
         <td>
           Apply
@@ -3601,15 +2775,15 @@
         </td>
       </tr><tr>
         <td>
-          95
+          119
         </td>
         <td>
-          334
+          298
         </td>
         <td>
-          3933
+          4000
           -
-          3985
+          4052
         </td>
         <td>
           Apply
@@ -3625,15 +2799,15 @@
         </td>
       </tr><tr>
         <td>
-          95
+          119
         </td>
         <td>
-          333
+          297
         </td>
         <td>
-          3928
+          3995
           -
-          3932
+          3999
         </td>
         <td>
           Ident
@@ -3649,15 +2823,15 @@
         </td>
       </tr><tr>
         <td>
-          95
+          119
         </td>
         <td>
-          335
+          299
         </td>
         <td>
-          3928
+          3995
           -
-          3986
+          4053
         </td>
         <td>
           Apply
@@ -3673,15 +2847,15 @@
         </td>
       </tr><tr>
         <td>
-          118
+          141
         </td>
         <td>
-          348
+          312
         </td>
         <td>
-          4789
+          4850
           -
-          4789
+          4850
         </td>
         <td>
           DefDef
@@ -3697,15 +2871,15 @@
         </td>
       </tr><tr>
         <td>
-          118
+          141
         </td>
         <td>
-          347
+          311
         </td>
         <td>
-          4789
+          4850
           -
-          4792
+          4853
         </td>
         <td>
           Ident
@@ -3721,15 +2895,15 @@
         </td>
       </tr><tr>
         <td>
-          120
+          143
         </td>
         <td>
-          337
+          301
         </td>
         <td>
-          4879
+          4940
           -
-          4894
+          4955
         </td>
         <td>
           Apply
@@ -3745,15 +2919,15 @@
         </td>
       </tr><tr>
         <td>
-          120
+          143
         </td>
         <td>
-          338
+          302
         </td>
         <td>
-          4835
+          4896
           -
-          4850
+          4911
         </td>
         <td>
           DefDef
@@ -3769,15 +2943,15 @@
         </td>
       </tr><tr>
         <td>
-          122
+          145
         </td>
         <td>
-          346
+          310
         </td>
         <td>
-          4899
+          4960
           -
-          4908
+          4969
         </td>
         <td>
           DefDef
@@ -3793,15 +2967,15 @@
         </td>
       </tr><tr>
         <td>
-          123
+          146
         </td>
         <td>
-          340
+          304
         </td>
         <td>
-          4939
+          5000
           -
-          4973
+          5034
         </td>
         <td>
           Apply
@@ -3817,15 +2991,15 @@
         </td>
       </tr><tr>
         <td>
-          123
+          146
         </td>
         <td>
-          339
+          303
         </td>
         <td>
-          4939
+          5000
           -
-          4988
+          5049
         </td>
         <td>
           Apply
@@ -3841,15 +3015,15 @@
         </td>
       </tr><tr>
         <td>
-          123
+          146
         </td>
         <td>
-          341
+          305
         </td>
         <td>
-          4959
+          5020
           -
-          4972
+          5033
         </td>
         <td>
           Select
@@ -3865,15 +3039,15 @@
         </td>
       </tr><tr>
         <td>
-          124
+          147
         </td>
         <td>
-          343
+          307
         </td>
         <td>
-          4997
+          5058
           -
-          5017
+          5078
         </td>
         <td>
           Select
@@ -3889,15 +3063,15 @@
         </td>
       </tr><tr>
         <td>
-          124
+          147
         </td>
         <td>
-          345
+          309
         </td>
         <td>
-          5058
+          5119
           -
-          5078
+          5139
         </td>
         <td>
           Select
@@ -3913,15 +3087,15 @@
         </td>
       </tr><tr>
         <td>
-          124
+          147
         </td>
         <td>
-          342
+          306
         </td>
         <td>
-          4993
+          5054
           -
-          5122
+          5183
         </td>
         <td>
           Apply
@@ -3937,15 +3111,15 @@
         </td>
       </tr><tr>
         <td>
-          124
+          147
         </td>
         <td>
-          344
+          308
         </td>
         <td>
-          5021
+          5082
           -
-          5054
+          5115
         </td>
         <td>
           Apply
@@ -3961,15 +3135,15 @@
         </td>
       </tr><tr>
         <td>
-          129
+          152
         </td>
         <td>
-          355
+          319
         </td>
         <td>
-          5231
+          5292
           -
-          5242
+          5303
         </td>
         <td>
           DefDef
@@ -3985,15 +3159,15 @@
         </td>
       </tr><tr>
         <td>
-          130
+          153
         </td>
         <td>
-          349
+          313
         </td>
         <td>
-          5289
+          5350
           -
-          5302
+          5363
         </td>
         <td>
           Select
@@ -4009,15 +3183,15 @@
         </td>
       </tr><tr>
         <td>
-          132
+          155
         </td>
         <td>
-          352
+          316
         </td>
         <td>
-          5361
+          5422
           -
-          5375
+          5436
         </td>
         <td>
           Select
@@ -4033,15 +3207,15 @@
         </td>
       </tr><tr>
         <td>
-          132
+          155
         </td>
         <td>
-          351
+          315
         </td>
         <td>
-          5361
+          5422
           -
-          5375
+          5436
         </td>
         <td>
           Select
@@ -4057,39 +3231,15 @@
         </td>
       </tr><tr>
         <td>
-          132
+          155
         </td>
         <td>
-          350
+          317
         </td>
         <td>
-          5361
+          5422
           -
-          5375
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          $lessinit$greater$default$1
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          CastlingRights
-        </td>
-      </tr><tr>
-        <td>
-          132
-        </td>
-        <td>
-          353
-        </td>
-        <td>
-          5361
-          -
-          5375
+          5436
         </td>
         <td>
           Select
@@ -4105,15 +3255,39 @@
         </td>
       </tr><tr>
         <td>
-          136
+          155
         </td>
         <td>
-          354
+          314
         </td>
         <td>
-          5481
+          5422
           -
-          5484
+          5436
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          $lessinit$greater$default$1
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          CastlingRights
+        </td>
+      </tr><tr>
+        <td>
+          159
+        </td>
+        <td>
+          318
+        </td>
+        <td>
+          5542
+          -
+          5545
         </td>
         <td>
           Ident
@@ -4129,15 +3303,15 @@
         </td>
       </tr><tr>
         <td>
-          139
+          162
         </td>
         <td>
-          375
+          351
         </td>
         <td>
-          5492
+          5553
           -
-          5503
+          5564
         </td>
         <td>
           DefDef
@@ -4153,15 +3327,15 @@
         </td>
       </tr><tr>
         <td>
-          140
+          163
         </td>
         <td>
-          357
+          321
         </td>
         <td>
-          5550
+          5611
           -
-          5558
+          5619
         </td>
         <td>
           Apply
@@ -4177,15 +3351,15 @@
         </td>
       </tr><tr>
         <td>
-          140
+          163
         </td>
         <td>
-          356
+          320
         </td>
         <td>
-          5550
+          5611
           -
-          5572
+          5633
         </td>
         <td>
           Apply
@@ -4201,15 +3375,15 @@
         </td>
       </tr><tr>
         <td>
-          141
+          164
         </td>
         <td>
-          358
+          322
         </td>
         <td>
-          5585
+          5646
           -
-          5655
+          5716
         </td>
         <td>
           Block
@@ -4225,39 +3399,15 @@
         </td>
       </tr><tr>
         <td>
-          142
+          165
         </td>
         <td>
-          359
+          323
         </td>
         <td>
-          5667
+          5728
           -
-          6344
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          flatMap
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          for\n          board &lt;- Board.fromFenPlacement(placement)\n          activeColor &lt;- colorFromFen(active)\n          castlingRights &lt;- CastlingRights.fromFen(castling).toRight(&quot;Invalid castling rights in FEN&quot;)\n          enPassantTarget &lt;- parseEnPassant(enPassant)\n          halfMoveClock &lt;- parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)\n          fullMoveNumber &lt;- parsePositiveInt(fullMove, &quot;fullmove number&quot;)\n        yield GameState(\n          board = board,\n          activeColor = activeColor,\n          castlingRights = castlingRights,\n          enPassantTarget = enPassantTarget,\n          halfMoveClock = halfMoveClock,\n          fullMoveNumber = fullMoveNumber\n        )
-        </td>
-      </tr><tr>
-        <td>
-          143
-        </td>
-        <td>
-          360
-        </td>
-        <td>
-          5690
-          -
-          5723
+          5761
         </td>
         <td>
           Apply
@@ -4268,44 +3418,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           Board.fromFenPlacement(placement)
         </td>
       </tr><tr>
         <td>
-          144
+          166
         </td>
         <td>
-          361
+          325
         </td>
         <td>
-          5734
+          5798
           -
-          6344
+          5802
         </td>
         <td>
-          Apply
+          Ident
         </td>
         <td>
-          flatMap
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          166
+        </td>
+        <td>
+          324
+        </td>
+        <td>
+          5778
+          -
+          5794
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          case Left(error)
+        </td>
+      </tr><tr>
+        <td>
+          167
+        </td>
+        <td>
+          326
+        </td>
+        <td>
+          5820
+          -
+          5837
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          activeColor &lt;- colorFromFen(active)\n          castlingRights &lt;- CastlingRights.fromFen(castling).toRight(&quot;Invalid castling rights in FEN&quot;)\n          enPassantTarget &lt;- parseEnPassant(enPassant)\n          halfMoveClock &lt;- parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)\n          fullMoveNumber &lt;- parsePositiveInt(fullMove, &quot;fullmove number&quot;)\n        yield GameState(\n          board = board,\n          activeColor = activeColor,\n          castlingRights = castlingRights,\n          enPassantTarget = enPassantTarget,\n          halfMoveClock = halfMoveClock,\n          fullMoveNumber = fullMoveNumber\n        )
+          case Right(board)
         </td>
       </tr><tr>
         <td>
-          144
+          168
         </td>
         <td>
-          362
+          327
         </td>
         <td>
-          5749
+          5853
           -
-          5769
+          5873
         </td>
         <td>
           Apply
@@ -4316,68 +3514,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           colorFromFen(active)
         </td>
       </tr><tr>
         <td>
-          145
+          169
         </td>
         <td>
-          364
+          328
         </td>
         <td>
-          5798
+          5894
           -
-          5872
+          5910
         </td>
         <td>
-          Apply
+          Block
         </td>
         <td>
-          toRight
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          CastlingRights.fromFen(castling).toRight(&quot;Invalid castling rights in FEN&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          145
-        </td>
-        <td>
-          363
-        </td>
-        <td>
-          5780
-          -
-          6344
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          flatMap
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          castlingRights &lt;- CastlingRights.fromFen(castling).toRight(&quot;Invalid castling rights in FEN&quot;)\n          enPassantTarget &lt;- parseEnPassant(enPassant)\n          halfMoveClock &lt;- parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)\n          fullMoveNumber &lt;- parsePositiveInt(fullMove, &quot;fullmove number&quot;)\n        yield GameState(\n          board = board,\n          activeColor = activeColor,\n          castlingRights = castlingRights,\n          enPassantTarget = enPassantTarget,\n          halfMoveClock = halfMoveClock,\n          fullMoveNumber = fullMoveNumber\n        )
+          case Left(error)
         </td>
       </tr><tr>
         <td>
-          145
+          169
         </td>
         <td>
-          365
+          329
         </td>
         <td>
-          5798
+          5914
           -
-          5830
+          5918
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          170
+        </td>
+        <td>
+          330
+        </td>
+        <td>
+          5940
+          -
+          5963
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Right(activeColor)
+        </td>
+      </tr><tr>
+        <td>
+          171
+        </td>
+        <td>
+          331
+        </td>
+        <td>
+          5983
+          -
+          6015
         </td>
         <td>
           Apply
@@ -4388,20 +3610,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           CastlingRights.fromFen(castling)
         </td>
       </tr><tr>
         <td>
-          146
+          172
         </td>
         <td>
-          367
+          333
         </td>
         <td>
-          5902
+          6053
           -
-          5927
+          6057
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          172
+        </td>
+        <td>
+          332
+        </td>
+        <td>
+          6040
+          -
+          6049
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case None
+        </td>
+      </tr><tr>
+        <td>
+          173
+        </td>
+        <td>
+          334
+        </td>
+        <td>
+          6110
+          -
+          6135
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Some(castlingRights)
+        </td>
+      </tr><tr>
+        <td>
+          174
+        </td>
+        <td>
+          335
+        </td>
+        <td>
+          6159
+          -
+          6184
         </td>
         <td>
           Apply
@@ -4412,44 +3706,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           parseEnPassant(enPassant)
         </td>
       </tr><tr>
         <td>
-          146
+          175
         </td>
         <td>
-          366
+          337
         </td>
         <td>
-          5883
+          6233
           -
-          6344
+          6237
         </td>
         <td>
-          Apply
+          Ident
         </td>
         <td>
-          flatMap
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          175
+        </td>
+        <td>
+          336
+        </td>
+        <td>
+          6213
+          -
+          6229
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          enPassantTarget &lt;- parseEnPassant(enPassant)\n          halfMoveClock &lt;- parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)\n          fullMoveNumber &lt;- parsePositiveInt(fullMove, &quot;fullmove number&quot;)\n        yield GameState(\n          board = board,\n          activeColor = activeColor,\n          castlingRights = castlingRights,\n          enPassantTarget = enPassantTarget,\n          halfMoveClock = halfMoveClock,\n          fullMoveNumber = fullMoveNumber\n        )
+          case Left(error)
         </td>
       </tr><tr>
         <td>
-          147
+          176
         </td>
         <td>
-          369
+          338
         </td>
         <td>
-          5955
+          6267
           -
-          6002
+          6294
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Right(enPassantTarget)
+        </td>
+      </tr><tr>
+        <td>
+          177
+        </td>
+        <td>
+          339
+        </td>
+        <td>
+          6322
+          -
+          6369
         </td>
         <td>
           Apply
@@ -4460,68 +3802,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)
         </td>
       </tr><tr>
         <td>
-          147
+          178
         </td>
         <td>
-          368
+          340
         </td>
         <td>
-          5938
+          6402
           -
-          6344
+          6418
         </td>
         <td>
-          Apply
+          Block
         </td>
         <td>
-          flatMap
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          halfMoveClock &lt;- parseNonNegativeInt(halfMove, &quot;halfmove clock&quot;)\n          fullMoveNumber &lt;- parsePositiveInt(fullMove, &quot;fullmove number&quot;)\n        yield GameState(\n          board = board,\n          activeColor = activeColor,\n          castlingRights = castlingRights,\n          enPassantTarget = enPassantTarget,\n          halfMoveClock = halfMoveClock,\n          fullMoveNumber = fullMoveNumber\n        )
+          case Left(error)
         </td>
       </tr><tr>
         <td>
-          148
+          178
         </td>
         <td>
-          370
+          341
         </td>
         <td>
-          6013
+          6422
           -
-          6344
+          6426
         </td>
         <td>
-          Apply
+          Ident
         </td>
         <td>
-          map
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          179
+        </td>
+        <td>
+          342
+        </td>
+        <td>
+          6460
+          -
+          6485
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          fullMoveNumber &lt;- parsePositiveInt(fullMove, &quot;fullmove number&quot;)\n        yield GameState(\n          board = board,\n          activeColor = activeColor,\n          castlingRights = castlingRights,\n          enPassantTarget = enPassantTarget,\n          halfMoveClock = halfMoveClock,\n          fullMoveNumber = fullMoveNumber\n        )
+          case Right(halfMoveClock)
         </td>
       </tr><tr>
         <td>
-          148
+          180
         </td>
         <td>
-          371
+          343
         </td>
         <td>
-          6031
+          6517
           -
-          6076
+          6562
         </td>
         <td>
           Apply
@@ -4532,20 +3898,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           parsePositiveInt(fullMove, &quot;fullmove number&quot;)
         </td>
       </tr><tr>
         <td>
-          149
+          181
         </td>
         <td>
-          372
+          345
         </td>
         <td>
-          6091
+          6619
           -
-          6100
+          6623
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
+        </td>
+      </tr><tr>
+        <td>
+          181
+        </td>
+        <td>
+          344
+        </td>
+        <td>
+          6599
+          -
+          6615
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Left(error)
+        </td>
+      </tr><tr>
+        <td>
+          182
+        </td>
+        <td>
+          346
+        </td>
+        <td>
+          6661
+          -
+          6687
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Right(fullMoveNumber)
+        </td>
+      </tr><tr>
+        <td>
+          183
+        </td>
+        <td>
+          348
+        </td>
+        <td>
+          6729
+          -
+          6738
         </td>
         <td>
           Select
@@ -4561,15 +3999,39 @@
         </td>
       </tr><tr>
         <td>
-          157
+          183
         </td>
         <td>
-          373
+          347
         </td>
         <td>
-          6351
+          6723
           -
-          6357
+          6728
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Right
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Right
+        </td>
+      </tr><tr>
+        <td>
+          191
+        </td>
+        <td>
+          349
+        </td>
+        <td>
+          7158
+          -
+          7164
         </td>
         <td>
           Block
@@ -4585,15 +4047,15 @@
         </td>
       </tr><tr>
         <td>
-          157
+          191
         </td>
         <td>
-          374
+          350
         </td>
         <td>
-          6361
+          7168
           -
-          6365
+          7172
         </td>
         <td>
           Ident
@@ -4609,15 +4071,15 @@
         </td>
       </tr><tr>
         <td>
-          159
+          193
         </td>
         <td>
-          378
+          354
         </td>
         <td>
-          6414
+          7221
           -
-          6443
+          7250
         </td>
         <td>
           DefDef
@@ -4633,15 +4095,15 @@
         </td>
       </tr><tr>
         <td>
-          160
+          194
         </td>
         <td>
-          376
+          352
         </td>
         <td>
-          6484
+          7291
           -
-          6500
+          7307
         </td>
         <td>
           Block
@@ -4657,15 +4119,15 @@
         </td>
       </tr><tr>
         <td>
-          161
+          195
         </td>
         <td>
-          377
+          353
         </td>
         <td>
-          6512
+          7319
           -
-          6528
+          7335
         </td>
         <td>
           Block
@@ -4681,15 +4143,15 @@
         </td>
       </tr><tr>
         <td>
-          163
+          197
         </td>
         <td>
-          385
+          361
         </td>
         <td>
-          6539
+          7346
           -
-          6563
+          7370
         </td>
         <td>
           DefDef
@@ -4705,15 +4167,15 @@
         </td>
       </tr><tr>
         <td>
-          164
+          198
         </td>
         <td>
-          379
+          355
         </td>
         <td>
-          6620
+          7427
           -
-          6628
+          7435
         </td>
         <td>
           Block
@@ -4729,15 +4191,15 @@
         </td>
       </tr><tr>
         <td>
-          164
+          198
         </td>
         <td>
-          380
+          356
         </td>
         <td>
-          6632
+          7439
           -
-          6637
+          7444
         </td>
         <td>
           Ident
@@ -4753,15 +4215,15 @@
         </td>
       </tr><tr>
         <td>
-          165
+          199
         </td>
         <td>
-          382
+          358
         </td>
         <td>
-          6667
+          7474
           -
-          6672
+          7479
         </td>
         <td>
           Ident
@@ -4777,15 +4239,15 @@
         </td>
       </tr><tr>
         <td>
-          165
+          199
         </td>
         <td>
-          381
+          357
         </td>
         <td>
-          6655
+          7462
           -
-          6663
+          7470
         </td>
         <td>
           Block
@@ -4801,15 +4263,15 @@
         </td>
       </tr><tr>
         <td>
-          166
+          200
         </td>
         <td>
-          384
+          360
         </td>
         <td>
-          6702
+          7509
           -
-          6706
+          7513
         </td>
         <td>
           Ident
@@ -4825,15 +4287,15 @@
         </td>
       </tr><tr>
         <td>
-          166
+          200
         </td>
         <td>
-          383
+          359
         </td>
         <td>
-          6690
+          7497
           -
-          6696
+          7503
         </td>
         <td>
           Block
@@ -4849,15 +4311,15 @@
         </td>
       </tr><tr>
         <td>
-          168
+          202
         </td>
         <td>
-          396
+          372
         </td>
         <td>
-          6741
+          7548
           -
-          6767
+          7574
         </td>
         <td>
           DefDef
@@ -4873,15 +4335,15 @@
         </td>
       </tr><tr>
         <td>
-          169
+          203
         </td>
         <td>
-          387
+          363
         </td>
         <td>
-          6839
+          7646
           -
-          6850
+          7657
         </td>
         <td>
           Apply
@@ -4897,15 +4359,15 @@
         </td>
       </tr><tr>
         <td>
-          169
+          203
         </td>
         <td>
-          386
+          362
         </td>
         <td>
-          6839
+          7646
           -
-          6844
+          7651
         </td>
         <td>
           Ident
@@ -4921,15 +4383,15 @@
         </td>
       </tr><tr>
         <td>
-          171
+          205
         </td>
         <td>
-          388
+          364
         </td>
         <td>
-          6866
+          7673
           -
-          6890
+          7697
         </td>
         <td>
           Apply
@@ -4945,15 +4407,15 @@
         </td>
       </tr><tr>
         <td>
-          171
+          205
         </td>
         <td>
-          395
+          371
         </td>
         <td>
-          6866
+          7673
           -
-          7113
+          7920
         </td>
         <td>
           Match
@@ -4969,15 +4431,15 @@
         </td>
       </tr><tr>
         <td>
-          172
+          206
         </td>
         <td>
-          390
+          366
         </td>
         <td>
-          6955
+          7762
           -
-          6960
+          7767
         </td>
         <td>
           Ident
@@ -4993,15 +4455,15 @@
         </td>
       </tr><tr>
         <td>
-          172
+          206
         </td>
         <td>
-          389
+          365
         </td>
         <td>
-          6905
+          7712
           -
-          6951
+          7758
         </td>
         <td>
           Block
@@ -5017,15 +4479,15 @@
         </td>
       </tr><tr>
         <td>
-          173
+          207
         </td>
         <td>
-          391
+          367
         </td>
         <td>
-          6980
+          7787
           -
-          6992
+          7799
         </td>
         <td>
           Block
@@ -5041,15 +4503,15 @@
         </td>
       </tr><tr>
         <td>
-          173
+          207
         </td>
         <td>
-          392
+          368
         </td>
         <td>
-          6996
+          7803
           -
-          7000
+          7807
         </td>
         <td>
           Ident
@@ -5065,15 +4527,15 @@
         </td>
       </tr><tr>
         <td>
-          174
+          208
         </td>
         <td>
-          394
+          370
         </td>
         <td>
-          7066
+          7873
           -
-          7070
+          7877
         </td>
         <td>
           Ident
@@ -5089,15 +4551,15 @@
         </td>
       </tr><tr>
         <td>
-          174
+          208
         </td>
         <td>
-          393
+          369
         </td>
         <td>
-          7050
+          7857
           -
-          7059
+          7866
         </td>
         <td>
           Block
@@ -5113,15 +4575,15 @@
         </td>
       </tr><tr>
         <td>
-          176
+          210
         </td>
         <td>
-          402
+          380
         </td>
         <td>
-          7117
+          7924
           -
-          7148
+          7955
         </td>
         <td>
           DefDef
@@ -5137,63 +4599,15 @@
         </td>
       </tr><tr>
         <td>
-          177
+          211
         </td>
         <td>
-          400
+          373
         </td>
         <td>
-          7206
+          8013
           -
-          7223
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          toIntOption
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          value.toIntOption
-        </td>
-      </tr><tr>
-        <td>
-          177
-        </td>
-        <td>
-          397
-        </td>
-        <td>
-          7206
-          -
-          7272
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          toRight
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value.toIntOption.filter(_ &gt;= 0).toRight(s&quot;Invalid $label in FEN&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          177
-        </td>
-        <td>
-          399
-        </td>
-        <td>
-          7206
-          -
-          7211
+          8018
         </td>
         <td>
           Apply
@@ -5204,20 +4618,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           value
         </td>
       </tr><tr>
         <td>
-          177
+          211
         </td>
         <td>
-          401
+          374
         </td>
         <td>
-          7247
+          8013
           -
-          7271
+          8030
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toIntOption
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.toIntOption
+        </td>
+      </tr><tr>
+        <td>
+          212
+        </td>
+        <td>
+          376
+        </td>
+        <td>
+          8079
+          -
+          8084
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Right
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Right
+        </td>
+      </tr><tr>
+        <td>
+          212
+        </td>
+        <td>
+          375
+        </td>
+        <td>
+          8043
+          -
+          8075
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Some(number) if number &gt;= 0
+        </td>
+      </tr><tr>
+        <td>
+          213
+        </td>
+        <td>
+          379
+        </td>
+        <td>
+          8140
+          -
+          8164
         </td>
         <td>
           Apply
@@ -5233,39 +4719,63 @@
         </td>
       </tr><tr>
         <td>
-          177
+          213
         </td>
         <td>
-          398
+          378
         </td>
         <td>
-          7206
+          8135
           -
-          7238
+          8139
         </td>
         <td>
-          Apply
+          Ident
         </td>
         <td>
-          filter
+          Left
         </td>
         <td>
           
         </td>
         <td style="background: #F0ADAD">
-          value.toIntOption.filter(_ &gt;= 0)
+          Left
         </td>
       </tr><tr>
         <td>
-          179
+          213
         </td>
         <td>
-          408
+          377
         </td>
         <td>
-          7276
+          8099
           -
-          7304
+          8105
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case _
+        </td>
+      </tr><tr>
+        <td>
+          215
+        </td>
+        <td>
+          388
+        </td>
+        <td>
+          8169
+          -
+          8197
         </td>
         <td>
           DefDef
@@ -5281,15 +4791,15 @@
         </td>
       </tr><tr>
         <td>
-          180
+          216
         </td>
         <td>
-          406
+          382
         </td>
         <td>
-          7362
+          8255
           -
-          7379
+          8272
         </td>
         <td>
           Select
@@ -5300,44 +4810,20 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           value.toIntOption
         </td>
       </tr><tr>
         <td>
-          180
+          216
         </td>
         <td>
-          403
+          381
         </td>
         <td>
-          7362
+          8255
           -
-          7427
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          toRight
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value.toIntOption.filter(_ &gt; 0).toRight(s&quot;Invalid $label in FEN&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          180
-        </td>
-        <td>
-          405
-        </td>
-        <td>
-          7362
-          -
-          7367
+          8260
         </td>
         <td>
           Apply
@@ -5348,44 +4834,92 @@
         <td>
           
         </td>
-        <td style="background: #F0ADAD">
+        <td style="background: #AEF1AE">
           value
         </td>
       </tr><tr>
         <td>
-          180
+          217
         </td>
         <td>
-          404
+          384
         </td>
         <td>
-          7362
+          8320
           -
-          7393
+          8325
         </td>
         <td>
-          Apply
+          Ident
         </td>
         <td>
-          filter
+          Right
         </td>
         <td>
           
         </td>
         <td style="background: #F0ADAD">
-          value.toIntOption.filter(_ &gt; 0)
+          Right
         </td>
       </tr><tr>
         <td>
-          180
+          217
         </td>
         <td>
-          407
+          383
         </td>
         <td>
-          7402
+          8285
           -
-          7426
+          8316
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Some(number) if number &gt; 0
+        </td>
+      </tr><tr>
+        <td>
+          218
+        </td>
+        <td>
+          385
+        </td>
+        <td>
+          8340
+          -
+          8346
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case _
+        </td>
+      </tr><tr>
+        <td>
+          218
+        </td>
+        <td>
+          387
+        </td>
+        <td>
+          8380
+          -
+          8404
         </td>
         <td>
           Apply
@@ -5398,6 +4932,30 @@
         </td>
         <td style="background: #AEF1AE">
           s&quot;Invalid $label in FEN&quot;
+        </td>
+      </tr><tr>
+        <td>
+          218
+        </td>
+        <td>
+          386
+        </td>
+        <td>
+          8375
+          -
+          8379
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Left
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          Left
         </td>
       </tr>
     </table>

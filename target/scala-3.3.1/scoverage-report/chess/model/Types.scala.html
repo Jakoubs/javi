@@ -24,145 +24,121 @@
           <div class="tab-pane active" id="codegrid">
             <pre style='font-size: 12pt; font-family: courier, monospace;'>1 <span style=''>package chess.model
 </span>2 <span style=''>
-</span>3 <span style=''>// ─── Colour ──────────────────────────────────────────────────────────────────
-</span>4 <span style=''>
-</span>5 <span style=''>enum Color:
-</span>6 <span style=''>  case White, Black
-</span>7 <span style=''>
-</span>8 <span style=''>  </span><span style='background: #AEF1AE'>def opposite</span><span style=''>: Color = this match
-</span>9 <span style=''>    </span><span style='background: #AEF1AE'>case White</span><span style=''> =&gt; Black
-</span>10 <span style=''>    </span><span style='background: #AEF1AE'>case Black</span><span style=''> =&gt; White
-</span>11 <span style=''>
-</span>12 <span style=''>// ─── Piece types ─────────────────────────────────────────────────────────────
-</span>13 <span style=''>
-</span>14 <span style=''>enum PieceType:
-</span>15 <span style=''>  case King, Queen, Rook, Bishop, Knight, Pawn
-</span>16 <span style=''>
-</span>17 <span style=''>// ─── Piece ───────────────────────────────────────────────────────────────────
-</span>18 <span style=''>
-</span>19 <span style=''>case class Piece(color: Color, pieceType: PieceType):
-</span>20 <span style=''>  </span><span style='background: #AEF1AE'>def symbol</span><span style=''>: String = (color, pieceType) match
-</span>21 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.King)</span><span style=''>   =&gt; &quot;♔&quot;
-</span>22 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Queen)</span><span style=''>  =&gt; &quot;♕&quot;
-</span>23 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Rook)</span><span style=''>   =&gt; &quot;♖&quot;
-</span>24 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Bishop)</span><span style=''> =&gt; &quot;♗&quot;
-</span>25 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Knight)</span><span style=''> =&gt; &quot;♘&quot;
-</span>26 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Pawn)</span><span style=''>   =&gt; &quot;♙&quot;
-</span>27 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.King)</span><span style=''>   =&gt; &quot;♚&quot;
-</span>28 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Queen)</span><span style=''>  =&gt; &quot;♛&quot;
-</span>29 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Rook)</span><span style=''>   =&gt; &quot;♜&quot;
-</span>30 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Bishop)</span><span style=''> =&gt; &quot;♝&quot;
-</span>31 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Knight)</span><span style=''> =&gt; &quot;♞&quot;
-</span>32 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Pawn)</span><span style=''>   =&gt; &quot;♟&quot;
-</span>33 <span style=''>
-</span>34 <span style=''>  </span><span style='background: #AEF1AE'>def letter</span><span style=''>: String = (color, pieceType) match
-</span>35 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.King)</span><span style=''>   =&gt; &quot;K&quot;
-</span>36 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Queen)</span><span style=''>  =&gt; &quot;Q&quot;
-</span>37 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Rook)</span><span style=''>   =&gt; &quot;R&quot;
-</span>38 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Bishop)</span><span style=''> =&gt; &quot;B&quot;
-</span>39 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Knight)</span><span style=''> =&gt; &quot;N&quot;
-</span>40 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Pawn)</span><span style=''>   =&gt; &quot;P&quot;
-</span>41 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.King)</span><span style=''>   =&gt; &quot;k&quot;
-</span>42 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Queen)</span><span style=''>  =&gt; &quot;q&quot;
-</span>43 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Rook)</span><span style=''>   =&gt; &quot;r&quot;
-</span>44 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Bishop)</span><span style=''> =&gt; &quot;b&quot;
-</span>45 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Knight)</span><span style=''> =&gt; &quot;n&quot;
-</span>46 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Pawn)</span><span style=''>   =&gt; &quot;p&quot;
-</span>47 <span style=''>
-</span>48 <span style=''>object Piece:
-</span>49 <span style=''>  </span><span style='background: #AEF1AE'>def fromFenChar</span><span style=''>(char: Char): Option[Piece] =
-</span>50 <span style=''>    val color =
-</span>51 <span style=''>      if </span><span style='background: #AEF1AE'>char.isUpper</span><span style=''> then </span><span style='background: #AEF1AE'>Color.White</span><span style=''>
-</span>52 <span style=''>      else </span><span style='background: #AEF1AE'>if char.isLower then Color.Black
-</span>53 <span style=''></span><span style='background: #AEF1AE'>      else return None</span><span style=''>
-</span>54 <span style=''>
-</span>55 <span style=''>    val pieceType = </span><span style='background: #AEF1AE'>char.toLower</span><span style=''> match
-</span>56 <span style=''>      </span><span style='background: #AEF1AE'>case 'k'</span><span style=''> =&gt; Some(PieceType.King)
-</span>57 <span style=''>      </span><span style='background: #AEF1AE'>case 'q'</span><span style=''> =&gt; Some(PieceType.Queen)
-</span>58 <span style=''>      </span><span style='background: #AEF1AE'>case 'r'</span><span style=''> =&gt; Some(PieceType.Rook)
-</span>59 <span style=''>      </span><span style='background: #AEF1AE'>case 'b'</span><span style=''> =&gt; Some(PieceType.Bishop)
-</span>60 <span style=''>      </span><span style='background: #AEF1AE'>case 'n'</span><span style=''> =&gt; Some(PieceType.Knight)
-</span>61 <span style=''>      </span><span style='background: #AEF1AE'>case 'p'</span><span style=''> =&gt; Some(PieceType.Pawn)
-</span>62 <span style=''>      </span><span style='background: #AEF1AE'>case _</span><span style=''>   =&gt; None
-</span>63 <span style=''>
-</span>64 <span style=''>    </span><span style='background: #AEF1AE'>pieceType.map(Piece(color, _))</span><span style=''>
-</span>65 <span style=''>
-</span>66 <span style=''>// ─── Position ────────────────────────────────────────────────────────────────
-</span>67 <span style=''>
-</span>68 <span style=''>/** Zero-based (col, row) where (0,0) = a1, (7,7) = h8 */
-</span>69 <span style=''>case class Pos(col: Int, row: Int):
-</span>70 <span style=''>  </span><span style='background: #AEF1AE'>def isValid</span><span style=''>: Boolean = col &gt;= 0 &amp;&amp; col &lt;= 7 &amp;&amp; row &gt;= 0 &amp;&amp; row &lt;= 7
-</span>71 <span style=''>
-</span>72 <span style=''>  </span><span style='background: #AEF1AE'>def +</span><span style=''>(dc: Int, dr: Int): Pos = Pos(col + dc, row + dr)
-</span>73 <span style=''>
-</span>74 <span style=''>  /** Algebraic notation, e.g. &quot;e4&quot; */
-</span>75 <span style=''>  </span><span style='background: #AEF1AE'>def toAlgebraic</span><span style=''>: String = </span><span style='background: #AEF1AE'>s&quot;${('a' + col).toChar}${row + 1}&quot;</span><span style=''>
+</span>3 <span style=''>enum Color:
+</span>4 <span style=''>  case White, Black
+</span>5 <span style=''>
+</span>6 <span style=''>  </span><span style='background: #AEF1AE'>def opposite</span><span style=''>: Color = this match
+</span>7 <span style=''>    </span><span style='background: #AEF1AE'>case White</span><span style=''> =&gt; Black
+</span>8 <span style=''>    </span><span style='background: #AEF1AE'>case Black</span><span style=''> =&gt; White
+</span>9 <span style=''>
+</span>10 <span style=''>enum PieceType:
+</span>11 <span style=''>  case King, Queen, Rook, Bishop, Knight, Pawn
+</span>12 <span style=''>
+</span>13 <span style=''>case class Piece(color: Color, pieceType: PieceType):
+</span>14 <span style=''>  </span><span style='background: #AEF1AE'>def symbol</span><span style=''>: String = pieceType match
+</span>15 <span style=''>    </span><span style='background: #AEF1AE'>case PieceType.King</span><span style=''>   =&gt; &quot;♚&quot;
+</span>16 <span style=''>    </span><span style='background: #AEF1AE'>case PieceType.Queen</span><span style=''>  =&gt; &quot;♛&quot;
+</span>17 <span style=''>    </span><span style='background: #AEF1AE'>case PieceType.Rook</span><span style=''>   =&gt; &quot;♜&quot;
+</span>18 <span style=''>    </span><span style='background: #AEF1AE'>case PieceType.Bishop</span><span style=''> =&gt; &quot;♝&quot;
+</span>19 <span style=''>    </span><span style='background: #AEF1AE'>case PieceType.Knight</span><span style=''> =&gt; &quot;♞&quot;
+</span>20 <span style=''>    </span><span style='background: #AEF1AE'>case PieceType.Pawn</span><span style=''>   =&gt; &quot;♟&quot;
+</span>21 <span style=''>
+</span>22 <span style=''>  </span><span style='background: #AEF1AE'>def letter</span><span style=''>: String = (color, pieceType) match
+</span>23 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.King)</span><span style=''>   =&gt; &quot;K&quot;
+</span>24 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Queen)</span><span style=''>  =&gt; &quot;Q&quot;
+</span>25 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Rook)</span><span style=''>   =&gt; &quot;R&quot;
+</span>26 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Bishop)</span><span style=''> =&gt; &quot;B&quot;
+</span>27 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Knight)</span><span style=''> =&gt; &quot;N&quot;
+</span>28 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.White, PieceType.Pawn)</span><span style=''>   =&gt; &quot;P&quot;
+</span>29 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.King)</span><span style=''>   =&gt; &quot;k&quot;
+</span>30 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Queen)</span><span style=''>  =&gt; &quot;q&quot;
+</span>31 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Rook)</span><span style=''>   =&gt; &quot;r&quot;
+</span>32 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Bishop)</span><span style=''> =&gt; &quot;b&quot;
+</span>33 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Knight)</span><span style=''> =&gt; &quot;n&quot;
+</span>34 <span style=''>    </span><span style='background: #AEF1AE'>case (Color.Black, PieceType.Pawn)</span><span style=''>   =&gt; &quot;p&quot;
+</span>35 <span style=''>
+</span>36 <span style=''>object Piece:
+</span>37 <span style=''>  </span><span style='background: #AEF1AE'>def fromFenChar</span><span style=''>(char: Char): Option[Piece] =
+</span>38 <span style=''>    val color =
+</span>39 <span style=''>      if </span><span style='background: #AEF1AE'>char.isUpper</span><span style=''> then </span><span style='background: #AEF1AE'>Color.White</span><span style=''>
+</span>40 <span style=''>      else </span><span style='background: #AEF1AE'>if char.isLower then Color.Black
+</span>41 <span style=''></span><span style='background: #AEF1AE'>      else return None</span><span style=''>
+</span>42 <span style=''>
+</span>43 <span style=''>    val pieceType = </span><span style='background: #AEF1AE'>char.toLower</span><span style=''> match
+</span>44 <span style=''>      </span><span style='background: #AEF1AE'>case 'k'</span><span style=''> =&gt; Some(PieceType.King)
+</span>45 <span style=''>      </span><span style='background: #AEF1AE'>case 'q'</span><span style=''> =&gt; Some(PieceType.Queen)
+</span>46 <span style=''>      </span><span style='background: #AEF1AE'>case 'r'</span><span style=''> =&gt; Some(PieceType.Rook)
+</span>47 <span style=''>      </span><span style='background: #AEF1AE'>case 'b'</span><span style=''> =&gt; Some(PieceType.Bishop)
+</span>48 <span style=''>      </span><span style='background: #AEF1AE'>case 'n'</span><span style=''> =&gt; Some(PieceType.Knight)
+</span>49 <span style=''>      </span><span style='background: #AEF1AE'>case 'p'</span><span style=''> =&gt; Some(PieceType.Pawn)
+</span>50 <span style=''>      </span><span style='background: #AEF1AE'>case _</span><span style=''>   =&gt; None
+</span>51 <span style=''>
+</span>52 <span style=''>    </span><span style='background: #AEF1AE'>pieceType.map(Piece(color, _))</span><span style=''>
+</span>53 <span style=''>
+</span>54 <span style=''>/** Zero-based (col, row) where (0,0) = a1, (7,7) = h8 */
+</span>55 <span style=''>case class Pos(col: Int, row: Int):
+</span>56 <span style=''>  </span><span style='background: #AEF1AE'>def isValid</span><span style=''>: Boolean = col &gt;= 0 &amp;&amp; col &lt;= 7 &amp;&amp; row &gt;= 0 &amp;&amp; row &lt;= 7
+</span>57 <span style=''>
+</span>58 <span style=''>  </span><span style='background: #AEF1AE'>def +</span><span style=''>(dc: Int, dr: Int): Pos = Pos(col + dc, row + dr)
+</span>59 <span style=''>
+</span>60 <span style=''>  </span><span style='background: #AEF1AE'>def toAlgebraic</span><span style=''>: String = </span><span style='background: #AEF1AE'>s&quot;${('a' + col).toChar}${row + 1}&quot;</span><span style=''>
+</span>61 <span style=''>
+</span>62 <span style=''>object Pos:
+</span>63 <span style=''>  </span><span style='background: #AEF1AE'>def fromAlgebraic</span><span style=''>(s: String): Option[Pos] =
+</span>64 <span style=''>    if </span><span style='background: #AEF1AE'>s.length</span><span style=''> != 2 then </span><span style='background: #AEF1AE'>None</span><span style=''>
+</span>65 <span style=''>    else
+</span>66 <span style=''>      </span><span style='background: #AEF1AE'>val col = s(0) - 'a'
+</span>67 <span style=''></span><span style='background: #AEF1AE'>      val row = s(1) - '1'
+</span>68 <span style=''></span><span style='background: #AEF1AE'>      val pos = Pos(col, row)
+</span>69 <span style=''></span><span style='background: #AEF1AE'>      if pos.isValid then Some(pos) else None</span><span style=''>
+</span>70 <span style=''>
+</span>71 <span style=''>case class Move(
+</span>72 <span style=''>  from: Pos,
+</span>73 <span style=''>  to: Pos,
+</span>74 <span style=''>  promotion: Option[PieceType] = None
+</span>75 <span style=''>)
 </span>76 <span style=''>
-</span>77 <span style=''>object Pos:
-</span>78 <span style=''>  /** Parse &quot;e4&quot; → Pos(4, 3) */
-</span>79 <span style=''>  </span><span style='background: #AEF1AE'>def fromAlgebraic</span><span style=''>(s: String): Option[Pos] =
-</span>80 <span style=''>    if </span><span style='background: #AEF1AE'>s.length</span><span style=''> != 2 then </span><span style='background: #AEF1AE'>None</span><span style=''>
-</span>81 <span style=''>    else
-</span>82 <span style=''>      </span><span style='background: #AEF1AE'>val col = s(0) - 'a'
-</span>83 <span style=''></span><span style='background: #AEF1AE'>      val row = s(1) - '1'
-</span>84 <span style=''></span><span style='background: #AEF1AE'>      val pos = Pos(col, row)
-</span>85 <span style=''></span><span style='background: #AEF1AE'>      if pos.isValid then Some(pos) else None</span><span style=''>
-</span>86 <span style=''>
-</span>87 <span style=''>// ─── Move ────────────────────────────────────────────────────────────────────
-</span>88 <span style=''>
-</span>89 <span style=''>case class Move(
-</span>90 <span style=''>  from: Pos,
-</span>91 <span style=''>  to: Pos,
-</span>92 <span style=''>  promotion: Option[PieceType] = None   // for pawn promotion
-</span>93 <span style=''>)
-</span>94 <span style=''>
-</span>95 <span style=''>// ─── CastlingRights ──────────────────────────────────────────────────────────
-</span>96 <span style=''>
-</span>97 <span style=''>case class CastlingRights(
-</span>98 <span style=''>  whiteKingSide:  Boolean = true,
-</span>99 <span style=''>  whiteQueenSide: Boolean = true,
-</span>100 <span style=''>  blackKingSide:  Boolean = true,
-</span>101 <span style=''>  blackQueenSide: Boolean = true
-</span>102 <span style=''>):
-</span>103 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhite</span><span style=''>: CastlingRights = copy(whiteKingSide = false, whiteQueenSide = false)
-</span>104 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlack</span><span style=''>: CastlingRights = copy(blackKingSide = false, blackQueenSide = false)
-</span>105 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhiteKingSide</span><span style=''>:  CastlingRights = copy(whiteKingSide  = false)
-</span>106 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhiteQueenSide</span><span style=''>: CastlingRights = copy(whiteQueenSide = false)
-</span>107 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlackKingSide</span><span style=''>:  CastlingRights = copy(blackKingSide  = false)
-</span>108 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlackQueenSide</span><span style=''>: CastlingRights = copy(blackQueenSide = false)
-</span>109 <span style=''>
-</span>110 <span style=''>  </span><span style='background: #AEF1AE'>def toFen</span><span style=''>: String =
-</span>111 <span style=''>    val rights =
-</span>112 <span style=''>      </span><span style='background: #F0ADAD'>List(
-</span>113 <span style=''></span><span style='background: #F0ADAD'>        Option.when(whiteKingSide)(&quot;K&quot;),
-</span>114 <span style=''></span><span style='background: #F0ADAD'>        Option.when(whiteQueenSide)(&quot;Q&quot;),
-</span>115 <span style=''></span><span style='background: #F0ADAD'>        Option.when(blackKingSide)(&quot;k&quot;),
-</span>116 <span style=''></span><span style='background: #F0ADAD'>        Option.when(blackQueenSide)(&quot;q&quot;)
-</span>117 <span style=''></span><span style='background: #F0ADAD'>      )</span><span style='background: #AEF1AE'>.flatten.mkString</span><span style=''>
-</span>118 <span style=''>    if </span><span style='background: #AEF1AE'>rights.nonEmpty</span><span style=''> then </span><span style='background: #AEF1AE'>rights</span><span style=''> else </span><span style='background: #AEF1AE'>&quot;-&quot;</span><span style=''>
-</span>119 <span style=''>
-</span>120 <span style=''>object CastlingRights:
-</span>121 <span style=''>  </span><span style='background: #AEF1AE'>def fromFen</span><span style=''>(value: String): Option[CastlingRights] =
-</span>122 <span style=''>    if value == &quot;-&quot; then </span><span style='background: #AEF1AE'>Some(CastlingRights(false, false, false, false))</span><span style=''>
-</span>123 <span style=''>    else </span><span style='background: #AEF1AE'>if value.nonEmpty &amp;&amp; value.forall(&quot;KQkq&quot;.contains(_)) &amp;&amp; value.distinct.length == value.length then
-</span>124 <span style=''></span><span style='background: #AEF1AE'>      Some(
-</span>125 <span style=''></span><span style='background: #AEF1AE'>        CastlingRights(
-</span>126 <span style=''></span><span style='background: #AEF1AE'>          whiteKingSide = value.contains('K'),
-</span>127 <span style=''></span><span style='background: #AEF1AE'>          whiteQueenSide = value.contains('Q'),
-</span>128 <span style=''></span><span style='background: #AEF1AE'>          blackKingSide = value.contains('k'),
-</span>129 <span style=''></span><span style='background: #AEF1AE'>          blackQueenSide = value.contains('q')
-</span>130 <span style=''></span><span style='background: #AEF1AE'>        )
-</span>131 <span style=''></span><span style='background: #AEF1AE'>      )
-</span>132 <span style=''></span><span style='background: #AEF1AE'>    else None</span><span style=''>
-</span>133 <span style=''>
-</span>134 <span style=''>// ─── GameStatus ──────────────────────────────────────────────────────────────
-</span>135 <span style=''>
-</span>136 <span style=''>enum GameStatus:
-</span>137 <span style=''>  case Playing
-</span>138 <span style=''>  case Check(color: Color)
-</span>139 <span style=''>  case Checkmate(loser: Color)
-</span>140 <span style=''>  case Stalemate
-</span>141 <span style=''>  case Draw(reason: String)
+</span>77 <span style=''>case class CastlingRights(
+</span>78 <span style=''>  whiteKingSide: Boolean = true,
+</span>79 <span style=''>  whiteQueenSide: Boolean = true,
+</span>80 <span style=''>  blackKingSide: Boolean = true,
+</span>81 <span style=''>  blackQueenSide: Boolean = true
+</span>82 <span style=''>):
+</span>83 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhite</span><span style=''>: CastlingRights = copy(whiteKingSide = false, whiteQueenSide = false)
+</span>84 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlack</span><span style=''>: CastlingRights = copy(blackKingSide = false, blackQueenSide = false)
+</span>85 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhiteKingSide</span><span style=''>: CastlingRights = copy(whiteKingSide = false)
+</span>86 <span style=''>  </span><span style='background: #AEF1AE'>def disableWhiteQueenSide</span><span style=''>: CastlingRights = copy(whiteQueenSide = false)
+</span>87 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlackKingSide</span><span style=''>: CastlingRights = copy(blackKingSide = false)
+</span>88 <span style=''>  </span><span style='background: #AEF1AE'>def disableBlackQueenSide</span><span style=''>: CastlingRights = copy(blackQueenSide = false)
+</span>89 <span style=''>
+</span>90 <span style=''>  </span><span style='background: #AEF1AE'>def toFen</span><span style=''>: String =
+</span>91 <span style=''>    val rights = </span><span style='background: #AEF1AE'>new StringBuilder</span><span style=''>
+</span>92 <span style=''>    if whiteKingSide then rights.append(&quot;K&quot;)
+</span>93 <span style=''>    if whiteQueenSide then rights.append(&quot;Q&quot;)
+</span>94 <span style=''>    if blackKingSide then rights.append(&quot;k&quot;)
+</span>95 <span style=''>    if blackQueenSide then rights.append(&quot;q&quot;)
+</span>96 <span style=''>    if </span><span style='background: #AEF1AE'>rights.nonEmpty</span><span style=''> then </span><span style='background: #AEF1AE'>rights.result()</span><span style=''> else </span><span style='background: #AEF1AE'>&quot;-&quot;</span><span style=''>
+</span>97 <span style=''>
+</span>98 <span style=''>object CastlingRights:
+</span>99 <span style=''>  </span><span style='background: #AEF1AE'>def fromFen</span><span style=''>(value: String): Option[CastlingRights] =
+</span>100 <span style=''>    if value == &quot;-&quot; then </span><span style='background: #AEF1AE'>Some(CastlingRights(false, false, false, false))</span><span style=''>
+</span>101 <span style=''>    else </span><span style='background: #AEF1AE'>if value.nonEmpty &amp;&amp; value.forall(&quot;KQkq&quot;.contains(_)) &amp;&amp; value.distinct.length == value.length then
+</span>102 <span style=''></span><span style='background: #AEF1AE'>      Some(
+</span>103 <span style=''></span><span style='background: #AEF1AE'>        CastlingRights(
+</span>104 <span style=''></span><span style='background: #AEF1AE'>          whiteKingSide = value.contains('K'),
+</span>105 <span style=''></span><span style='background: #AEF1AE'>          whiteQueenSide = value.contains('Q'),
+</span>106 <span style=''></span><span style='background: #AEF1AE'>          blackKingSide = value.contains('k'),
+</span>107 <span style=''></span><span style='background: #AEF1AE'>          blackQueenSide = value.contains('q')
+</span>108 <span style=''></span><span style='background: #AEF1AE'>        )
+</span>109 <span style=''></span><span style='background: #AEF1AE'>      )
+</span>110 <span style=''></span><span style='background: #AEF1AE'>    else None</span><span style=''>
+</span>111 <span style=''>
+</span>112 <span style=''>enum GameStatus:
+</span>113 <span style=''>  case Playing
+</span>114 <span style=''>  case Check(color: Color)
+</span>115 <span style=''>  case Checkmate(loser: Color)
+</span>116 <span style=''>  case Stalemate
+</span>117 <span style=''>  case Draw(reason: String)
 </span></pre>
           </div>
           <div class="tab-pane" id="statementlist">
@@ -177,15 +153,15 @@
         <th>Code</th>
       </tr><tr>
         <td>
-          7
+          5
         </td>
         <td>
-          761
+          725
         </td>
         <td>
-          145
+          56
           -
-          157
+          68
         </td>
         <td>
           DefDef
@@ -201,15 +177,15 @@
         </td>
       </tr><tr>
         <td>
-          8
+          6
         </td>
         <td>
-          759
+          723
         </td>
         <td>
-          183
+          93
           -
-          193
+          103
         </td>
         <td>
           Block
@@ -225,15 +201,15 @@
         </td>
       </tr><tr>
         <td>
-          9
+          7
         </td>
         <td>
-          760
+          724
         </td>
         <td>
-          208
+          117
           -
-          218
+          127
         </td>
         <td>
           Block
@@ -249,15 +225,15 @@
         </td>
       </tr><tr>
         <td>
-          19
+          13
         </td>
         <td>
-          774
+          732
         </td>
         <td>
-          522
+          258
           -
-          532
+          268
         </td>
         <td>
           DefDef
@@ -273,15 +249,15 @@
         </td>
       </tr><tr>
         <td>
-          20
+          14
         </td>
         <td>
-          762
+          726
         </td>
         <td>
-          572
+          299
           -
-          606
+          318
         </td>
         <td>
           Block
@@ -293,283 +269,139 @@
           
         </td>
         <td style="background: #AEF1AE">
-          case (Color.White, PieceType.King)
+          case PieceType.King
+        </td>
+      </tr><tr>
+        <td>
+          15
+        </td>
+        <td>
+          727
+        </td>
+        <td>
+          332
+          -
+          352
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Queen
+        </td>
+      </tr><tr>
+        <td>
+          16
+        </td>
+        <td>
+          728
+        </td>
+        <td>
+          365
+          -
+          384
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Rook
+        </td>
+      </tr><tr>
+        <td>
+          17
+        </td>
+        <td>
+          729
+        </td>
+        <td>
+          398
+          -
+          419
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Bishop
+        </td>
+      </tr><tr>
+        <td>
+          18
+        </td>
+        <td>
+          730
+        </td>
+        <td>
+          431
+          -
+          452
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Knight
+        </td>
+      </tr><tr>
+        <td>
+          19
+        </td>
+        <td>
+          731
+        </td>
+        <td>
+          464
+          -
+          483
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Pawn
         </td>
       </tr><tr>
         <td>
           21
         </td>
         <td>
-          763
+          745
         </td>
         <td>
-          621
+          496
           -
-          656
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.White, PieceType.Queen)
-        </td>
-      </tr><tr>
-        <td>
-          22
-        </td>
-        <td>
-          764
-        </td>
-        <td>
-          670
-          -
-          704
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.White, PieceType.Rook)
-        </td>
-      </tr><tr>
-        <td>
-          23
-        </td>
-        <td>
-          765
-        </td>
-        <td>
-          719
-          -
-          755
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.White, PieceType.Bishop)
-        </td>
-      </tr><tr>
-        <td>
-          24
-        </td>
-        <td>
-          766
-        </td>
-        <td>
-          768
-          -
-          804
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.White, PieceType.Knight)
-        </td>
-      </tr><tr>
-        <td>
-          25
-        </td>
-        <td>
-          767
-        </td>
-        <td>
-          817
-          -
-          851
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.White, PieceType.Pawn)
-        </td>
-      </tr><tr>
-        <td>
-          26
-        </td>
-        <td>
-          768
-        </td>
-        <td>
-          866
-          -
-          900
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.Black, PieceType.King)
-        </td>
-      </tr><tr>
-        <td>
-          27
-        </td>
-        <td>
-          769
-        </td>
-        <td>
-          915
-          -
-          950
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.Black, PieceType.Queen)
-        </td>
-      </tr><tr>
-        <td>
-          28
-        </td>
-        <td>
-          770
-        </td>
-        <td>
-          964
-          -
-          998
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.Black, PieceType.Rook)
-        </td>
-      </tr><tr>
-        <td>
-          29
-        </td>
-        <td>
-          771
-        </td>
-        <td>
-          1013
-          -
-          1049
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.Black, PieceType.Bishop)
-        </td>
-      </tr><tr>
-        <td>
-          30
-        </td>
-        <td>
-          772
-        </td>
-        <td>
-          1062
-          -
-          1098
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.Black, PieceType.Knight)
-        </td>
-      </tr><tr>
-        <td>
-          31
-        </td>
-        <td>
-          773
-        </td>
-        <td>
-          1111
-          -
-          1145
-        </td>
-        <td>
-          Block
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          case (Color.Black, PieceType.Pawn)
-        </td>
-      </tr><tr>
-        <td>
-          33
-        </td>
-        <td>
-          787
-        </td>
-        <td>
-          1160
-          -
-          1170
+          506
         </td>
         <td>
           DefDef
@@ -585,15 +417,15 @@
         </td>
       </tr><tr>
         <td>
-          34
+          22
         </td>
         <td>
-          775
+          733
         </td>
         <td>
-          1210
+          546
           -
-          1244
+          580
         </td>
         <td>
           Block
@@ -609,15 +441,15 @@
         </td>
       </tr><tr>
         <td>
-          35
+          23
         </td>
         <td>
-          776
+          734
         </td>
         <td>
-          1259
+          594
           -
-          1294
+          629
         </td>
         <td>
           Block
@@ -633,15 +465,15 @@
         </td>
       </tr><tr>
         <td>
-          36
+          24
         </td>
         <td>
-          777
+          735
         </td>
         <td>
-          1308
+          642
           -
-          1342
+          676
         </td>
         <td>
           Block
@@ -657,15 +489,15 @@
         </td>
       </tr><tr>
         <td>
-          37
+          25
         </td>
         <td>
-          778
+          736
         </td>
         <td>
-          1357
+          690
           -
-          1393
+          726
         </td>
         <td>
           Block
@@ -681,15 +513,15 @@
         </td>
       </tr><tr>
         <td>
-          38
+          26
         </td>
         <td>
-          779
+          737
         </td>
         <td>
-          1406
+          738
           -
-          1442
+          774
         </td>
         <td>
           Block
@@ -705,15 +537,15 @@
         </td>
       </tr><tr>
         <td>
-          39
+          27
         </td>
         <td>
-          780
+          738
         </td>
         <td>
-          1455
+          786
           -
-          1489
+          820
         </td>
         <td>
           Block
@@ -729,15 +561,15 @@
         </td>
       </tr><tr>
         <td>
-          40
+          28
         </td>
         <td>
-          781
+          739
         </td>
         <td>
-          1504
+          834
           -
-          1538
+          868
         </td>
         <td>
           Block
@@ -753,15 +585,15 @@
         </td>
       </tr><tr>
         <td>
-          41
+          29
         </td>
         <td>
-          782
+          740
         </td>
         <td>
-          1553
+          882
           -
-          1588
+          917
         </td>
         <td>
           Block
@@ -777,15 +609,15 @@
         </td>
       </tr><tr>
         <td>
-          42
+          30
         </td>
         <td>
-          783
+          741
         </td>
         <td>
-          1602
+          930
           -
-          1636
+          964
         </td>
         <td>
           Block
@@ -801,15 +633,15 @@
         </td>
       </tr><tr>
         <td>
-          43
+          31
         </td>
         <td>
-          784
+          742
         </td>
         <td>
-          1651
+          978
           -
-          1687
+          1014
         </td>
         <td>
           Block
@@ -825,15 +657,15 @@
         </td>
       </tr><tr>
         <td>
-          44
+          32
         </td>
         <td>
-          785
+          743
         </td>
         <td>
-          1700
+          1026
           -
-          1736
+          1062
         </td>
         <td>
           Block
@@ -849,15 +681,15 @@
         </td>
       </tr><tr>
         <td>
-          45
+          33
         </td>
         <td>
-          786
+          744
         </td>
         <td>
-          1748
+          1074
           -
-          1782
+          1108
         </td>
         <td>
           Block
@@ -873,15 +705,15 @@
         </td>
       </tr><tr>
         <td>
-          48
+          36
         </td>
         <td>
-          806
+          764
         </td>
         <td>
-          1809
+          1135
           -
-          1824
+          1150
         </td>
         <td>
           DefDef
@@ -897,63 +729,15 @@
         </td>
       </tr><tr>
         <td>
-          50
+          38
         </td>
         <td>
-          788
+          747
         </td>
         <td>
-          1879
+          1205
           -
-          1883
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          charWrapper
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          char
-        </td>
-      </tr><tr>
-        <td>
-          50
-        </td>
-        <td>
-          790
-        </td>
-        <td>
-          1897
-          -
-          1908
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          White
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          Color.White
-        </td>
-      </tr><tr>
-        <td>
-          50
-        </td>
-        <td>
-          789
-        </td>
-        <td>
-          1879
-          -
-          1891
+          1217
         </td>
         <td>
           Select
@@ -969,15 +753,63 @@
         </td>
       </tr><tr>
         <td>
-          51
+          38
         </td>
         <td>
-          792
+          746
         </td>
         <td>
-          1923
+          1205
           -
-          1935
+          1209
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          charWrapper
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          char
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          748
+        </td>
+        <td>
+          1223
+          -
+          1234
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          White
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Color.White
+        </td>
+      </tr><tr>
+        <td>
+          39
+        </td>
+        <td>
+          750
+        </td>
+        <td>
+          1249
+          -
+          1261
         </td>
         <td>
           Select
@@ -993,15 +825,15 @@
         </td>
       </tr><tr>
         <td>
-          51
+          39
         </td>
         <td>
-          795
+          753
         </td>
         <td>
-          1920
+          1246
           -
-          1975
+          1301
         </td>
         <td>
           If
@@ -1017,15 +849,15 @@
         </td>
       </tr><tr>
         <td>
-          51
+          39
         </td>
         <td>
-          791
+          749
         </td>
         <td>
-          1923
+          1249
           -
-          1927
+          1253
         </td>
         <td>
           Apply
@@ -1041,15 +873,15 @@
         </td>
       </tr><tr>
         <td>
-          51
+          39
         </td>
         <td>
-          793
+          751
         </td>
         <td>
-          1941
+          1267
           -
-          1952
+          1278
         </td>
         <td>
           Select
@@ -1065,15 +897,15 @@
         </td>
       </tr><tr>
         <td>
-          52
+          40
         </td>
         <td>
-          794
+          752
         </td>
         <td>
-          1964
+          1290
           -
-          1975
+          1301
         </td>
         <td>
           Return
@@ -1089,15 +921,15 @@
         </td>
       </tr><tr>
         <td>
-          54
+          42
         </td>
         <td>
-          797
+          755
         </td>
         <td>
-          1997
+          1323
           -
-          2009
+          1335
         </td>
         <td>
           Select
@@ -1113,15 +945,15 @@
         </td>
       </tr><tr>
         <td>
-          54
+          42
         </td>
         <td>
-          796
+          754
         </td>
         <td>
-          1997
+          1323
           -
-          2001
+          1327
         </td>
         <td>
           Apply
@@ -1137,15 +969,15 @@
         </td>
       </tr><tr>
         <td>
-          55
+          43
         </td>
         <td>
-          798
+          756
         </td>
         <td>
-          2022
+          1348
           -
-          2030
+          1356
         </td>
         <td>
           Block
@@ -1161,15 +993,15 @@
         </td>
       </tr><tr>
         <td>
-          56
+          44
         </td>
         <td>
-          799
+          757
         </td>
         <td>
-          2061
+          1387
           -
-          2069
+          1395
         </td>
         <td>
           Block
@@ -1185,15 +1017,15 @@
         </td>
       </tr><tr>
         <td>
-          57
+          45
         </td>
         <td>
-          800
+          758
         </td>
         <td>
-          2101
+          1427
           -
-          2109
+          1435
         </td>
         <td>
           Block
@@ -1209,15 +1041,15 @@
         </td>
       </tr><tr>
         <td>
-          58
+          46
         </td>
         <td>
-          801
+          759
         </td>
         <td>
-          2140
+          1466
           -
-          2148
+          1474
         </td>
         <td>
           Block
@@ -1233,15 +1065,15 @@
         </td>
       </tr><tr>
         <td>
-          59
+          47
         </td>
         <td>
-          802
+          760
         </td>
         <td>
-          2181
+          1507
           -
-          2189
+          1515
         </td>
         <td>
           Block
@@ -1257,15 +1089,15 @@
         </td>
       </tr><tr>
         <td>
-          60
+          48
         </td>
         <td>
-          803
+          761
         </td>
         <td>
-          2222
+          1548
           -
-          2230
+          1556
         </td>
         <td>
           Block
@@ -1281,15 +1113,15 @@
         </td>
       </tr><tr>
         <td>
-          61
+          49
         </td>
         <td>
-          804
+          762
         </td>
         <td>
-          2261
+          1587
           -
-          2267
+          1593
         </td>
         <td>
           Block
@@ -1305,15 +1137,15 @@
         </td>
       </tr><tr>
         <td>
-          63
+          51
         </td>
         <td>
-          805
+          763
         </td>
         <td>
-          2283
+          1609
           -
-          2313
+          1639
         </td>
         <td>
           Apply
@@ -1329,15 +1161,15 @@
         </td>
       </tr><tr>
         <td>
-          69
+          55
         </td>
         <td>
-          807
+          765
         </td>
         <td>
-          2498
+          1737
           -
-          2509
+          1748
         </td>
         <td>
           DefDef
@@ -1353,15 +1185,15 @@
         </td>
       </tr><tr>
         <td>
-          71
+          57
         </td>
         <td>
-          808
+          766
         </td>
         <td>
-          2571
+          1808
           -
-          2576
+          1813
         </td>
         <td>
           DefDef
@@ -1377,15 +1209,15 @@
         </td>
       </tr><tr>
         <td>
-          74
+          59
         </td>
         <td>
-          810
+          768
         </td>
         <td>
-          2671
+          1866
           -
-          2686
+          1881
         </td>
         <td>
           DefDef
@@ -1401,15 +1233,15 @@
         </td>
       </tr><tr>
         <td>
-          74
+          59
         </td>
         <td>
-          809
+          767
         </td>
         <td>
-          2697
+          1892
           -
-          2731
+          1926
         </td>
         <td>
           Apply
@@ -1425,15 +1257,15 @@
         </td>
       </tr><tr>
         <td>
-          78
+          62
         </td>
         <td>
-          821
+          779
         </td>
         <td>
-          2783
+          1942
           -
-          2800
+          1959
         </td>
         <td>
           DefDef
@@ -1449,15 +1281,15 @@
         </td>
       </tr><tr>
         <td>
-          79
+          63
         </td>
         <td>
-          812
+          770
         </td>
         <td>
-          2854
+          2012
           -
-          2858
+          2016
         </td>
         <td>
           Ident
@@ -1473,15 +1305,15 @@
         </td>
       </tr><tr>
         <td>
-          79
+          63
         </td>
         <td>
-          811
+          769
         </td>
         <td>
-          2835
+          1993
           -
-          2843
+          2001
         </td>
         <td>
           Apply
@@ -1497,15 +1329,15 @@
         </td>
       </tr><tr>
         <td>
-          81
+          65
         </td>
         <td>
-          813
+          771
         </td>
         <td>
-          2886
+          2042
           -
-          2890
+          2046
         </td>
         <td>
           Apply
@@ -1521,15 +1353,15 @@
         </td>
       </tr><tr>
         <td>
-          81
+          65
         </td>
         <td>
-          820
+          778
         </td>
         <td>
-          2876
+          2032
           -
-          3002
+          2155
         </td>
         <td>
           Block
@@ -1541,19 +1373,19 @@
           
         </td>
         <td style="background: #AEF1AE">
-          val col = s(0) - 'a'\r\n      val row = s(1) - '1'\r\n      val pos = Pos(col, row)\r\n      if pos.isValid then Some(pos) else None
+          val col = s(0) - 'a'\n      val row = s(1) - '1'\n      val pos = Pos(col, row)\n      if pos.isValid then Some(pos) else None
         </td>
       </tr><tr>
         <td>
-          81
+          65
         </td>
         <td>
-          814
+          772
         </td>
         <td>
-          2886
+          2042
           -
-          2887
+          2043
         </td>
         <td>
           Apply
@@ -1569,15 +1401,39 @@
         </td>
       </tr><tr>
         <td>
-          82
+          66
         </td>
         <td>
-          815
+          774
         </td>
         <td>
-          2914
+          2069
           -
-          2918
+          2070
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          s
+        </td>
+      </tr><tr>
+        <td>
+          66
+        </td>
+        <td>
+          773
+        </td>
+        <td>
+          2069
+          -
+          2073
         </td>
         <td>
           Apply
@@ -1593,39 +1449,15 @@
         </td>
       </tr><tr>
         <td>
-          82
+          68
         </td>
         <td>
-          816
+          777
         </td>
         <td>
-          2914
+          2151
           -
-          2915
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          augmentString
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          s
-        </td>
-      </tr><tr>
-        <td>
-          84
-        </td>
-        <td>
-          819
-        </td>
-        <td>
-          2998
-          -
-          3002
+          2155
         </td>
         <td>
           Ident
@@ -1641,15 +1473,15 @@
         </td>
       </tr><tr>
         <td>
-          84
+          68
         </td>
         <td>
-          818
+          776
         </td>
         <td>
-          2983
+          2136
           -
-          2992
+          2145
         </td>
         <td>
           Apply
@@ -1665,15 +1497,15 @@
         </td>
       </tr><tr>
         <td>
-          84
+          68
         </td>
         <td>
-          817
+          775
         </td>
         <td>
-          2966
+          2119
           -
-          2977
+          2130
         </td>
         <td>
           Select
@@ -1689,15 +1521,15 @@
         </td>
       </tr><tr>
         <td>
-          91
+          73
         </td>
         <td>
-          822
+          780
         </td>
         <td>
-          3167
+          2231
           -
-          3167
+          2231
         </td>
         <td>
           DefDef
@@ -1713,15 +1545,15 @@
         </td>
       </tr><tr>
         <td>
-          97
+          77
         </td>
         <td>
-          842
+          793
         </td>
         <td>
-          3341
+          2293
           -
-          3341
+          2293
         </td>
         <td>
           DefDef
@@ -1737,15 +1569,15 @@
         </td>
       </tr><tr>
         <td>
-          98
+          78
         </td>
         <td>
-          843
+          794
         </td>
         <td>
-          3376
+          2327
           -
-          3376
+          2327
         </td>
         <td>
           DefDef
@@ -1761,15 +1593,15 @@
         </td>
       </tr><tr>
         <td>
-          99
+          79
         </td>
         <td>
-          844
+          795
         </td>
         <td>
-          3411
+          2360
           -
-          3411
+          2360
         </td>
         <td>
           DefDef
@@ -1785,15 +1617,15 @@
         </td>
       </tr><tr>
         <td>
-          100
+          80
         </td>
         <td>
-          845
+          796
         </td>
         <td>
-          3446
+          2394
           -
-          3446
+          2394
         </td>
         <td>
           DefDef
@@ -1809,15 +1641,15 @@
         </td>
       </tr><tr>
         <td>
-          102
+          82
         </td>
         <td>
-          823
+          781
         </td>
         <td>
-          3457
+          2404
           -
-          3473
+          2420
         </td>
         <td>
           DefDef
@@ -1833,15 +1665,15 @@
         </td>
       </tr><tr>
         <td>
-          103
+          83
         </td>
         <td>
-          824
+          782
         </td>
         <td>
-          3546
+          2493
           -
-          3562
+          2509
         </td>
         <td>
           DefDef
@@ -1857,15 +1689,15 @@
         </td>
       </tr><tr>
         <td>
-          104
+          84
         </td>
         <td>
-          825
+          783
         </td>
         <td>
-          3635
+          2582
           -
-          3659
+          2606
         </td>
         <td>
           DefDef
@@ -1881,15 +1713,15 @@
         </td>
       </tr><tr>
         <td>
-          105
+          85
         </td>
         <td>
-          826
+          784
         </td>
         <td>
-          3710
+          2655
           -
-          3735
+          2680
         </td>
         <td>
           DefDef
@@ -1905,15 +1737,15 @@
         </td>
       </tr><tr>
         <td>
-          106
+          86
         </td>
         <td>
-          827
+          785
         </td>
         <td>
-          3785
+          2730
           -
-          3809
+          2754
         </td>
         <td>
           DefDef
@@ -1929,15 +1761,15 @@
         </td>
       </tr><tr>
         <td>
-          107
+          87
         </td>
         <td>
-          828
+          786
         </td>
         <td>
-          3860
+          2803
           -
-          3885
+          2828
         </td>
         <td>
           DefDef
@@ -1953,15 +1785,15 @@
         </td>
       </tr><tr>
         <td>
-          109
+          89
         </td>
         <td>
-          841
+          792
         </td>
         <td>
-          3936
+          2879
           -
-          3945
+          2888
         </td>
         <td>
           DefDef
@@ -1977,255 +1809,39 @@
         </td>
       </tr><tr>
         <td>
-          111
+          90
         </td>
         <td>
-          831
+          787
         </td>
         <td>
-          3979
+          2916
           -
-          3983
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          List
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          List
-        </td>
-      </tr><tr>
-        <td>
-          111
-        </td>
-        <td>
-          830
-        </td>
-        <td>
-          3979
-          -
-          4157
+          2933
         </td>
         <td>
           Apply
         </td>
         <td>
-          apply
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          List(\n        Option.when(whiteKingSide)(&quot;K&quot;),\n        Option.when(whiteQueenSide)(&quot;Q&quot;),\n        Option.when(blackKingSide)(&quot;k&quot;),\n        Option.when(blackQueenSide)(&quot;q&quot;)\n      )
-        </td>
-      </tr><tr>
-        <td>
-          111
-        </td>
-        <td>
-          829
-        </td>
-        <td>
-          3979
-          -
-          4165
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          flatten
+          &lt;init&gt;
         </td>
         <td>
           
         </td>
         <td style="background: #AEF1AE">
-          List(\n        Option.when(whiteKingSide)(&quot;K&quot;),\n        Option.when(whiteQueenSide)(&quot;Q&quot;),\n        Option.when(blackKingSide)(&quot;k&quot;),\n        Option.when(blackQueenSide)(&quot;q&quot;)\n      ).flatten
+          new StringBuilder
         </td>
       </tr><tr>
         <td>
-          112
+          95
         </td>
         <td>
-          832
+          788
         </td>
         <td>
-          3993
+          3123
           -
-          4024
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          when
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Option.when(whiteKingSide)(&quot;K&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          113
-        </td>
-        <td>
-          833
-        </td>
-        <td>
-          4034
-          -
-          4066
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          when
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Option.when(whiteQueenSide)(&quot;Q&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          114
-        </td>
-        <td>
-          834
-        </td>
-        <td>
-          4076
-          -
-          4107
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          when
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Option.when(blackKingSide)(&quot;k&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          115
-        </td>
-        <td>
-          835
-        </td>
-        <td>
-          4117
-          -
-          4149
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          when
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #F0ADAD">
-          Option.when(blackQueenSide)(&quot;q&quot;)
-        </td>
-      </tr><tr>
-        <td>
-          116
-        </td>
-        <td>
-          836
-        </td>
-        <td>
-          3979
-          -
-          4174
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          mkString
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          List(\n        Option.when(whiteKingSide)(&quot;K&quot;),\n        Option.when(whiteQueenSide)(&quot;Q&quot;),\n        Option.when(blackKingSide)(&quot;k&quot;),\n        Option.when(blackQueenSide)(&quot;q&quot;)\n      ).flatten.mkString
-        </td>
-      </tr><tr>
-        <td>
-          117
-        </td>
-        <td>
-          837
-        </td>
-        <td>
-          4182
-          -
-          4188
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          augmentString
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          rights
-        </td>
-      </tr><tr>
-        <td>
-          117
-        </td>
-        <td>
-          839
-        </td>
-        <td>
-          4203
-          -
-          4209
-        </td>
-        <td>
-          Ident
-        </td>
-        <td>
-          rights
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          rights
-        </td>
-      </tr><tr>
-        <td>
-          117
-        </td>
-        <td>
-          838
-        </td>
-        <td>
-          4182
-          -
-          4197
+          3138
         </td>
         <td>
           Select
@@ -2241,15 +1857,15 @@
         </td>
       </tr><tr>
         <td>
-          117
+          95
         </td>
         <td>
-          840
+          791
         </td>
         <td>
-          4215
+          3165
           -
-          4218
+          3168
         </td>
         <td>
           Literal
@@ -2265,15 +1881,63 @@
         </td>
       </tr><tr>
         <td>
-          120
+          95
         </td>
         <td>
-          868
+          790
         </td>
         <td>
-          4245
+          3144
           -
-          4256
+          3159
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          result
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights.result()
+        </td>
+      </tr><tr>
+        <td>
+          95
+        </td>
+        <td>
+          789
+        </td>
+        <td>
+          3144
+          -
+          3159
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          result
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights.result()
+        </td>
+      </tr><tr>
+        <td>
+          98
+        </td>
+        <td>
+          819
+        </td>
+        <td>
+          3195
+          -
+          3206
         </td>
         <td>
           DefDef
@@ -2289,15 +1953,15 @@
         </td>
       </tr><tr>
         <td>
-          121
+          99
         </td>
         <td>
-          846
+          797
         </td>
         <td>
-          4323
+          3273
           -
-          4371
+          3321
         </td>
         <td>
           Apply
@@ -2313,87 +1977,15 @@
         </td>
       </tr><tr>
         <td>
-          122
+          100
         </td>
         <td>
-          855
+          801
         </td>
         <td>
-          4438
+          3352
           -
-          4452
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          distinct
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value.distinct
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          848
-        </td>
-        <td>
-          4384
-          -
-          4398
-        </td>
-        <td>
-          Select
-        </td>
-        <td>
-          nonEmpty
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value.nonEmpty
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          851
-        </td>
-        <td>
-          4415
-          -
-          4433
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          contains
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          &quot;KQkq&quot;.contains(_)
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          854
-        </td>
-        <td>
-          4438
-          -
-          4443
+          3357
         </td>
         <td>
           Apply
@@ -2409,15 +2001,15 @@
         </td>
       </tr><tr>
         <td>
-          122
+          100
         </td>
         <td>
-          853
+          804
         </td>
         <td>
-          4438
+          3388
           -
-          4459
+          3409
         </td>
         <td>
           Apply
@@ -2433,135 +2025,15 @@
         </td>
       </tr><tr>
         <td>
-          122
+          100
         </td>
         <td>
-          847
+          803
         </td>
         <td>
-          4384
+          3365
           -
-          4389
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          augmentString
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          856
-        </td>
-        <td>
-          4463
-          -
-          4475
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          length
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value.length
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          850
-        </td>
-        <td>
-          4402
-          -
-          4407
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          augmentString
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          867
-        </td>
-        <td>
-          4381
-          -
-          4737
-        </td>
-        <td>
-          If
-        </td>
-        <td>
-          &lt;none&gt;
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          if value.nonEmpty &amp;&amp; value.forall(&quot;KQkq&quot;.contains(_)) &amp;&amp; value.distinct.length == value.length then\n      Some(\n        CastlingRights(\n          whiteKingSide = value.contains('K'),\n          whiteQueenSide = value.contains('Q'),\n          blackKingSide = value.contains('k'),\n          blackQueenSide = value.contains('q')\n        )\n      )\n    else None
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          849
-        </td>
-        <td>
-          4402
-          -
-          4434
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          forall
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value.forall(&quot;KQkq&quot;.contains(_))
-        </td>
-      </tr><tr>
-        <td>
-          122
-        </td>
-        <td>
-          852
-        </td>
-        <td>
-          4415
-          -
-          4421
+          3371
         </td>
         <td>
           Apply
@@ -2577,15 +2049,207 @@
         </td>
       </tr><tr>
         <td>
-          123
+          100
         </td>
         <td>
-          865
+          806
         </td>
         <td>
-          4487
+          3388
           -
-          4723
+          3402
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          distinct
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.distinct
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          800
+        </td>
+        <td>
+          3352
+          -
+          3384
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          forall
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.forall(&quot;KQkq&quot;.contains(_))
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          818
+        </td>
+        <td>
+          3331
+          -
+          3687
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if value.nonEmpty &amp;&amp; value.forall(&quot;KQkq&quot;.contains(_)) &amp;&amp; value.distinct.length == value.length then\n      Some(\n        CastlingRights(\n          whiteKingSide = value.contains('K'),\n          whiteQueenSide = value.contains('Q'),\n          blackKingSide = value.contains('k'),\n          blackQueenSide = value.contains('q')\n        )\n      )\n    else None
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          802
+        </td>
+        <td>
+          3365
+          -
+          3383
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          &quot;KQkq&quot;.contains(_)
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          805
+        </td>
+        <td>
+          3388
+          -
+          3393
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          799
+        </td>
+        <td>
+          3334
+          -
+          3348
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          nonEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.nonEmpty
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          807
+        </td>
+        <td>
+          3413
+          -
+          3425
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value.length
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          798
+        </td>
+        <td>
+          3334
+          -
+          3339
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          101
+        </td>
+        <td>
+          816
+        </td>
+        <td>
+          3437
+          -
+          3673
         </td>
         <td>
           Apply
@@ -2601,15 +2265,39 @@
         </td>
       </tr><tr>
         <td>
-          125
+          103
         </td>
         <td>
-          857
+          809
         </td>
         <td>
-          4543
+          3493
           -
-          4562
+          3498
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          103
+        </td>
+        <td>
+          808
+        </td>
+        <td>
+          3493
+          -
+          3512
         </td>
         <td>
           Apply
@@ -2625,63 +2313,15 @@
         </td>
       </tr><tr>
         <td>
-          125
+          104
         </td>
         <td>
-          858
+          810
         </td>
         <td>
-          4543
+          3541
           -
-          4548
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          augmentString
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value
-        </td>
-      </tr><tr>
-        <td>
-          126
-        </td>
-        <td>
-          860
-        </td>
-        <td>
-          4591
-          -
-          4596
-        </td>
-        <td>
-          Apply
-        </td>
-        <td>
-          augmentString
-        </td>
-        <td>
-          
-        </td>
-        <td style="background: #AEF1AE">
-          value
-        </td>
-      </tr><tr>
-        <td>
-          126
-        </td>
-        <td>
-          859
-        </td>
-        <td>
-          4591
-          -
-          4610
+          3560
         </td>
         <td>
           Apply
@@ -2697,15 +2337,15 @@
         </td>
       </tr><tr>
         <td>
-          127
+          104
         </td>
         <td>
-          862
+          811
         </td>
         <td>
-          4638
+          3541
           -
-          4643
+          3546
         </td>
         <td>
           Apply
@@ -2721,15 +2361,39 @@
         </td>
       </tr><tr>
         <td>
-          127
+          105
         </td>
         <td>
-          861
+          813
         </td>
         <td>
-          4638
+          3588
           -
-          4657
+          3593
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          augmentString
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          value
+        </td>
+      </tr><tr>
+        <td>
+          105
+        </td>
+        <td>
+          812
+        </td>
+        <td>
+          3588
+          -
+          3607
         </td>
         <td>
           Apply
@@ -2745,15 +2409,15 @@
         </td>
       </tr><tr>
         <td>
-          128
+          106
         </td>
         <td>
-          864
+          815
         </td>
         <td>
-          4686
+          3636
           -
-          4691
+          3641
         </td>
         <td>
           Apply
@@ -2769,15 +2433,15 @@
         </td>
       </tr><tr>
         <td>
-          128
+          106
         </td>
         <td>
-          863
+          814
         </td>
         <td>
-          4686
+          3636
           -
-          4705
+          3655
         </td>
         <td>
           Apply
@@ -2793,15 +2457,15 @@
         </td>
       </tr><tr>
         <td>
-          131
+          109
         </td>
         <td>
-          866
+          817
         </td>
         <td>
-          4733
+          3683
           -
-          4737
+          3687
         </td>
         <td>
           Ident
