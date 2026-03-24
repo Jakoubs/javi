@@ -1,4 +1,4 @@
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.IntegrationTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.IntegrationTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mIntegrationTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Game should start with correct initial state[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Initial FEN should parse back to the same game state[0m[0m
@@ -6,7 +6,7 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- App should handle basic move sequence[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Command parser should handle all commands[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView should render without errors[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.GameControllerTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.GameControllerTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mGameControllerTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- initial app state is Playing[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- legal move updates board and switches active color[0m[0m
@@ -21,7 +21,7 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- draw offer then accept produces Draw status[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- run stops cleanly on EOF after initial render[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- run processes scripted input and re-renders until quit[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.CommandParserTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.CommandParserTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mCommandParserTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- parses a simple move[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- parses a move with promotion[0m[0m
@@ -33,7 +33,7 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- parses 'quit'[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- unknown input produces Unknown command[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- invalid position in 'moves' produces Unknown[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chesscoverage.CoverageRegressionTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chesscoverage.CoverageRegressionTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mCoverageRegressionTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Board initial and empty serialize to expected FEN placement[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Board fromFenPlacement rejects malformed ranks and invalid pieces[0m[0m
@@ -56,13 +56,13 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView renders all footer states, highlights and flipped coordinates[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView helpers and StdConsoleIO are directly executable[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Main.main prints startup text and exits on quit input[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.PerformanceBenchmark, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.PerformanceBenchmark, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mPerformanceBenchmark:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Functional GameController performance[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView rendering performance[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Command parsing performance[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Move generation performance[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.TypesTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.TypesTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mTypesTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Color.opposite should return opposite color[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Piece.symbol should return correct Unicode symbols[0m[0m
@@ -76,7 +76,7 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- Piece.fromFenChar should parse valid FEN pieces[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- CastlingRights should round-trip FEN notation[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- GameState should parse and serialize FEN[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.MoveGeneratorTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.MoveGeneratorTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mMoveGeneratorTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- white pawn on e2 can advance one or two squares[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- white pawn cannot advance if blocked[0m[0m
@@ -96,7 +96,7 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- castling is blocked when a square is under attack[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- FEN active color controls which side can move[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- missing castling rights in FEN disable castling[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.FunctionalProgrammingTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.FunctionalProgrammingTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mFunctionalProgrammingTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- GameController should use immutable state[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- TerminalView should be pure functional[0m[0m
@@ -105,7 +105,7 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- Position operations should be functional[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Game operations should be functional[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Functional composition should work[0m[0m
-[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.CoverageImprovementTest, org.scalatest.tools.Framework$$anon$1@6b1facbc, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(chess.CoverageImprovementTest, org.scalatest.tools.Framework$$anon$1@4981b1e9, false, [SuiteSelector])[0m
 [0m[[0m[0minfo[0m] [0m[0m[32mCoverageImprovementTest:[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Board helpers and initial setup expose expected pieces[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- Board put remove and movePiece cover replacement and missing-source cases[0m[0m
@@ -127,7 +127,7 @@
 [0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator covers blocked sliders, black promotion and black castling[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator rejects castling when transit squares are occupied or attacked[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[32m- MoveGenerator rejects castling while in check and tolerates positions without own king[0m[0m
-[0m[[0m[0minfo[0m] [0m[0m[36mRun completed in 1 second, 102 milliseconds.[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mRun completed in 837 milliseconds.[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[36mTotal number of tests run: 111[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[36mSuites: completed 9, aborted 0[0m[0m
 [0m[[0m[0minfo[0m] [0m[0m[36mTests: succeeded 111, failed 0, canceled 0, ignored 0, pending 0[0m[0m
