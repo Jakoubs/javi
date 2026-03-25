@@ -33,8 +33,8 @@ class ModelFenCoverageTest extends AnyWordSpec with Matchers {
 
   "GameState FEN parsing" should {
     "fail defensively on corrupt FEN inputs" in {
-      GameState.fromFen("invalid fen format") shouldBe Left("FEN must contain 6 space-separated fields")
-      GameState.fromFen("invalid/placement 8 8 8 8 8 8") shouldBe Left("FEN placement must contain 8 ranks")
+      GameState.fromFen("invalid fen format - - 0 1") shouldBe Left("FEN must contain 6 space-separated fields")
+      GameState.fromFen("invalid/placement w - - 0 1") shouldBe Left("FEN placement must contain 8 ranks")
       GameState.fromFen("8/8/8/8/8/8/8/8 invalid_color - - 0 1") shouldBe Left("Invalid active color in FEN")
       GameState.fromFen("8/8/8/8/8/8/8/8 w invalid_castling - 0 1") shouldBe Left("Invalid castling rights in FEN")
       GameState.fromFen("8/8/8/8/8/8/8/8 w - invalid_ep 0 1") shouldBe Left("Invalid en passant target square in FEN")
@@ -98,13 +98,14 @@ class ModelFenCoverageTest extends AnyWordSpec with Matchers {
 
   "MoveGenerator" should {
     "handle isAttackedBy cases for various piece types" in {
-      // White pawn attacking e4 from d3/f3
-      val sLeftPawnAttack = GameState.fromFen("8/8/8/8/4k3/5P2/8/4K3 b - - 0 1").toOption.get
-      MoveGenerator.isAttackedBy(sLeftPawnAttack.board, Pos.fromAlgebraic("e4").get, Color.White) shouldBe true
+      val sPawnAttack = GameState.fromFen("8/8/8/8/4k3/3P1P2/8/4K3 b - - 0 1").toOption.get
+      // Add a debug assertion just in case.
+      sPawnAttack.board.get(Pos.fromAlgebraic("f3").get) shouldBe Some(Piece(Color.White, PieceType.Pawn))
+      sPawnAttack.board.get(Pos.fromAlgebraic("d3").get) shouldBe Some(Piece(Color.White, PieceType.Pawn))
       
-      val sRightPawnAttack = GameState.fromFen("8/8/8/8/4k3/3P4/8/4K3 b - - 0 1").toOption.get
-      MoveGenerator.isAttackedBy(sRightPawnAttack.board, Pos.fromAlgebraic("e4").get, Color.White) shouldBe true
-
+      // Right attack (from d3)
+      MoveGenerator.isAttackedBy(sPawnAttack.board, Pos.fromAlgebraic("e4").get, Color.White) shouldBe true
+      
       // Knight attack
       val sKnightAttack = GameState.fromFen("8/8/8/3N4/4k3/8/8/4K3 b - - 0 1").toOption.get
       MoveGenerator.isAttackedBy(sKnightAttack.board, Pos.fromAlgebraic("e4").get, Color.White) shouldBe true
