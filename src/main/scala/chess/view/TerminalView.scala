@@ -147,6 +147,8 @@ object TerminalView:
   ${BOLD}resign${RESET}        Resign the game
   ${BOLD}draw${RESET}          Offer / accept draw
   ${BOLD}new${RESET}           Start a new game
+  ${BOLD}ai${RESET}            Let AI suggest/make a move
+  ${BOLD}train [n]${RESET}      Run n games of AI self-play to train
   ${BOLD}help${RESET}          Show this help
   ${BOLD}quit${RESET}          Quit
   ${DIM}─────────────────────────────────────${RESET}

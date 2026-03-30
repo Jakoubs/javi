@@ -27,9 +27,11 @@ enum Command:
   case Undo
   case Resign
   case OfferDraw
-  case NewGame
+  case NewGamet
   case Help
   case Quit
+  case AiMove
+  case AiTrain(n: Int)
   case Unknown(input: String)
 
 // ─── CommandParser ────────────────────────────────────────────────────────────
@@ -47,15 +49,33 @@ object CommandParser:
       case "new" | "newgame"    => Command.NewGame
       case "help" | "?"         => Command.Help
       case "quit" | "exit" | "q"=> Command.Quit
+      case "ai"                 => Command.AiMove
+      case s if s.startsWith("train ") =>
+        val nStr = s.drop(6).trim
+        nStr.toIntOption match
+          case Some(n) if n > 0 => Command.AiTrain(n)
+          case _                => Command.Unknown(s"Invalid training count: $nStr")
       case s if s.startsWith("moves ") =>
         val posStr = s.drop(6).trim
         Pos.fromAlgebraic(posStr) match
           case Some(pos) => Command.ShowMoves(pos)
           case None      => Command.Unknown(s"Invalid position: $posStr")
-      case s if s.exists(_.isDigit) && s.length >= 4 => 
-        Command.ProcessTurn(s)
-      case s => 
-        Command.Unknown(s"Unknown command or invalid move format: $s")
+      case s if (s.length >= 4 && s.length <= 7) =>
+        val normalized = s.replace("-", "")
+        if (normalized.length == 4 || normalized.length == 5) then
+          val fromPos = Pos.fromAlgebraic(normalized.take(2))
+          val toPos   = Pos.fromAlgebraic(normalized.substring(2, 4))
+          val promo   = normalized.drop(4)
+          val validPromo = promo.isEmpty || (promo.length == 1 && "qrbn".contains(promo.head))
+          
+          if fromPos.isDefined && toPos.isDefined && validPromo then
+            Command.ProcessTurn(s)
+          else
+            Command.Unknown(s"Invalid move format: $s")
+        else
+          Command.Unknown(s"Invalid move format: $s")
+      case s =>
+        Command.Unknown(s"Unknown command: $s")
 
 object MoveParser:
   import scala.util.Try
@@ -85,7 +105,7 @@ object MoveParser:
 // ─── AppState ─────────────────────────────────────────────────────────────────
 
 /** Everything the controller needs to know about the current UI state */
-case class AppState(
+  case class AppState(
   game:       GameState,
   status:     GameStatus,
   flipped:    Boolean         = false,
@@ -93,7 +113,8 @@ case class AppState(
   lastMove:   Option[Move]    = None,
   message:    Option[String]  = None,   // one-shot message shown after next render
   drawOffer:  Boolean         = false,
-  running:    Boolean         = true
+  running:    Boolean         = true,
+  training:   Boolean         = false   // New field to track if training is in progress
 )
 
 object AppState:
@@ -105,10 +126,13 @@ object AppState:
 // ─── GameController ───────────────────────────────────────────────────────────
 
 object GameController:
+  import scala.concurrent.Future
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   // ── Main loop ──────────────────────────────────────────────────────────────
 
   def run(console: ConsoleIO = StdConsoleIO): Unit =
+    chess.ai.Evaluator.loadWeights()
     var app = AppState.initial
     renderFull(app, console)
 
@@ -132,6 +156,8 @@ object GameController:
       lastMove   = app.lastMove,
       flipped    = app.flipped
     ))
+    if app.training then
+      console.print(TerminalView.info("AI is currently training in the background..."))
     app.message.foreach(console.print)
 
   // ── Command dispatch ───────────────────────────────────────────────────────
@@ -148,6 +174,8 @@ object GameController:
       case NewGame        => AppState.initial.copy(message = Some(TerminalView.info("New game started.")))
       case Help           => app.copy(message = Some(TerminalView.helpText))
       case Quit           => app.copy(running = false, message = None)
+      case AiMove         => handleAiMove(app)
+      case AiTrain(n)     => handleAiTrain(app, n)
       case Unknown(msg)   => app.copy(message = Some(TerminalView.error(msg)), highlights = Set.empty)
 
   // ── Move handler ───────────────────────────────────────────────────────────
@@ -208,11 +236,47 @@ object GameController:
           highlights = Set.empty,
           message    = msg,
           drawOffer  = false
-        )
+        ) match {
+          case next if next.status != GameStatus.Playing =>
+            chess.ai.PassiveTrainer.train(next.game, next.status)
+            next
+          case other => other
+        }
 
       case Left(errorMsg) =>
         app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty)
     }
+
+  private def handleAiTrain(initialApp: AppState, numGames: Int): AppState =
+    Future {
+      println(s"Starting automated training for $numGames games in background...")
+      for i <- 1 to numGames do
+        var gameApp = AppState.initial
+        while gameApp.status == GameStatus.Playing do
+          val move = chess.ai.AiEngine.bestMove(gameApp.game, 2, epsilon = 0.1)
+          move match
+            case Some(m) => gameApp = handleTurn(gameApp, m.toInputString)
+            case None    => gameApp = gameApp.copy(status = GameStatus.Draw("no legal moves"))
+        
+        if (i % 10 == 0 || i == numGames) then
+           println(s"\rTraining progress: $i/$numGames games completed.")
+      println("Training session completed! Weights updated.")
+    }
+    
+    initialApp.copy(
+      training = true,
+      message = Some(TerminalView.success(s"Started background training for $numGames games."))
+    )
+
+  private def handleAiMove(app: AppState): AppState =
+    if app.status != GameStatus.Playing then
+       app.copy(message = Some(TerminalView.error("Game is already over.")))
+    else
+      chess.ai.AiEngine.bestMove(app.game, 3) match
+        case Some(move) => 
+          handleTurn(app, move.toInputString)
+        case None => 
+          app.copy(message = Some(TerminalView.error("AI found no legal moves.")))
 
   // ── Show legal moves for a square ─────────────────────────────────────────
 
