@@ -1,0 +1,1 @@
+["chess.IntegrationTest","chess.GameControllerTest","chess.CommandParserTest","chess.ModelFenCoverageTest","chesscoverage.CoverageRegressionTest","chess.PerformanceBenchmark","chess.TypesTest","chess.MoveGeneratorTest","chess.FunctionalProgrammingTest","chess.CoverageImprovementTest"]

@@ -21,7 +21,7 @@ object StdConsoleIO extends ConsoleIO:
 // ─── Command ADT ─────────────────────────────────────────────────────────────
 
 enum Command:
-  case MakeMove(move: Move)
+  case ProcessTurn(input: String)
   case ShowMoves(pos: Pos)
   case Flip
   case Undo
@@ -52,34 +52,32 @@ object CommandParser:
         Pos.fromAlgebraic(posStr) match
           case Some(pos) => Command.ShowMoves(pos)
           case None      => Command.Unknown(s"Invalid position: $posStr")
-      case s =>
-        parseMove(s) match
-          case Some(cmd) => cmd
-          case None      => Command.Unknown(s"Unknown command: '$input'. Type 'help' for help.")
+      case s => Command.ProcessTurn(s)
 
-  private def parseMove(s: String): Option[Command] =
-    // Formats: "e2e4"  or  "e7e8q"
-    val cleaned = s.trim.toLowerCase
-    if cleaned.length < 4 then return None
+object MoveParser:
+  import scala.util.Try
+  def parseInput(input: String): Try[Move] = Try {
+    val cleaned = input.trim.toLowerCase
+    val parts = if cleaned.contains('-') then cleaned.split('-').mkString else cleaned
+    if parts.length < 4 then throw new IllegalArgumentException("Input too short")
 
-    val fromStr   = cleaned.take(2)
-    val restStr   = cleaned.drop(2)
-    val toStr     = restStr.take(2)
-    val promoChar = restStr.drop(2).headOption
+    val fromStr   = parts.take(2)
+    val toStr     = parts.substring(2, 4)
+    val promoChar = parts.drop(4).headOption
 
-    for
-      from  <- Pos.fromAlgebraic(fromStr)
-      to    <- Pos.fromAlgebraic(toStr)
-      promo = promoChar.flatMap(charToPromotion)
-      _     <- if promoChar.isDefined && promo.isEmpty then None else Some(())
-    yield Command.MakeMove(Move(from, to, promo))
+    val from = Pos.fromAlgebraic(fromStr).getOrElse(throw new IllegalArgumentException(s"Ungültiges Startfeld: $fromStr"))
+    val to   = Pos.fromAlgebraic(toStr).getOrElse(throw new IllegalArgumentException(s"Ungültiges Zielfeld: $toStr"))
 
-  private def charToPromotion(c: Char): Option[PieceType] = c match
-    case 'q' => Some(PieceType.Queen)
-    case 'r' => Some(PieceType.Rook)
-    case 'b' => Some(PieceType.Bishop)
-    case 'n' => Some(PieceType.Knight)
-    case _   => None
+    val promo = promoChar match
+      case Some('q') => Some(PieceType.Queen)
+      case Some('r') => Some(PieceType.Rook)
+      case Some('b') => Some(PieceType.Bishop)
+      case Some('n') => Some(PieceType.Knight)
+      case Some(c)   => throw new IllegalArgumentException(s"Ungültige Promotion: $c")
+      case None      => None
+
+    Move(from, to, promo)
+  }
 
 // ─── AppState ─────────────────────────────────────────────────────────────────
 
@@ -138,7 +136,7 @@ object GameController:
   def handleCommand(app: AppState, cmd: Command): AppState =
     import Command.*
     cmd match
-      case MakeMove(move) => handleMove(app, move)
+      case ProcessTurn(input) => handleTurn(app, input)
       case ShowMoves(pos) => handleShowMoves(app, pos)
       case Flip           => app.copy(highlights = Set.empty, message = None, flipped = !app.flipped)
       case Undo           => handleUndo(app)
@@ -151,44 +149,67 @@ object GameController:
 
   // ── Move handler ───────────────────────────────────────────────────────────
 
-  private def handleMove(app: AppState, move: Move): AppState =
+  private def processTurn(input: String, state: GameState): Either[String, (Move, GameState)] =
+    for {
+      // 1. Unpack Try: Input validieren
+      moveCoords <- MoveParser.parseInput(input).toEither.left.map(e => s"Ungültiges Format! ${e.getMessage}")
+      
+      // 2. Unpack Option: Ist auf dem Startfeld eine Figur?
+      piece <- state.board.get(moveCoords.from).toRight("Feld ist leer!")
+      
+      // 3. Either-Logik: Turn-Check (State-Pattern)
+      _ <- Either.cond(
+             piece.color == state.activeColor,
+             (),
+             s"Falsche Farbe! ${state.activeColor} ist am Zug."
+           )
+           
+      // 4. Either-Logik: Legal-Move-Check
+      legalMoves = MoveGenerator.legalMoves(state)
+      _ <- Either.cond(
+             legalMoves.exists(m => m == moveCoords),
+             (),
+             if legalMoves.exists(m => m.from == moveCoords.from && m.to == moveCoords.to && m.promotion.isDefined) && moveCoords.promotion.isEmpty then
+               "Pawn promotion required. Append q/r/b/n (e.g. e7e8q)."
+             else "Illegaler Zug."
+           )
+           
+      // 5. State-Update: Neues Board erzeugen
+      newState = GameRules.applyMove(state, moveCoords)
+    } yield (moveCoords, newState)
+
+  private def handleTurn(app: AppState, input: String): AppState =
     // Game already over?
     app.status match
       case GameStatus.Checkmate(_) | GameStatus.Stalemate | GameStatus.Draw(_) =>
         return app.copy(message = Some(TerminalView.error("Game is over. Type 'new' to start again.")))
       case _ => ()
 
-    val legal = MoveGenerator.legalMoves(app.game)
+    // Run Monadic Railway
+    processTurn(input, app.game) match {
+      case Right((move, newGame)) =>
+        val newStatus = GameRules.computeStatus(newGame)
+        val msg = newStatus match
+          case GameStatus.Checkmate(loser)  =>
+            val winner = if loser == Color.White then "Black" else "White"
+            Some(TerminalView.success(s"Checkmate! $winner wins!"))
+          case GameStatus.Stalemate        => Some(TerminalView.info("Stalemate — draw!"))
+          case GameStatus.Draw(reason)     => Some(TerminalView.info(s"Draw by $reason."))
+          case GameStatus.Check(_)         => Some(TerminalView.info("Check!"))
+          case GameStatus.Playing          => None
 
-    // Check legality
-    if !legal.exists(m => m.from == move.from && m.to == move.to && m.promotion == move.promotion) then
-      // Maybe pawn promotion needed?
-      if legal.exists(m => m.from == move.from && m.to == move.to && m.promotion.isDefined) && move.promotion.isEmpty then
-        return app.copy(message = Some(TerminalView.error("Pawn promotion required. Append q/r/b/n (e.g. e7e8q).")))
-      else
-        return app.copy(message = Some(TerminalView.error("Illegal move.")), highlights = Set.empty)
+        app.copy(
+          game       = newGame,
+          status     = newStatus,
+          lastMove   = Some(move),
+          highlights = Set.empty,
+          message    = msg,
+          drawOffer  = false
+        )
 
-    // Apply move
-    val newGame   = GameRules.applyMove(app.game, move)
-    val newStatus = GameRules.computeStatus(newGame)
-
-    val msg = newStatus match
-      case GameStatus.Checkmate(loser)  =>
-        val winner = if loser == Color.White then "Black" else "White"
-        Some(TerminalView.success(s"Checkmate! $winner wins!"))
-      case GameStatus.Stalemate        => Some(TerminalView.info("Stalemate — draw!"))
-      case GameStatus.Draw(reason)     => Some(TerminalView.info(s"Draw by $reason."))
-      case GameStatus.Check(_)         => Some(TerminalView.info("Check!"))
-      case GameStatus.Playing          => None
-
-    app.copy(
-      game       = newGame,
-      status     = newStatus,
-      lastMove   = Some(move),
-      highlights = Set.empty,
-      message    = msg,
-      drawOffer  = false
-    )
+      case Left(errorMsg) =>
+        app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty)
+    }
 
   // ── Show legal moves for a square ─────────────────────────────────────────
 

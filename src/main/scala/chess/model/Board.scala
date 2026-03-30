@@ -123,36 +123,49 @@ object Board:
 
 /**
  * Complete, immutable game state.
- *
- * @param board          current board
- * @param activeColor    whose turn it is
- * @param castlingRights remaining castling rights
- * @param enPassantTarget square a pawn may capture en-passant, if any
- * @param halfMoveClock  half-moves since last capture or pawn move (for 50-move rule)
- * @param fullMoveNumber increments after Black's move
- * @param history        previous states for threefold-repetition detection
  */
-case class GameState(
-  board:           Board,
-  activeColor:     Color,
-  castlingRights:  CastlingRights,
-  enPassantTarget: Option[Pos],
-  halfMoveClock:   Int,
-  fullMoveNumber:  Int,
-  history:         List[GameState] = Nil   // oldest first, current excluded
-):
-  def withHistory: GameState = copy(history = history :+ this)
+sealed trait GameState:
+  def board:           Board
+  def activeColor:     Color
+  def castlingRights:  CastlingRights
+  def enPassantTarget: Option[Pos]
+  def halfMoveClock:   Int
+  def fullMoveNumber:  Int
+  def history:         List[GameState]
 
+  def withHistory: GameState
+  
   def toFen: String =
     val enPassant = enPassantTarget.map(_.toAlgebraic).getOrElse("-")
     s"${board.toFenPlacement} ${GameState.colorToFen(activeColor)} ${castlingRights.toFen} $enPassant $halfMoveClock $fullMoveNumber"
 
+case class WhiteToMove(
+  board:           Board,
+  castlingRights:  CastlingRights,
+  enPassantTarget: Option[Pos],
+  halfMoveClock:   Int,
+  fullMoveNumber:  Int,
+  history:         List[GameState] = Nil
+) extends GameState:
+  val activeColor: Color = Color.White
+  def withHistory: GameState = copy(history = history :+ this)
+
+case class BlackToMove(
+  board:           Board,
+  castlingRights:  CastlingRights,
+  enPassantTarget: Option[Pos],
+  halfMoveClock:   Int,
+  fullMoveNumber:  Int,
+  history:         List[GameState] = Nil
+) extends GameState:
+  val activeColor: Color = Color.Black
+  def withHistory: GameState = copy(history = history :+ this)
+
 object GameState:
   val initialFen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
-  def initial: GameState = GameState(
+  def initial: GameState = WhiteToMove(
     board           = Board.initial,
-    activeColor     = Color.White,
     castlingRights  = CastlingRights(),
     enPassantTarget = None,
     halfMoveClock   = 0,
@@ -181,14 +194,12 @@ object GameState:
                             parsePositiveInt(fullMove, "fullmove number") match
                               case Left(error) => Left(error)
                               case Right(fullMoveNumber) =>
-                                Right(GameState(
-                                  board = board,
-                                  activeColor = activeColor,
-                                  castlingRights = castlingRights,
-                                  enPassantTarget = enPassantTarget,
-                                  halfMoveClock = halfMoveClock,
-                                  fullMoveNumber = fullMoveNumber
-                                ))
+                                Right(
+                                  if activeColor == Color.White then
+                                    WhiteToMove(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber)
+                                  else
+                                    BlackToMove(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber)
+                                )
       case _ => Left("FEN must contain 6 space-separated fields")
 
   private[model] def colorToFen(color: Color): String = color match

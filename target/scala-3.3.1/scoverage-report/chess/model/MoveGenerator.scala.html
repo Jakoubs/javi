@@ -1,0 +1,5945 @@
+<html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <title id="title">
+          chess/model/MoveGenerator.scala.html
+        </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/css/theme.default.min.css" type="text/css"/><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.min.js"></script><link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css"/><script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script><script type="text/javascript">
+        $(document).ready(function() {$(".tablesorter").tablesorter();});
+      </script>
+        <style>
+          table.codegrid { font-family: monospace; font-size: 12px; width: auto!important; }table.statementlist { width: auto!important; font-size: 13px; } table.codegrid td { padding: 0!important; border: 0!important } table td.linenumber { width: 40px!important; } 
+        </style>
+      </head>
+      <body style="font-family: monospace;">
+        <ul class="nav nav-tabs">
+          <li>
+            <a href="#codegrid" data-toggle="tab">Codegrid</a>
+          </li>
+          <li>
+            <a href="#statementlist" data-toggle="tab">Statement List</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane active" id="codegrid">
+            <pre style='font-size: 12pt; font-family: courier, monospace;'>1 <span style=''>package chess.model
+</span>2 <span style=''>
+</span>3 <span style=''>object MoveGenerator:
+</span>4 <span style=''>
+</span>5 <span style=''>  </span><span style='background: #AEF1AE'>private def bishopDirections</span><span style=''>: Array[(Int, Int)] = </span><span style='background: #AEF1AE'>Array((1, 1), (1, -1), (-1, 1), (-1, -1))</span><span style=''>
+</span>6 <span style=''>  </span><span style='background: #AEF1AE'>private def rookDirections</span><span style=''>: Array[(Int, Int)] = </span><span style='background: #AEF1AE'>Array((1, 0), (-1, 0), (0, 1), (0, -1))</span><span style=''>
+</span>7 <span style=''>  </span><span style='background: #AEF1AE'>private def knightDeltas</span><span style=''>: Array[(Int, Int)] = </span><span style='background: #AEF1AE'>Array((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))</span><span style=''>
+</span>8 <span style=''>  </span><span style='background: #AEF1AE'>private def kingDirections</span><span style=''>: Array[(Int, Int)] = </span><span style='background: #AEF1AE'>Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))</span><span style=''>
+</span>9 <span style=''>
+</span>10 <span style=''>  </span><span style='background: #AEF1AE'>def legalMoves</span><span style=''>(state: GameState): List[Move] =
+</span>11 <span style=''>    </span><span style='background: #AEF1AE'>pseudoLegalMoves(state).filter(move =&gt; !leavesKingInCheck(state, move))</span><span style=''>
+</span>12 <span style=''>
+</span>13 <span style=''>  </span><span style='background: #AEF1AE'>def legalMovesFrom</span><span style=''>(state: GameState, from: Pos): List[Move] =
+</span>14 <span style=''>    </span><span style='background: #AEF1AE'>legalMoves(state).filter(_.from == from)</span><span style=''>
+</span>15 <span style=''>
+</span>16 <span style=''>  </span><span style='background: #AEF1AE'>def isInCheck</span><span style=''>(state: GameState, color: Color): Boolean =
+</span>17 <span style=''>    </span><span style='background: #AEF1AE'>state.board.findKing(color)</span><span style=''> match
+</span>18 <span style=''>      </span><span style='background: #AEF1AE'>case None</span><span style=''>      =&gt; false
+</span>19 <span style=''>      </span><span style='background: #AEF1AE'>case Some(pos)</span><span style=''> =&gt; </span><span style='background: #AEF1AE'>isAttackedBy(state.board, pos, color.opposite)</span><span style=''>
+</span>20 <span style=''>
+</span>21 <span style=''>  </span><span style='background: #AEF1AE'>private def pseudoLegalMoves</span><span style=''>(state: GameState): List[Move] =
+</span>22 <span style=''>    val pieces = </span><span style='background: #AEF1AE'>state.board.allPiecesOf(state.activeColor)</span><span style=''>
+</span>23 <span style=''>    val moves = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[Move]
+</span>24 <span style=''>    var index = 0
+</span>25 <span style=''>    while index &lt; </span><span style='background: #AEF1AE'>pieces.length</span><span style=''> do
+</span>26 <span style=''>      val </span><span style='background: #AEF1AE'>(pos, piece)</span><span style=''> = </span><span style='background: #AEF1AE'>pieces(index)</span><span style=''>
+</span>27 <span style=''>      piece.pieceType match
+</span>28 <span style=''>        </span><span style='background: #AEF1AE'>case PieceType.Pawn</span><span style=''> =&gt;
+</span>29 <span style=''>          </span><span style='background: #AEF1AE'>moves ++= pawnMoves(state, pos, piece.color)</span><span style=''>
+</span>30 <span style=''>        </span><span style='background: #AEF1AE'>case PieceType.Knight</span><span style=''> =&gt;
+</span>31 <span style=''>          </span><span style='background: #AEF1AE'>moves ++= knightMoves(state, pos, piece.color)</span><span style=''>
+</span>32 <span style=''>        </span><span style='background: #AEF1AE'>case PieceType.Bishop</span><span style=''> =&gt;
+</span>33 <span style=''>          </span><span style='background: #AEF1AE'>moves ++= slidingMoves(state, pos, piece.color, bishopDirections)</span><span style=''>
+</span>34 <span style=''>        </span><span style='background: #AEF1AE'>case PieceType.Rook</span><span style=''> =&gt;
+</span>35 <span style=''>          </span><span style='background: #AEF1AE'>moves ++= slidingMoves(state, pos, piece.color, rookDirections)</span><span style=''>
+</span>36 <span style=''>        </span><span style='background: #AEF1AE'>case PieceType.Queen</span><span style=''> =&gt;
+</span>37 <span style=''>          </span><span style='background: #AEF1AE'>moves ++= queenMoves(state, pos, piece.color)</span><span style=''>
+</span>38 <span style=''>        </span><span style='background: #AEF1AE'>case PieceType.King</span><span style=''> =&gt;
+</span>39 <span style=''>          </span><span style='background: #AEF1AE'>moves ++= kingMoves(state, pos, piece.color)</span><span style=''>
+</span>40 <span style=''>      index += 1
+</span>41 <span style=''>    </span><span style='background: #AEF1AE'>moves.toList</span><span style=''>
+</span>42 <span style=''>
+</span>43 <span style=''>  </span><span style='background: #AEF1AE'>private def pawnMoves</span><span style=''>(state: GameState, pos: Pos, color: Color): List[Move] =
+</span>44 <span style=''>    val dir = if color == Color.White then </span><span style='background: #AEF1AE'>1</span><span style=''> else </span><span style='background: #AEF1AE'>-1</span><span style=''>
+</span>45 <span style=''>    val startRow = if color == Color.White then </span><span style='background: #AEF1AE'>1</span><span style=''> else </span><span style='background: #AEF1AE'>6</span><span style=''>
+</span>46 <span style=''>    val promRow = if color == Color.White then </span><span style='background: #AEF1AE'>7</span><span style=''> else </span><span style='background: #AEF1AE'>0</span><span style=''>
+</span>47 <span style=''>    val board = state.board
+</span>48 <span style=''>    val moves = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[Move]
+</span>49 <span style=''>
+</span>50 <span style=''>    </span><span style='background: #AEF1AE'>def addMoves</span><span style=''>(to: Pos): Unit =
+</span>51 <span style=''>      if to.row == promRow then
+</span>52 <span style=''>        </span><span style='background: #AEF1AE'>moves += Move(pos, to, Some(PieceType.Queen))
+</span>53 <span style=''></span><span style='background: #AEF1AE'>        moves += Move(pos, to, Some(PieceType.Rook))
+</span>54 <span style=''></span><span style='background: #AEF1AE'>        moves += Move(pos, to, Some(PieceType.Bishop))
+</span>55 <span style=''></span><span style='background: #AEF1AE'>        moves += Move(pos, to, Some(PieceType.Knight))</span><span style=''>
+</span>56 <span style=''>      else
+</span>57 <span style=''>        moves += Move(pos, to)
+</span>58 <span style=''>
+</span>59 <span style=''>    val oneStep = </span><span style='background: #AEF1AE'>pos + (0, dir)</span><span style=''>
+</span>60 <span style=''>    if </span><span style='background: #AEF1AE'>oneStep.isValid</span><span style=''> &amp;&amp; </span><span style='background: #AEF1AE'>board.isEmpty(oneStep)</span><span style=''> then
+</span>61 <span style=''>      </span><span style='background: #AEF1AE'>addMoves(oneStep)</span><span style=''>
+</span>62 <span style=''>
+</span>63 <span style=''>    val twoStep = </span><span style='background: #AEF1AE'>pos + (0, 2 * dir)</span><span style=''>
+</span>64 <span style=''>    if pos.row == startRow &amp;&amp; </span><span style='background: #AEF1AE'>board.isEmpty(oneStep)</span><span style=''> &amp;&amp; </span><span style='background: #AEF1AE'>board.isEmpty(twoStep)</span><span style=''> then
+</span>65 <span style=''>      moves += Move(pos, twoStep)
+</span>66 <span style=''>
+</span>67 <span style=''>    val leftTarget = </span><span style='background: #AEF1AE'>pos + (-1, dir)</span><span style=''>
+</span>68 <span style=''>    if </span><span style='background: #AEF1AE'>leftTarget.isValid</span><span style=''> then
+</span>69 <span style=''>      </span><span style='background: #AEF1AE'>if board.isOccupiedBy(leftTarget, color.opposite) then addMoves(leftTarget)
+</span>70 <span style=''></span><span style='background: #AEF1AE'>      else if state.enPassantTarget.contains(leftTarget) then moves += Move(pos, leftTarget)</span><span style=''>
+</span>71 <span style=''>
+</span>72 <span style=''>    val rightTarget = </span><span style='background: #AEF1AE'>pos + (1, dir)</span><span style=''>
+</span>73 <span style=''>    if </span><span style='background: #AEF1AE'>rightTarget.isValid</span><span style=''> then
+</span>74 <span style=''>      </span><span style='background: #AEF1AE'>if board.isOccupiedBy(rightTarget, color.opposite) then addMoves(rightTarget)
+</span>75 <span style=''></span><span style='background: #AEF1AE'>      else if state.enPassantTarget.contains(rightTarget) then moves += Move(pos, rightTarget)</span><span style=''>
+</span>76 <span style=''>
+</span>77 <span style=''>    </span><span style='background: #AEF1AE'>moves.toList</span><span style=''>
+</span>78 <span style=''>
+</span>79 <span style=''>  </span><span style='background: #AEF1AE'>private def knightMoves</span><span style=''>(state: GameState, pos: Pos, color: Color): List[Move] =
+</span>80 <span style=''>    val moves = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[Move]
+</span>81 <span style=''>    val deltas = </span><span style='background: #AEF1AE'>knightDeltas</span><span style=''>
+</span>82 <span style=''>    var index = 0
+</span>83 <span style=''>    while index &lt; </span><span style='background: #AEF1AE'>deltas.length</span><span style=''> do
+</span>84 <span style=''>      val </span><span style='background: #AEF1AE'>(dc, dr)</span><span style=''> = </span><span style='background: #AEF1AE'>deltas(index)</span><span style=''>
+</span>85 <span style=''>      val to = </span><span style='background: #AEF1AE'>pos + (dc, dr)</span><span style=''>
+</span>86 <span style=''>      if </span><span style='background: #AEF1AE'>to.isValid</span><span style=''> &amp;&amp; !</span><span style='background: #AEF1AE'>state.board.isOccupiedBy(to, color)</span><span style=''> then
+</span>87 <span style=''>        moves += Move(pos, to)
+</span>88 <span style=''>      index += 1
+</span>89 <span style=''>    </span><span style='background: #AEF1AE'>moves.toList</span><span style=''>
+</span>90 <span style=''>
+</span>91 <span style=''>  </span><span style='background: #AEF1AE'>private def slidingMoves</span><span style=''>(
+</span>92 <span style=''>    state: GameState,
+</span>93 <span style=''>    pos: Pos,
+</span>94 <span style=''>    color: Color,
+</span>95 <span style=''>    directions: Array[(Int, Int)]
+</span>96 <span style=''>  ): List[Move] =
+</span>97 <span style=''>    val moves = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[Move]
+</span>98 <span style=''>    var dirIndex = 0
+</span>99 <span style=''>    while dirIndex &lt; </span><span style='background: #AEF1AE'>directions.length</span><span style=''> do
+</span>100 <span style=''>      val </span><span style='background: #AEF1AE'>(dc, dr)</span><span style=''> = </span><span style='background: #AEF1AE'>directions(dirIndex)</span><span style=''>
+</span>101 <span style=''>      var current = </span><span style='background: #AEF1AE'>pos + (dc, dr)</span><span style=''>
+</span>102 <span style=''>      var blocked = false
+</span>103 <span style=''>      while </span><span style='background: #AEF1AE'>current.isValid</span><span style=''> &amp;&amp; !blocked do
+</span>104 <span style=''>        if </span><span style='background: #AEF1AE'>state.board.isOccupiedBy(current, color)</span><span style=''> then
+</span>105 <span style=''>          </span><span style='background: #AEF1AE'>blocked = true</span><span style=''>
+</span>106 <span style=''>        else </span><span style='background: #AEF1AE'>if state.board.isOccupiedBy(current, color.opposite) then
+</span>107 <span style=''></span><span style='background: #AEF1AE'>          moves += Move(pos, current)
+</span>108 <span style=''></span><span style='background: #AEF1AE'>          blocked = true
+</span>109 <span style=''></span><span style='background: #AEF1AE'>        else
+</span>110 <span style=''></span><span style='background: #AEF1AE'>          moves += Move(pos, current)
+</span>111 <span style=''></span><span style='background: #AEF1AE'>          current = current + (dc, dr)</span><span style=''>
+</span>112 <span style=''>      dirIndex += 1
+</span>113 <span style=''>    </span><span style='background: #AEF1AE'>moves.toList</span><span style=''>
+</span>114 <span style=''>
+</span>115 <span style=''>  </span><span style='background: #AEF1AE'>private def queenMoves</span><span style=''>(state: GameState, pos: Pos, color: Color): List[Move] =
+</span>116 <span style=''>    </span><span style='background: #AEF1AE'>slidingMoves(state, pos, color, Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)))</span><span style=''>
+</span>117 <span style=''>
+</span>118 <span style=''>  </span><span style='background: #AEF1AE'>private def kingMoves</span><span style=''>(state: GameState, pos: Pos, color: Color): List[Move] =
+</span>119 <span style=''>    val moves = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[Move]
+</span>120 <span style=''>    val directions = </span><span style='background: #AEF1AE'>kingDirections</span><span style=''>
+</span>121 <span style=''>    var index = 0
+</span>122 <span style=''>    while index &lt; </span><span style='background: #AEF1AE'>directions.length</span><span style=''> do
+</span>123 <span style=''>      val </span><span style='background: #AEF1AE'>(dc, dr)</span><span style=''> = </span><span style='background: #AEF1AE'>directions(index)</span><span style=''>
+</span>124 <span style=''>      val to = </span><span style='background: #AEF1AE'>pos + (dc, dr)</span><span style=''>
+</span>125 <span style=''>      if </span><span style='background: #AEF1AE'>to.isValid</span><span style=''> &amp;&amp; !</span><span style='background: #AEF1AE'>state.board.isOccupiedBy(to, color)</span><span style=''> then
+</span>126 <span style=''>        moves += Move(pos, to)
+</span>127 <span style=''>      index += 1
+</span>128 <span style=''>    </span><span style='background: #AEF1AE'>moves ++= castlingMoves(state, pos, color)</span><span style=''>
+</span>129 <span style=''>    </span><span style='background: #AEF1AE'>moves.toList</span><span style=''>
+</span>130 <span style=''>
+</span>131 <span style=''>  // $COVERAGE-OFF$
+</span>132 <span style=''>  </span><span style='background: #AEF1AE'>private def castlingMoves</span><span style=''>(state: GameState, kingPos: Pos, color: Color): List[Move] =
+</span>133 <span style=''>    val moves = </span><span style='background: #AEF1AE'>scala.collection.mutable.ListBuffer.empty</span><span style=''>[Move]
+</span>134 <span style=''>    val board = state.board
+</span>135 <span style=''>    val rights = state.castlingRights
+</span>136 <span style=''>    val row = if color == Color.White then </span><span style='background: #AEF1AE'>0</span><span style=''> else </span><span style='background: #AEF1AE'>7</span><span style=''>
+</span>137 <span style=''>
+</span>138 <span style=''>    if </span><span style='background: #AEF1AE'>isAttackedBy(board, kingPos, color.opposite)</span><span style=''> then
+</span>139 <span style=''>      </span><span style='background: #AEF1AE'>return Nil</span><span style=''>
+</span>140 <span style=''>
+</span>141 <span style=''>    val kingSideAllowed = if color == Color.White then </span><span style='background: #AEF1AE'>rights.whiteKingSide</span><span style=''> else </span><span style='background: #AEF1AE'>rights.blackKingSide</span><span style=''>
+</span>142 <span style=''>    if kingSideAllowed &amp;&amp;
+</span>143 <span style=''>      </span><span style='background: #F0ADAD'>board.get(Pos(7, row))</span><span style='background: #AEF1AE'>.contains(Piece(color, PieceType.Rook))</span><span style=''> &amp;&amp;
+</span>144 <span style=''>      </span><span style='background: #AEF1AE'>board.isEmpty(Pos(5, row))</span><span style=''> &amp;&amp;
+</span>145 <span style=''>      </span><span style='background: #AEF1AE'>board.isEmpty(Pos(6, row))</span><span style=''> &amp;&amp;
+</span>146 <span style=''>      !</span><span style='background: #AEF1AE'>isAttackedBy(board, Pos(5, row), color.opposite)</span><span style=''> &amp;&amp;
+</span>147 <span style=''>      !</span><span style='background: #AEF1AE'>isAttackedBy(board, Pos(6, row), color.opposite)</span><span style=''>
+</span>148 <span style=''>    then
+</span>149 <span style=''>      moves += Move(kingPos, Pos(6, row))
+</span>150 <span style=''>
+</span>151 <span style=''>    val queenSideAllowed = if color == Color.White then </span><span style='background: #AEF1AE'>rights.whiteQueenSide</span><span style=''> else </span><span style='background: #AEF1AE'>rights.blackQueenSide</span><span style=''>
+</span>152 <span style=''>    if queenSideAllowed &amp;&amp;
+</span>153 <span style=''>      </span><span style='background: #F0ADAD'>board.get(Pos(0, row))</span><span style='background: #AEF1AE'>.contains(Piece(color, PieceType.Rook))</span><span style=''> &amp;&amp;
+</span>154 <span style=''>      </span><span style='background: #AEF1AE'>board.isEmpty(Pos(1, row))</span><span style=''> &amp;&amp;
+</span>155 <span style=''>      </span><span style='background: #AEF1AE'>board.isEmpty(Pos(2, row))</span><span style=''> &amp;&amp;
+</span>156 <span style=''>      </span><span style='background: #AEF1AE'>board.isEmpty(Pos(3, row))</span><span style=''> &amp;&amp;
+</span>157 <span style=''>      !</span><span style='background: #AEF1AE'>isAttackedBy(board, Pos(3, row), color.opposite)</span><span style=''> &amp;&amp;
+</span>158 <span style=''>      !</span><span style='background: #AEF1AE'>isAttackedBy(board, Pos(4, row), color.opposite)</span><span style=''>
+</span>159 <span style=''>    then
+</span>160 <span style=''>      moves += Move(kingPos, Pos(2, row))
+</span>161 <span style=''>
+</span>162 <span style=''>    </span><span style='background: #AEF1AE'>moves.toList</span><span style=''>
+</span>163 <span style=''>
+</span>164 <span style=''>  </span><span style='background: #AEF1AE'>def isAttackedBy</span><span style=''>(board: Board, pos: Pos, attacker: Color): Boolean =
+</span>165 <span style=''>    val pawnDir = if attacker == Color.White then </span><span style='background: #AEF1AE'>1</span><span style=''> else </span><span style='background: #AEF1AE'>-1</span><span style=''>
+</span>166 <span style=''>    if </span><span style='background: #F0ADAD'>board.get(pos + (-1, -pawnDir))</span><span style='background: #AEF1AE'>.contains(Piece(attacker, PieceType.Pawn))</span><span style=''> then </span><span style='background: #AEF1AE'>return true</span><span style=''>
+</span>167 <span style=''>    if </span><span style='background: #F0ADAD'>board.get(pos + (1, -pawnDir))</span><span style='background: #AEF1AE'>.contains(Piece(attacker, PieceType.Pawn))</span><span style=''> then </span><span style='background: #AEF1AE'>return true</span><span style=''>
+</span>168 <span style=''>
+</span>169 <span style=''>    val deltas = </span><span style='background: #AEF1AE'>knightDeltas</span><span style=''>
+</span>170 <span style=''>    var index = 0
+</span>171 <span style=''>    while index &lt; </span><span style='background: #AEF1AE'>deltas.length</span><span style=''> do
+</span>172 <span style=''>      val </span><span style='background: #AEF1AE'>(dc, dr)</span><span style=''> = </span><span style='background: #AEF1AE'>deltas(index)</span><span style=''>
+</span>173 <span style=''>      if </span><span style='background: #F0ADAD'>board.get(pos + (dc, dr))</span><span style='background: #AEF1AE'>.contains(Piece(attacker, PieceType.Knight))</span><span style=''> then </span><span style='background: #AEF1AE'>return true</span><span style=''>
+</span>174 <span style=''>      index += 1
+</span>175 <span style=''>
+</span>176 <span style=''>    val kings = </span><span style='background: #AEF1AE'>kingDirections</span><span style=''>
+</span>177 <span style=''>    index = 0
+</span>178 <span style=''>    while index &lt; </span><span style='background: #AEF1AE'>kings.length</span><span style=''> do
+</span>179 <span style=''>      val </span><span style='background: #AEF1AE'>(dc, dr)</span><span style=''> = </span><span style='background: #AEF1AE'>kings(index)</span><span style=''>
+</span>180 <span style=''>      if </span><span style='background: #F0ADAD'>board.get(pos + (dc, dr))</span><span style='background: #AEF1AE'>.contains(Piece(attacker, PieceType.King))</span><span style=''> then </span><span style='background: #AEF1AE'>return true</span><span style=''>
+</span>181 <span style=''>      index += 1
+</span>182 <span style=''>
+</span>183 <span style=''>    </span><span style='background: #AEF1AE'>slidingAttack(board, pos, attacker, bishopDirections, PieceType.Bishop)</span><span style=''> ||
+</span>184 <span style=''>    </span><span style='background: #AEF1AE'>slidingAttack(board, pos, attacker, rookDirections, PieceType.Rook)</span><span style=''>
+</span>185 <span style=''>
+</span>186 <span style=''>  </span><span style='background: #AEF1AE'>private def slidingAttack</span><span style=''>(
+</span>187 <span style=''>    board: Board,
+</span>188 <span style=''>    pos: Pos,
+</span>189 <span style=''>    attacker: Color,
+</span>190 <span style=''>    directions: Array[(Int, Int)],
+</span>191 <span style=''>    primary: PieceType
+</span>192 <span style=''>  ): Boolean =
+</span>193 <span style=''>    var dirIndex = 0
+</span>194 <span style=''>    while dirIndex &lt; </span><span style='background: #AEF1AE'>directions.length</span><span style=''> do
+</span>195 <span style=''>      val </span><span style='background: #AEF1AE'>(dc, dr)</span><span style=''> = </span><span style='background: #AEF1AE'>directions(dirIndex)</span><span style=''>
+</span>196 <span style=''>      var current = </span><span style='background: #AEF1AE'>pos + (dc, dr)</span><span style=''>
+</span>197 <span style=''>      var blocked = false
+</span>198 <span style=''>      while </span><span style='background: #AEF1AE'>current.isValid</span><span style=''> &amp;&amp; !blocked do
+</span>199 <span style=''>        </span><span style='background: #AEF1AE'>board.get(current)</span><span style=''> match
+</span>200 <span style=''>          </span><span style='background: #AEF1AE'>case None</span><span style=''> =&gt;
+</span>201 <span style=''>            current = </span><span style='background: #AEF1AE'>current + (dc, dr)</span><span style=''>
+</span>202 <span style=''>          </span><span style='background: #AEF1AE'>case Some(Piece(c, pt)) if c == attacker &amp;&amp; (pt == primary || pt == PieceType.Queen</span><span style=''>) =&gt;
+</span>203 <span style=''>            return true
+</span>204 <span style=''>          </span><span style='background: #AEF1AE'>case _</span><span style=''> =&gt;
+</span>205 <span style=''>            blocked = true
+</span>206 <span style=''>      dirIndex += 1
+</span>207 <span style=''>    false
+</span>208 <span style=''>
+</span>209 <span style=''>  </span><span style='background: #AEF1AE'>private def leavesKingInCheck</span><span style=''>(state: GameState, move: Move): Boolean =
+</span>210 <span style=''>    val nextBoard = </span><span style='background: #AEF1AE'>applyMoveToBoard(state, move)</span><span style=''>
+</span>211 <span style=''>    </span><span style='background: #AEF1AE'>nextBoard.findKing(state.activeColor).exists(pos =&gt; isAttackedBy(nextBoard, pos, state.activeColor.opposite))</span><span style=''>
+</span>212 <span style=''>
+</span>213 <span style=''>  </span><span style='background: #AEF1AE'>private def applyMoveToBoard</span><span style=''>(state: GameState, move: Move): Board =
+</span>214 <span style=''>    val board = state.board
+</span>215 <span style=''>    val piece = </span><span style='background: #AEF1AE'>board.get(move.from).get</span><span style=''>
+</span>216 <span style=''>
+</span>217 <span style=''>    val boardAfterEP =
+</span>218 <span style=''>      if piece.pieceType == PieceType.Pawn &amp;&amp; </span><span style='background: #AEF1AE'>state.enPassantTarget.contains(move.to)</span><span style=''> then
+</span>219 <span style=''>        </span><span style='background: #AEF1AE'>val dir = if piece.color == Color.White then -1 else 1
+</span>220 <span style=''></span><span style='background: #AEF1AE'>        board.remove(move.to + (0, dir))</span><span style=''>
+</span>221 <span style=''>      else </span><span style='background: #AEF1AE'>board</span><span style=''>
+</span>222 <span style=''>
+</span>223 <span style=''>    val boardAfterCastle =
+</span>224 <span style=''>      if piece.pieceType == PieceType.King then
+</span>225 <span style=''>        </span><span style='background: #AEF1AE'>val dc = move.to.col - move.from.col
+</span>226 <span style=''></span><span style='background: #AEF1AE'>        if math.abs(dc) == 2 then
+</span>227 <span style=''></span><span style='background: #AEF1AE'>          val row = move.from.row
+</span>228 <span style=''></span><span style='background: #AEF1AE'>          val rookCol = if dc &gt; 0 then 7 else 0
+</span>229 <span style=''></span><span style='background: #AEF1AE'>          val newCol = if dc &gt; 0 then 5 else 3
+</span>230 <span style=''></span><span style='background: #AEF1AE'>          boardAfterEP.movePiece(Pos(rookCol, row), Pos(newCol, row))
+</span>231 <span style=''></span><span style='background: #AEF1AE'>        else boardAfterEP</span><span style=''>
+</span>232 <span style=''>      else </span><span style='background: #AEF1AE'>boardAfterEP</span><span style=''>
+</span>233 <span style=''>
+</span>234 <span style=''>    val finalPiece = move.promotion match
+</span>235 <span style=''>      </span><span style='background: #AEF1AE'>case Some(pt)</span><span style=''> =&gt; Piece(piece.color, pt)
+</span>236 <span style=''>      </span><span style='background: #AEF1AE'>case None</span><span style=''>     =&gt; piece
+</span>237 <span style=''>
+</span>238 <span style=''>    </span><span style='background: #AEF1AE'>boardAfterCastle.remove(move.from).put(move.to, finalPiece)</span><span style=''>
+</span>239 <span style=''>  // $COVERAGE-ON$
+</span></pre>
+          </div>
+          <div class="tab-pane" id="statementlist">
+            <table cellspacing="0" cellpadding="0" class="table statementlist">
+      <tr>
+        <th>Line</th>
+        <th>Stmt Id</th>
+        <th>Pos</th>
+        <th>Tree</th>
+        <th>Symbol</th>
+        <th>Tests</th>
+        <th>Code</th>
+      </tr><tr>
+        <td>
+          4
+        </td>
+        <td>
+          487
+        </td>
+        <td>
+          96
+          -
+          137
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Array((1, 1), (1, -1), (-1, 1), (-1, -1))
+        </td>
+      </tr><tr>
+        <td>
+          4
+        </td>
+        <td>
+          488
+        </td>
+        <td>
+          46
+          -
+          74
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          bishopDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def bishopDirections
+        </td>
+      </tr><tr>
+        <td>
+          5
+        </td>
+        <td>
+          490
+        </td>
+        <td>
+          140
+          -
+          166
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          rookDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def rookDirections
+        </td>
+      </tr><tr>
+        <td>
+          5
+        </td>
+        <td>
+          489
+        </td>
+        <td>
+          188
+          -
+          227
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Array((1, 0), (-1, 0), (0, 1), (0, -1))
+        </td>
+      </tr><tr>
+        <td>
+          6
+        </td>
+        <td>
+          492
+        </td>
+        <td>
+          230
+          -
+          254
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          knightDeltas
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def knightDeltas
+        </td>
+      </tr><tr>
+        <td>
+          6
+        </td>
+        <td>
+          491
+        </td>
+        <td>
+          276
+          -
+          353
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Array((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
+        </td>
+      </tr><tr>
+        <td>
+          7
+        </td>
+        <td>
+          494
+        </td>
+        <td>
+          356
+          -
+          382
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          kingDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def kingDirections
+        </td>
+      </tr><tr>
+        <td>
+          7
+        </td>
+        <td>
+          493
+        </td>
+        <td>
+          404
+          -
+          479
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
+        </td>
+      </tr><tr>
+        <td>
+          9
+        </td>
+        <td>
+          498
+        </td>
+        <td>
+          483
+          -
+          497
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          legalMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def legalMoves
+        </td>
+      </tr><tr>
+        <td>
+          10
+        </td>
+        <td>
+          496
+        </td>
+        <td>
+          534
+          -
+          557
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          pseudoLegalMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pseudoLegalMoves(state)
+        </td>
+      </tr><tr>
+        <td>
+          10
+        </td>
+        <td>
+          495
+        </td>
+        <td>
+          534
+          -
+          605
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          filter
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pseudoLegalMoves(state).filter(move =&gt; !leavesKingInCheck(state, move))
+        </td>
+      </tr><tr>
+        <td>
+          10
+        </td>
+        <td>
+          497
+        </td>
+        <td>
+          574
+          -
+          604
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          leavesKingInCheck
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          leavesKingInCheck(state, move)
+        </td>
+      </tr><tr>
+        <td>
+          12
+        </td>
+        <td>
+          501
+        </td>
+        <td>
+          609
+          -
+          627
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          legalMovesFrom
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def legalMovesFrom
+        </td>
+      </tr><tr>
+        <td>
+          13
+        </td>
+        <td>
+          499
+        </td>
+        <td>
+          675
+          -
+          715
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          filter
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          legalMoves(state).filter(_.from == from)
+        </td>
+      </tr><tr>
+        <td>
+          13
+        </td>
+        <td>
+          500
+        </td>
+        <td>
+          675
+          -
+          692
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          legalMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          legalMoves(state)
+        </td>
+      </tr><tr>
+        <td>
+          15
+        </td>
+        <td>
+          507
+        </td>
+        <td>
+          719
+          -
+          732
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          isInCheck
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def isInCheck
+        </td>
+      </tr><tr>
+        <td>
+          16
+        </td>
+        <td>
+          502
+        </td>
+        <td>
+          780
+          -
+          807
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          findKing
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.board.findKing(color)
+        </td>
+      </tr><tr>
+        <td>
+          17
+        </td>
+        <td>
+          503
+        </td>
+        <td>
+          820
+          -
+          829
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case None
+        </td>
+      </tr><tr>
+        <td>
+          18
+        </td>
+        <td>
+          505
+        </td>
+        <td>
+          868
+          -
+          914
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          isAttackedBy(state.board, pos, color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          18
+        </td>
+        <td>
+          504
+        </td>
+        <td>
+          850
+          -
+          864
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Some(pos)
+        </td>
+      </tr><tr>
+        <td>
+          18
+        </td>
+        <td>
+          506
+        </td>
+        <td>
+          899
+          -
+          913
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          20
+        </td>
+        <td>
+          534
+        </td>
+        <td>
+          918
+          -
+          946
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          pseudoLegalMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def pseudoLegalMoves
+        </td>
+      </tr><tr>
+        <td>
+          21
+        </td>
+        <td>
+          508
+        </td>
+        <td>
+          996
+          -
+          1038
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          allPiecesOf
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.board.allPiecesOf(state.activeColor)
+        </td>
+      </tr><tr>
+        <td>
+          22
+        </td>
+        <td>
+          509
+        </td>
+        <td>
+          1055
+          -
+          1096
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.ListBuffer.empty
+        </td>
+      </tr><tr>
+        <td>
+          24
+        </td>
+        <td>
+          510
+        </td>
+        <td>
+          1139
+          -
+          1152
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces.length
+        </td>
+      </tr><tr>
+        <td>
+          25
+        </td>
+        <td>
+          512
+        </td>
+        <td>
+          1166
+          -
+          1178
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (pos, piece)
+        </td>
+      </tr><tr>
+        <td>
+          25
+        </td>
+        <td>
+          511
+        </td>
+        <td>
+          1181
+          -
+          1194
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pieces(index)
+        </td>
+      </tr><tr>
+        <td>
+          27
+        </td>
+        <td>
+          513
+        </td>
+        <td>
+          1231
+          -
+          1250
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Pawn
+        </td>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          514
+        </td>
+        <td>
+          1264
+          -
+          1308
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves ++= pawnMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          28
+        </td>
+        <td>
+          515
+        </td>
+        <td>
+          1274
+          -
+          1308
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          pawnMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pawnMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          29
+        </td>
+        <td>
+          516
+        </td>
+        <td>
+          1317
+          -
+          1338
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Knight
+        </td>
+      </tr><tr>
+        <td>
+          30
+        </td>
+        <td>
+          517
+        </td>
+        <td>
+          1352
+          -
+          1398
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves ++= knightMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          30
+        </td>
+        <td>
+          518
+        </td>
+        <td>
+          1362
+          -
+          1398
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          knightMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          knightMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          31
+        </td>
+        <td>
+          519
+        </td>
+        <td>
+          1407
+          -
+          1428
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Bishop
+        </td>
+      </tr><tr>
+        <td>
+          32
+        </td>
+        <td>
+          522
+        </td>
+        <td>
+          1490
+          -
+          1506
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          bishopDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          bishopDirections
+        </td>
+      </tr><tr>
+        <td>
+          32
+        </td>
+        <td>
+          521
+        </td>
+        <td>
+          1452
+          -
+          1507
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          slidingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          slidingMoves(state, pos, piece.color, bishopDirections)
+        </td>
+      </tr><tr>
+        <td>
+          32
+        </td>
+        <td>
+          520
+        </td>
+        <td>
+          1442
+          -
+          1507
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves ++= slidingMoves(state, pos, piece.color, bishopDirections)
+        </td>
+      </tr><tr>
+        <td>
+          33
+        </td>
+        <td>
+          523
+        </td>
+        <td>
+          1516
+          -
+          1535
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Rook
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          525
+        </td>
+        <td>
+          1559
+          -
+          1612
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          slidingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          slidingMoves(state, pos, piece.color, rookDirections)
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          524
+        </td>
+        <td>
+          1549
+          -
+          1612
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves ++= slidingMoves(state, pos, piece.color, rookDirections)
+        </td>
+      </tr><tr>
+        <td>
+          34
+        </td>
+        <td>
+          526
+        </td>
+        <td>
+          1597
+          -
+          1611
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          rookDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rookDirections
+        </td>
+      </tr><tr>
+        <td>
+          35
+        </td>
+        <td>
+          527
+        </td>
+        <td>
+          1621
+          -
+          1641
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.Queen
+        </td>
+      </tr><tr>
+        <td>
+          36
+        </td>
+        <td>
+          528
+        </td>
+        <td>
+          1655
+          -
+          1700
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves ++= queenMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          36
+        </td>
+        <td>
+          529
+        </td>
+        <td>
+          1665
+          -
+          1700
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          queenMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          queenMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          37
+        </td>
+        <td>
+          530
+        </td>
+        <td>
+          1709
+          -
+          1728
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case PieceType.King
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          532
+        </td>
+        <td>
+          1752
+          -
+          1786
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          kingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          kingMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          38
+        </td>
+        <td>
+          531
+        </td>
+        <td>
+          1742
+          -
+          1786
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves ++= kingMoves(state, pos, piece.color)
+        </td>
+      </tr><tr>
+        <td>
+          40
+        </td>
+        <td>
+          533
+        </td>
+        <td>
+          1808
+          -
+          1820
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves.toList
+        </td>
+      </tr><tr>
+        <td>
+          42
+        </td>
+        <td>
+          575
+        </td>
+        <td>
+          1824
+          -
+          1845
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          pawnMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def pawnMoves
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          536
+        </td>
+        <td>
+          1952
+          -
+          1954
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          -1
+        </td>
+      </tr><tr>
+        <td>
+          43
+        </td>
+        <td>
+          535
+        </td>
+        <td>
+          1945
+          -
+          1946
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          1
+        </td>
+      </tr><tr>
+        <td>
+          44
+        </td>
+        <td>
+          537
+        </td>
+        <td>
+          2003
+          -
+          2004
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          1
+        </td>
+      </tr><tr>
+        <td>
+          44
+        </td>
+        <td>
+          538
+        </td>
+        <td>
+          2010
+          -
+          2011
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          6
+        </td>
+      </tr><tr>
+        <td>
+          45
+        </td>
+        <td>
+          540
+        </td>
+        <td>
+          2066
+          -
+          2067
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          45
+        </td>
+        <td>
+          539
+        </td>
+        <td>
+          2059
+          -
+          2060
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          7
+        </td>
+      </tr><tr>
+        <td>
+          47
+        </td>
+        <td>
+          541
+        </td>
+        <td>
+          2112
+          -
+          2153
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.ListBuffer.empty
+        </td>
+      </tr><tr>
+        <td>
+          49
+        </td>
+        <td>
+          547
+        </td>
+        <td>
+          2165
+          -
+          2177
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          addMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def addMoves
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          546
+        </td>
+        <td>
+          2235
+          -
+          2443
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, to, Some(PieceType.Queen))\n        moves += Move(pos, to, Some(PieceType.Rook))\n        moves += Move(pos, to, Some(PieceType.Bishop))\n        moves += Move(pos, to, Some(PieceType.Knight))
+        </td>
+      </tr><tr>
+        <td>
+          51
+        </td>
+        <td>
+          542
+        </td>
+        <td>
+          2235
+          -
+          2280
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, to, Some(PieceType.Queen))
+        </td>
+      </tr><tr>
+        <td>
+          52
+        </td>
+        <td>
+          543
+        </td>
+        <td>
+          2289
+          -
+          2333
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, to, Some(PieceType.Rook))
+        </td>
+      </tr><tr>
+        <td>
+          53
+        </td>
+        <td>
+          544
+        </td>
+        <td>
+          2342
+          -
+          2388
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, to, Some(PieceType.Bishop))
+        </td>
+      </tr><tr>
+        <td>
+          54
+        </td>
+        <td>
+          545
+        </td>
+        <td>
+          2397
+          -
+          2443
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, to, Some(PieceType.Knight))
+        </td>
+      </tr><tr>
+        <td>
+          58
+        </td>
+        <td>
+          548
+        </td>
+        <td>
+          2505
+          -
+          2519
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (0, dir)
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          550
+        </td>
+        <td>
+          2546
+          -
+          2568
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(oneStep)
+        </td>
+      </tr><tr>
+        <td>
+          59
+        </td>
+        <td>
+          549
+        </td>
+        <td>
+          2527
+          -
+          2542
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          oneStep.isValid
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          552
+        </td>
+        <td>
+          2580
+          -
+          2597
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          addMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          addMoves(oneStep)
+        </td>
+      </tr><tr>
+        <td>
+          60
+        </td>
+        <td>
+          551
+        </td>
+        <td>
+          2580
+          -
+          2597
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          addMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          addMoves(oneStep)
+        </td>
+      </tr><tr>
+        <td>
+          62
+        </td>
+        <td>
+          553
+        </td>
+        <td>
+          2617
+          -
+          2635
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (0, 2 * dir)
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          555
+        </td>
+        <td>
+          2692
+          -
+          2714
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(twoStep)
+        </td>
+      </tr><tr>
+        <td>
+          63
+        </td>
+        <td>
+          554
+        </td>
+        <td>
+          2666
+          -
+          2688
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(oneStep)
+        </td>
+      </tr><tr>
+        <td>
+          66
+        </td>
+        <td>
+          556
+        </td>
+        <td>
+          2776
+          -
+          2791
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (-1, dir)
+        </td>
+      </tr><tr>
+        <td>
+          67
+        </td>
+        <td>
+          557
+        </td>
+        <td>
+          2799
+          -
+          2817
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          leftTarget.isValid
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          559
+        </td>
+        <td>
+          2863
+          -
+          2877
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          558
+        </td>
+        <td>
+          2832
+          -
+          2878
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isOccupiedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isOccupiedBy(leftTarget, color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          561
+        </td>
+        <td>
+          2884
+          -
+          2904
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          addMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          addMoves(leftTarget)
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          564
+        </td>
+        <td>
+          2829
+          -
+          2997
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if board.isOccupiedBy(leftTarget, color.opposite) then addMoves(leftTarget)\n      else if state.enPassantTarget.contains(leftTarget) then moves += Move(pos, leftTarget)
+        </td>
+      </tr><tr>
+        <td>
+          68
+        </td>
+        <td>
+          560
+        </td>
+        <td>
+          2884
+          -
+          2904
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          addMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          addMoves(leftTarget)
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          563
+        </td>
+        <td>
+          2916
+          -
+          2997
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if state.enPassantTarget.contains(leftTarget) then moves += Move(pos, leftTarget)
+        </td>
+      </tr><tr>
+        <td>
+          69
+        </td>
+        <td>
+          562
+        </td>
+        <td>
+          2919
+          -
+          2961
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.enPassantTarget.contains(leftTarget)
+        </td>
+      </tr><tr>
+        <td>
+          71
+        </td>
+        <td>
+          565
+        </td>
+        <td>
+          3021
+          -
+          3035
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (1, dir)
+        </td>
+      </tr><tr>
+        <td>
+          72
+        </td>
+        <td>
+          566
+        </td>
+        <td>
+          3043
+          -
+          3062
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rightTarget.isValid
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          568
+        </td>
+        <td>
+          3109
+          -
+          3123
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          567
+        </td>
+        <td>
+          3077
+          -
+          3124
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isOccupiedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isOccupiedBy(rightTarget, color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          570
+        </td>
+        <td>
+          3130
+          -
+          3151
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          addMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          addMoves(rightTarget)
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          573
+        </td>
+        <td>
+          3074
+          -
+          3246
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if board.isOccupiedBy(rightTarget, color.opposite) then addMoves(rightTarget)\n      else if state.enPassantTarget.contains(rightTarget) then moves += Move(pos, rightTarget)
+        </td>
+      </tr><tr>
+        <td>
+          73
+        </td>
+        <td>
+          569
+        </td>
+        <td>
+          3130
+          -
+          3151
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          addMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          addMoves(rightTarget)
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          572
+        </td>
+        <td>
+          3163
+          -
+          3246
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if state.enPassantTarget.contains(rightTarget) then moves += Move(pos, rightTarget)
+        </td>
+      </tr><tr>
+        <td>
+          74
+        </td>
+        <td>
+          571
+        </td>
+        <td>
+          3166
+          -
+          3209
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.enPassantTarget.contains(rightTarget)
+        </td>
+      </tr><tr>
+        <td>
+          76
+        </td>
+        <td>
+          574
+        </td>
+        <td>
+          3252
+          -
+          3264
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves.toList
+        </td>
+      </tr><tr>
+        <td>
+          78
+        </td>
+        <td>
+          585
+        </td>
+        <td>
+          3268
+          -
+          3291
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          knightMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def knightMoves
+        </td>
+      </tr><tr>
+        <td>
+          79
+        </td>
+        <td>
+          576
+        </td>
+        <td>
+          3364
+          -
+          3405
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.ListBuffer.empty
+        </td>
+      </tr><tr>
+        <td>
+          80
+        </td>
+        <td>
+          577
+        </td>
+        <td>
+          3429
+          -
+          3441
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          knightDeltas
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          knightDeltas
+        </td>
+      </tr><tr>
+        <td>
+          82
+        </td>
+        <td>
+          578
+        </td>
+        <td>
+          3478
+          -
+          3491
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          deltas.length
+        </td>
+      </tr><tr>
+        <td>
+          83
+        </td>
+        <td>
+          579
+        </td>
+        <td>
+          3516
+          -
+          3529
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          deltas(index)
+        </td>
+      </tr><tr>
+        <td>
+          83
+        </td>
+        <td>
+          580
+        </td>
+        <td>
+          3505
+          -
+          3513
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          84
+        </td>
+        <td>
+          581
+        </td>
+        <td>
+          3545
+          -
+          3559
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          85
+        </td>
+        <td>
+          582
+        </td>
+        <td>
+          3569
+          -
+          3579
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          to.isValid
+        </td>
+      </tr><tr>
+        <td>
+          85
+        </td>
+        <td>
+          583
+        </td>
+        <td>
+          3584
+          -
+          3619
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isOccupiedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.board.isOccupiedBy(to, color)
+        </td>
+      </tr><tr>
+        <td>
+          88
+        </td>
+        <td>
+          584
+        </td>
+        <td>
+          3677
+          -
+          3689
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves.toList
+        </td>
+      </tr><tr>
+        <td>
+          90
+        </td>
+        <td>
+          605
+        </td>
+        <td>
+          3693
+          -
+          3717
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          slidingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def slidingMoves
+        </td>
+      </tr><tr>
+        <td>
+          96
+        </td>
+        <td>
+          586
+        </td>
+        <td>
+          3841
+          -
+          3882
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.ListBuffer.empty
+        </td>
+      </tr><tr>
+        <td>
+          98
+        </td>
+        <td>
+          587
+        </td>
+        <td>
+          3931
+          -
+          3948
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          directions.length
+        </td>
+      </tr><tr>
+        <td>
+          99
+        </td>
+        <td>
+          588
+        </td>
+        <td>
+          3973
+          -
+          3993
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          directions(dirIndex)
+        </td>
+      </tr><tr>
+        <td>
+          99
+        </td>
+        <td>
+          589
+        </td>
+        <td>
+          3962
+          -
+          3970
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          100
+        </td>
+        <td>
+          590
+        </td>
+        <td>
+          4014
+          -
+          4028
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          102
+        </td>
+        <td>
+          591
+        </td>
+        <td>
+          4067
+          -
+          4082
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          current.isValid
+        </td>
+      </tr><tr>
+        <td>
+          103
+        </td>
+        <td>
+          592
+        </td>
+        <td>
+          4109
+          -
+          4149
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isOccupiedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.board.isOccupiedBy(current, color)
+        </td>
+      </tr><tr>
+        <td>
+          104
+        </td>
+        <td>
+          593
+        </td>
+        <td>
+          4165
+          -
+          4179
+        </td>
+        <td>
+          Assign
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          blocked = true
+        </td>
+      </tr><tr>
+        <td>
+          105
+        </td>
+        <td>
+          603
+        </td>
+        <td>
+          4193
+          -
+          4403
+        </td>
+        <td>
+          If
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          if state.board.isOccupiedBy(current, color.opposite) then\n          moves += Move(pos, current)\n          blocked = true\n        else\n          moves += Move(pos, current)\n          current = current + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          105
+        </td>
+        <td>
+          594
+        </td>
+        <td>
+          4196
+          -
+          4245
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isOccupiedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.board.isOccupiedBy(current, color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          105
+        </td>
+        <td>
+          595
+        </td>
+        <td>
+          4230
+          -
+          4244
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          106
+        </td>
+        <td>
+          597
+        </td>
+        <td>
+          4270
+          -
+          4274
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          $lessinit$greater$default$3
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Move
+        </td>
+      </tr><tr>
+        <td>
+          106
+        </td>
+        <td>
+          596
+        </td>
+        <td>
+          4261
+          -
+          4288
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, current)
+        </td>
+      </tr><tr>
+        <td>
+          106
+        </td>
+        <td>
+          598
+        </td>
+        <td>
+          4261
+          -
+          4313
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, current)\n          blocked = true
+        </td>
+      </tr><tr>
+        <td>
+          109
+        </td>
+        <td>
+          600
+        </td>
+        <td>
+          4346
+          -
+          4350
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          $lessinit$greater$default$3
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Move
+        </td>
+      </tr><tr>
+        <td>
+          109
+        </td>
+        <td>
+          599
+        </td>
+        <td>
+          4337
+          -
+          4364
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, current)
+        </td>
+      </tr><tr>
+        <td>
+          109
+        </td>
+        <td>
+          602
+        </td>
+        <td>
+          4337
+          -
+          4403
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves += Move(pos, current)\n          current = current + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          110
+        </td>
+        <td>
+          601
+        </td>
+        <td>
+          4385
+          -
+          4403
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          current + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          112
+        </td>
+        <td>
+          604
+        </td>
+        <td>
+          4428
+          -
+          4440
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves.toList
+        </td>
+      </tr><tr>
+        <td>
+          114
+        </td>
+        <td>
+          608
+        </td>
+        <td>
+          4444
+          -
+          4466
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          queenMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def queenMoves
+        </td>
+      </tr><tr>
+        <td>
+          115
+        </td>
+        <td>
+          606
+        </td>
+        <td>
+          4527
+          -
+          4635
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          slidingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          slidingMoves(state, pos, color, Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)))
+        </td>
+      </tr><tr>
+        <td>
+          115
+        </td>
+        <td>
+          607
+        </td>
+        <td>
+          4559
+          -
+          4634
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
+        </td>
+      </tr><tr>
+        <td>
+          117
+        </td>
+        <td>
+          620
+        </td>
+        <td>
+          4639
+          -
+          4660
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          kingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def kingMoves
+        </td>
+      </tr><tr>
+        <td>
+          118
+        </td>
+        <td>
+          609
+        </td>
+        <td>
+          4733
+          -
+          4774
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.ListBuffer.empty
+        </td>
+      </tr><tr>
+        <td>
+          119
+        </td>
+        <td>
+          610
+        </td>
+        <td>
+          4802
+          -
+          4816
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          kingDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          kingDirections
+        </td>
+      </tr><tr>
+        <td>
+          121
+        </td>
+        <td>
+          611
+        </td>
+        <td>
+          4853
+          -
+          4870
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          directions.length
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          612
+        </td>
+        <td>
+          4895
+          -
+          4912
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          directions(index)
+        </td>
+      </tr><tr>
+        <td>
+          122
+        </td>
+        <td>
+          613
+        </td>
+        <td>
+          4884
+          -
+          4892
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          123
+        </td>
+        <td>
+          614
+        </td>
+        <td>
+          4928
+          -
+          4942
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          124
+        </td>
+        <td>
+          615
+        </td>
+        <td>
+          4952
+          -
+          4962
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          to.isValid
+        </td>
+      </tr><tr>
+        <td>
+          124
+        </td>
+        <td>
+          616
+        </td>
+        <td>
+          4967
+          -
+          5002
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isOccupiedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.board.isOccupiedBy(to, color)
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          618
+        </td>
+        <td>
+          5070
+          -
+          5102
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          castlingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          castlingMoves(state, pos, color)
+        </td>
+      </tr><tr>
+        <td>
+          127
+        </td>
+        <td>
+          617
+        </td>
+        <td>
+          5060
+          -
+          5102
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          ++=
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves ++= castlingMoves(state, pos, color)
+        </td>
+      </tr><tr>
+        <td>
+          128
+        </td>
+        <td>
+          619
+        </td>
+        <td>
+          5107
+          -
+          5119
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves.toList
+        </td>
+      </tr><tr>
+        <td>
+          131
+        </td>
+        <td>
+          650
+        </td>
+        <td>
+          5143
+          -
+          5168
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          castlingMoves
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def castlingMoves
+        </td>
+      </tr><tr>
+        <td>
+          132
+        </td>
+        <td>
+          621
+        </td>
+        <td>
+          5245
+          -
+          5286
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          empty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          scala.collection.mutable.ListBuffer.empty
+        </td>
+      </tr><tr>
+        <td>
+          135
+        </td>
+        <td>
+          623
+        </td>
+        <td>
+          5409
+          -
+          5410
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          7
+        </td>
+      </tr><tr>
+        <td>
+          135
+        </td>
+        <td>
+          622
+        </td>
+        <td>
+          5402
+          -
+          5403
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          137
+        </td>
+        <td>
+          624
+        </td>
+        <td>
+          5419
+          -
+          5463
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          isAttackedBy(board, kingPos, color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          137
+        </td>
+        <td>
+          625
+        </td>
+        <td>
+          5448
+          -
+          5462
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          138
+        </td>
+        <td>
+          627
+        </td>
+        <td>
+          5475
+          -
+          5485
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          return Nil
+        </td>
+      </tr><tr>
+        <td>
+          138
+        </td>
+        <td>
+          626
+        </td>
+        <td>
+          5482
+          -
+          5485
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          Nil
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          Nil
+        </td>
+      </tr><tr>
+        <td>
+          140
+        </td>
+        <td>
+          629
+        </td>
+        <td>
+          5568
+          -
+          5588
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          blackKingSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights.blackKingSide
+        </td>
+      </tr><tr>
+        <td>
+          140
+        </td>
+        <td>
+          628
+        </td>
+        <td>
+          5542
+          -
+          5562
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          whiteKingSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights.whiteKingSide
+        </td>
+      </tr><tr>
+        <td>
+          142
+        </td>
+        <td>
+          630
+        </td>
+        <td>
+          5621
+          -
+          5682
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(Pos(7, row)).contains(Piece(color, PieceType.Rook))
+        </td>
+      </tr><tr>
+        <td>
+          142
+        </td>
+        <td>
+          631
+        </td>
+        <td>
+          5621
+          -
+          5643
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          board.get(Pos(7, row))
+        </td>
+      </tr><tr>
+        <td>
+          143
+        </td>
+        <td>
+          632
+        </td>
+        <td>
+          5692
+          -
+          5718
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(Pos(5, row))
+        </td>
+      </tr><tr>
+        <td>
+          144
+        </td>
+        <td>
+          633
+        </td>
+        <td>
+          5728
+          -
+          5754
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(Pos(6, row))
+        </td>
+      </tr><tr>
+        <td>
+          145
+        </td>
+        <td>
+          635
+        </td>
+        <td>
+          5798
+          -
+          5812
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          145
+        </td>
+        <td>
+          634
+        </td>
+        <td>
+          5765
+          -
+          5813
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          isAttackedBy(board, Pos(5, row), color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          146
+        </td>
+        <td>
+          636
+        </td>
+        <td>
+          5824
+          -
+          5872
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          isAttackedBy(board, Pos(6, row), color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          146
+        </td>
+        <td>
+          637
+        </td>
+        <td>
+          5857
+          -
+          5871
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          150
+        </td>
+        <td>
+          639
+        </td>
+        <td>
+          6008
+          -
+          6029
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          blackQueenSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights.blackQueenSide
+        </td>
+      </tr><tr>
+        <td>
+          150
+        </td>
+        <td>
+          638
+        </td>
+        <td>
+          5981
+          -
+          6002
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          whiteQueenSide
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rights.whiteQueenSide
+        </td>
+      </tr><tr>
+        <td>
+          152
+        </td>
+        <td>
+          641
+        </td>
+        <td>
+          6063
+          -
+          6085
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          board.get(Pos(0, row))
+        </td>
+      </tr><tr>
+        <td>
+          152
+        </td>
+        <td>
+          640
+        </td>
+        <td>
+          6063
+          -
+          6124
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(Pos(0, row)).contains(Piece(color, PieceType.Rook))
+        </td>
+      </tr><tr>
+        <td>
+          153
+        </td>
+        <td>
+          642
+        </td>
+        <td>
+          6134
+          -
+          6160
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(Pos(1, row))
+        </td>
+      </tr><tr>
+        <td>
+          154
+        </td>
+        <td>
+          643
+        </td>
+        <td>
+          6170
+          -
+          6196
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(Pos(2, row))
+        </td>
+      </tr><tr>
+        <td>
+          155
+        </td>
+        <td>
+          644
+        </td>
+        <td>
+          6206
+          -
+          6232
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isEmpty
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.isEmpty(Pos(3, row))
+        </td>
+      </tr><tr>
+        <td>
+          156
+        </td>
+        <td>
+          645
+        </td>
+        <td>
+          6243
+          -
+          6291
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          isAttackedBy(board, Pos(3, row), color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          156
+        </td>
+        <td>
+          646
+        </td>
+        <td>
+          6276
+          -
+          6290
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          157
+        </td>
+        <td>
+          648
+        </td>
+        <td>
+          6335
+          -
+          6349
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          color.opposite
+        </td>
+      </tr><tr>
+        <td>
+          157
+        </td>
+        <td>
+          647
+        </td>
+        <td>
+          6302
+          -
+          6350
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          isAttackedBy(board, Pos(4, row), color.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          161
+        </td>
+        <td>
+          649
+        </td>
+        <td>
+          6407
+          -
+          6419
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          toList
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          moves.toList
+        </td>
+      </tr><tr>
+        <td>
+          163
+        </td>
+        <td>
+          681
+        </td>
+        <td>
+          6423
+          -
+          6439
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          def isAttackedBy
+        </td>
+      </tr><tr>
+        <td>
+          164
+        </td>
+        <td>
+          651
+        </td>
+        <td>
+          6542
+          -
+          6543
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          1
+        </td>
+      </tr><tr>
+        <td>
+          164
+        </td>
+        <td>
+          652
+        </td>
+        <td>
+          6549
+          -
+          6551
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          -1
+        </td>
+      </tr><tr>
+        <td>
+          165
+        </td>
+        <td>
+          654
+        </td>
+        <td>
+          6559
+          -
+          6590
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          board.get(pos + (-1, -pawnDir))
+        </td>
+      </tr><tr>
+        <td>
+          165
+        </td>
+        <td>
+          653
+        </td>
+        <td>
+          6559
+          -
+          6632
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(pos + (-1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn))
+        </td>
+      </tr><tr>
+        <td>
+          165
+        </td>
+        <td>
+          656
+        </td>
+        <td>
+          6638
+          -
+          6649
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          return true
+        </td>
+      </tr><tr>
+        <td>
+          165
+        </td>
+        <td>
+          655
+        </td>
+        <td>
+          6569
+          -
+          6589
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          pos + (-1, -pawnDir)
+        </td>
+      </tr><tr>
+        <td>
+          166
+        </td>
+        <td>
+          660
+        </td>
+        <td>
+          6735
+          -
+          6746
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          return true
+        </td>
+      </tr><tr>
+        <td>
+          166
+        </td>
+        <td>
+          657
+        </td>
+        <td>
+          6657
+          -
+          6729
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(pos + (1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn))
+        </td>
+      </tr><tr>
+        <td>
+          166
+        </td>
+        <td>
+          659
+        </td>
+        <td>
+          6667
+          -
+          6686
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          pos + (1, -pawnDir)
+        </td>
+      </tr><tr>
+        <td>
+          166
+        </td>
+        <td>
+          658
+        </td>
+        <td>
+          6657
+          -
+          6687
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          board.get(pos + (1, -pawnDir))
+        </td>
+      </tr><tr>
+        <td>
+          168
+        </td>
+        <td>
+          661
+        </td>
+        <td>
+          6765
+          -
+          6777
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          knightDeltas
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          knightDeltas
+        </td>
+      </tr><tr>
+        <td>
+          170
+        </td>
+        <td>
+          662
+        </td>
+        <td>
+          6814
+          -
+          6827
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          deltas.length
+        </td>
+      </tr><tr>
+        <td>
+          171
+        </td>
+        <td>
+          663
+        </td>
+        <td>
+          6852
+          -
+          6865
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          deltas(index)
+        </td>
+      </tr><tr>
+        <td>
+          171
+        </td>
+        <td>
+          664
+        </td>
+        <td>
+          6841
+          -
+          6849
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          172
+        </td>
+        <td>
+          666
+        </td>
+        <td>
+          6875
+          -
+          6900
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          board.get(pos + (dc, dr))
+        </td>
+      </tr><tr>
+        <td>
+          172
+        </td>
+        <td>
+          668
+        </td>
+        <td>
+          6950
+          -
+          6961
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          return true
+        </td>
+      </tr><tr>
+        <td>
+          172
+        </td>
+        <td>
+          665
+        </td>
+        <td>
+          6875
+          -
+          6944
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.Knight))
+        </td>
+      </tr><tr>
+        <td>
+          172
+        </td>
+        <td>
+          667
+        </td>
+        <td>
+          6885
+          -
+          6899
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          pos + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          175
+        </td>
+        <td>
+          669
+        </td>
+        <td>
+          6996
+          -
+          7010
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          kingDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          kingDirections
+        </td>
+      </tr><tr>
+        <td>
+          177
+        </td>
+        <td>
+          670
+        </td>
+        <td>
+          7043
+          -
+          7055
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          kings.length
+        </td>
+      </tr><tr>
+        <td>
+          178
+        </td>
+        <td>
+          672
+        </td>
+        <td>
+          7069
+          -
+          7077
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          178
+        </td>
+        <td>
+          671
+        </td>
+        <td>
+          7080
+          -
+          7092
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          kings(index)
+        </td>
+      </tr><tr>
+        <td>
+          179
+        </td>
+        <td>
+          675
+        </td>
+        <td>
+          7112
+          -
+          7126
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          pos + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          179
+        </td>
+        <td>
+          674
+        </td>
+        <td>
+          7102
+          -
+          7127
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #F0ADAD">
+          board.get(pos + (dc, dr))
+        </td>
+      </tr><tr>
+        <td>
+          179
+        </td>
+        <td>
+          673
+        </td>
+        <td>
+          7102
+          -
+          7169
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.King))
+        </td>
+      </tr><tr>
+        <td>
+          179
+        </td>
+        <td>
+          676
+        </td>
+        <td>
+          7175
+          -
+          7186
+        </td>
+        <td>
+          Return
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          return true
+        </td>
+      </tr><tr>
+        <td>
+          182
+        </td>
+        <td>
+          678
+        </td>
+        <td>
+          7245
+          -
+          7261
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          bishopDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          bishopDirections
+        </td>
+      </tr><tr>
+        <td>
+          182
+        </td>
+        <td>
+          677
+        </td>
+        <td>
+          7209
+          -
+          7280
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          slidingAttack
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          slidingAttack(board, pos, attacker, bishopDirections, PieceType.Bishop)
+        </td>
+      </tr><tr>
+        <td>
+          183
+        </td>
+        <td>
+          680
+        </td>
+        <td>
+          7324
+          -
+          7338
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          rookDirections
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          rookDirections
+        </td>
+      </tr><tr>
+        <td>
+          183
+        </td>
+        <td>
+          679
+        </td>
+        <td>
+          7288
+          -
+          7355
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          slidingAttack
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          slidingAttack(board, pos, attacker, rookDirections, PieceType.Rook)
+        </td>
+      </tr><tr>
+        <td>
+          185
+        </td>
+        <td>
+          692
+        </td>
+        <td>
+          7359
+          -
+          7384
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          slidingAttack
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def slidingAttack
+        </td>
+      </tr><tr>
+        <td>
+          193
+        </td>
+        <td>
+          682
+        </td>
+        <td>
+          7554
+          -
+          7571
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          length
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          directions.length
+        </td>
+      </tr><tr>
+        <td>
+          194
+        </td>
+        <td>
+          684
+        </td>
+        <td>
+          7585
+          -
+          7593
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          194
+        </td>
+        <td>
+          683
+        </td>
+        <td>
+          7596
+          -
+          7616
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          apply
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          directions(dirIndex)
+        </td>
+      </tr><tr>
+        <td>
+          195
+        </td>
+        <td>
+          685
+        </td>
+        <td>
+          7637
+          -
+          7651
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          pos + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          197
+        </td>
+        <td>
+          686
+        </td>
+        <td>
+          7690
+          -
+          7705
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          isValid
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          current.isValid
+        </td>
+      </tr><tr>
+        <td>
+          198
+        </td>
+        <td>
+          687
+        </td>
+        <td>
+          7729
+          -
+          7747
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(current)
+        </td>
+      </tr><tr>
+        <td>
+          199
+        </td>
+        <td>
+          688
+        </td>
+        <td>
+          7764
+          -
+          7773
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case None
+        </td>
+      </tr><tr>
+        <td>
+          200
+        </td>
+        <td>
+          689
+        </td>
+        <td>
+          7799
+          -
+          7817
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          current + (dc, dr)
+        </td>
+      </tr><tr>
+        <td>
+          201
+        </td>
+        <td>
+          690
+        </td>
+        <td>
+          7828
+          -
+          7911
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Some(Piece(c, pt)) if c == attacker &amp;&amp; (pt == primary || pt == PieceType.Queen
+        </td>
+      </tr><tr>
+        <td>
+          203
+        </td>
+        <td>
+          691
+        </td>
+        <td>
+          7950
+          -
+          7956
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case _
+        </td>
+      </tr><tr>
+        <td>
+          208
+        </td>
+        <td>
+          698
+        </td>
+        <td>
+          8020
+          -
+          8049
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          leavesKingInCheck
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def leavesKingInCheck
+        </td>
+      </tr><tr>
+        <td>
+          209
+        </td>
+        <td>
+          693
+        </td>
+        <td>
+          8111
+          -
+          8140
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          applyMoveToBoard
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          applyMoveToBoard(state, move)
+        </td>
+      </tr><tr>
+        <td>
+          210
+        </td>
+        <td>
+          696
+        </td>
+        <td>
+          8197
+          -
+          8253
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          isAttackedBy
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          isAttackedBy(nextBoard, pos, state.activeColor.opposite)
+        </td>
+      </tr><tr>
+        <td>
+          210
+        </td>
+        <td>
+          695
+        </td>
+        <td>
+          8145
+          -
+          8182
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          findKing
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          nextBoard.findKing(state.activeColor)
+        </td>
+      </tr><tr>
+        <td>
+          210
+        </td>
+        <td>
+          697
+        </td>
+        <td>
+          8226
+          -
+          8252
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          opposite
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.activeColor.opposite
+        </td>
+      </tr><tr>
+        <td>
+          210
+        </td>
+        <td>
+          694
+        </td>
+        <td>
+          8145
+          -
+          8254
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          exists
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          nextBoard.findKing(state.activeColor).exists(pos =&gt; isAttackedBy(nextBoard, pos, state.activeColor.opposite))
+        </td>
+      </tr><tr>
+        <td>
+          212
+        </td>
+        <td>
+          722
+        </td>
+        <td>
+          8258
+          -
+          8286
+        </td>
+        <td>
+          DefDef
+        </td>
+        <td>
+          applyMoveToBoard
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          private def applyMoveToBoard
+        </td>
+      </tr><tr>
+        <td>
+          214
+        </td>
+        <td>
+          699
+        </td>
+        <td>
+          8370
+          -
+          8390
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(move.from)
+        </td>
+      </tr><tr>
+        <td>
+          214
+        </td>
+        <td>
+          700
+        </td>
+        <td>
+          8370
+          -
+          8394
+        </td>
+        <td>
+          Select
+        </td>
+        <td>
+          get
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.get(move.from).get
+        </td>
+      </tr><tr>
+        <td>
+          217
+        </td>
+        <td>
+          701
+        </td>
+        <td>
+          8465
+          -
+          8504
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          contains
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          state.enPassantTarget.contains(move.to)
+        </td>
+      </tr><tr>
+        <td>
+          218
+        </td>
+        <td>
+          702
+        </td>
+        <td>
+          8563
+          -
+          8565
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          -1
+        </td>
+      </tr><tr>
+        <td>
+          218
+        </td>
+        <td>
+          706
+        </td>
+        <td>
+          8518
+          -
+          8613
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          val dir = if piece.color == Color.White then -1 else 1\n        board.remove(move.to + (0, dir))
+        </td>
+      </tr><tr>
+        <td>
+          218
+        </td>
+        <td>
+          703
+        </td>
+        <td>
+          8571
+          -
+          8572
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          1
+        </td>
+      </tr><tr>
+        <td>
+          219
+        </td>
+        <td>
+          705
+        </td>
+        <td>
+          8594
+          -
+          8612
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          +
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          move.to + (0, dir)
+        </td>
+      </tr><tr>
+        <td>
+          219
+        </td>
+        <td>
+          704
+        </td>
+        <td>
+          8581
+          -
+          8613
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          remove
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board.remove(move.to + (0, dir))
+        </td>
+      </tr><tr>
+        <td>
+          220
+        </td>
+        <td>
+          707
+        </td>
+        <td>
+          8625
+          -
+          8630
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          board
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          board
+        </td>
+      </tr><tr>
+        <td>
+          224
+        </td>
+        <td>
+          716
+        </td>
+        <td>
+          8715
+          -
+          9010
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          val dc = move.to.col - move.from.col\n        if math.abs(dc) == 2 then\n          val row = move.from.row\n          val rookCol = if dc &gt; 0 then 7 else 0\n          val newCol = if dc &gt; 0 then 5 else 3\n          boardAfterEP.movePiece(Pos(rookCol, row), Pos(newCol, row))\n        else boardAfterEP
+        </td>
+      </tr><tr>
+        <td>
+          225
+        </td>
+        <td>
+          708
+        </td>
+        <td>
+          8763
+          -
+          8775
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          abs
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          math.abs(dc)
+        </td>
+      </tr><tr>
+        <td>
+          226
+        </td>
+        <td>
+          714
+        </td>
+        <td>
+          8796
+          -
+          8984
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          val row = move.from.row\n          val rookCol = if dc &gt; 0 then 7 else 0\n          val newCol = if dc &gt; 0 then 5 else 3\n          boardAfterEP.movePiece(Pos(rookCol, row), Pos(newCol, row))
+        </td>
+      </tr><tr>
+        <td>
+          227
+        </td>
+        <td>
+          710
+        </td>
+        <td>
+          8866
+          -
+          8867
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          0
+        </td>
+      </tr><tr>
+        <td>
+          227
+        </td>
+        <td>
+          709
+        </td>
+        <td>
+          8859
+          -
+          8860
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          7
+        </td>
+      </tr><tr>
+        <td>
+          228
+        </td>
+        <td>
+          711
+        </td>
+        <td>
+          8906
+          -
+          8907
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          5
+        </td>
+      </tr><tr>
+        <td>
+          228
+        </td>
+        <td>
+          712
+        </td>
+        <td>
+          8913
+          -
+          8914
+        </td>
+        <td>
+          Literal
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          3
+        </td>
+      </tr><tr>
+        <td>
+          229
+        </td>
+        <td>
+          713
+        </td>
+        <td>
+          8925
+          -
+          8984
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          movePiece
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          boardAfterEP.movePiece(Pos(rookCol, row), Pos(newCol, row))
+        </td>
+      </tr><tr>
+        <td>
+          230
+        </td>
+        <td>
+          715
+        </td>
+        <td>
+          8998
+          -
+          9010
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          boardAfterEP
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          boardAfterEP
+        </td>
+      </tr><tr>
+        <td>
+          231
+        </td>
+        <td>
+          717
+        </td>
+        <td>
+          9022
+          -
+          9034
+        </td>
+        <td>
+          Ident
+        </td>
+        <td>
+          boardAfterEP
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          boardAfterEP
+        </td>
+      </tr><tr>
+        <td>
+          234
+        </td>
+        <td>
+          718
+        </td>
+        <td>
+          9084
+          -
+          9097
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case Some(pt)
+        </td>
+      </tr><tr>
+        <td>
+          235
+        </td>
+        <td>
+          719
+        </td>
+        <td>
+          9130
+          -
+          9139
+        </td>
+        <td>
+          Block
+        </td>
+        <td>
+          &lt;none&gt;
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          case None
+        </td>
+      </tr><tr>
+        <td>
+          237
+        </td>
+        <td>
+          720
+        </td>
+        <td>
+          9158
+          -
+          9217
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          put
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          boardAfterCastle.remove(move.from).put(move.to, finalPiece)
+        </td>
+      </tr><tr>
+        <td>
+          237
+        </td>
+        <td>
+          721
+        </td>
+        <td>
+          9158
+          -
+          9192
+        </td>
+        <td>
+          Apply
+        </td>
+        <td>
+          remove
+        </td>
+        <td>
+          
+        </td>
+        <td style="background: #AEF1AE">
+          boardAfterCastle.remove(move.from)
+        </td>
+      </tr>
+    </table>
+          </div>
+        </div>
+      </body>
+    </html>

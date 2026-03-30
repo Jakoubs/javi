@@ -58,14 +58,10 @@ object GameRules:
     val newHalfClock = if isCapture || isPawnMove then 0 else state.halfMoveClock + 1
     val newFullMove  = if color == Color.Black then state.fullMoveNumber + 1 else state.fullMoveNumber
 
-    val newState = state.withHistory.copy(
-      board           = boardAfterMove,
-      activeColor     = color.opposite,
-      castlingRights  = cr,
-      enPassantTarget = newEP,
-      halfMoveClock   = newHalfClock,
-      fullMoveNumber  = newFullMove
-    )
+    val newState = if color.opposite == Color.White then
+      WhiteToMove(boardAfterMove, cr, newEP, newHalfClock, newFullMove, state.history :+ state)
+    else
+      BlackToMove(boardAfterMove, cr, newEP, newHalfClock, newFullMove, state.history :+ state)
 
     newState
 
