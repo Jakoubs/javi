@@ -52,7 +52,10 @@ object CommandParser:
         Pos.fromAlgebraic(posStr) match
           case Some(pos) => Command.ShowMoves(pos)
           case None      => Command.Unknown(s"Invalid position: $posStr")
-      case s => Command.ProcessTurn(s)
+      case s if s.exists(_.isDigit) && s.length >= 4 => 
+        Command.ProcessTurn(s)
+      case s => 
+        Command.Unknown(s"Unknown command or invalid move format: $s")
 
 object MoveParser:
   import scala.util.Try
