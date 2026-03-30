@@ -10,14 +10,14 @@ import scala.collection.mutable.ArrayBuffer
 class CommandParserTest extends AnyFunSuite with Matchers:
 
   test("parses a simple move") {
-    CommandParser.parse("e2e4") shouldBe Command.MakeMove(Move(Pos(4,1), Pos(4,3)))
+    CommandParser.parse("e2e4") shouldBe Command.ProcessTurn("e2e4")
   }
 
   test("parses a move with promotion") {
-    CommandParser.parse("e7e8q") shouldBe Command.MakeMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Queen)))
-    CommandParser.parse("e7e8r") shouldBe Command.MakeMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Rook)))
-    CommandParser.parse("e7e8b") shouldBe Command.MakeMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Bishop)))
-    CommandParser.parse("e7e8n") shouldBe Command.MakeMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Knight)))
+    CommandParser.parse("e7e8q") shouldBe Command.ProcessTurn("e7e8q")
+    CommandParser.parse("e7e8r") shouldBe Command.ProcessTurn("e7e8r")
+    CommandParser.parse("e7e8b") shouldBe Command.ProcessTurn("e7e8b")
+    CommandParser.parse("e7e8n") shouldBe Command.ProcessTurn("e7e8n")
   }
 
   test("parses 'moves e2'") {
@@ -114,7 +114,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
 
   test("legal move updates board and switches active color") {
     val app  = AppState.initial
-    val cmd  = Command.MakeMove(Move(pos("e2"), pos("e4")))
+    val cmd  = Command.ProcessTurn("e2e4")
     val next = GameController.handleCommand(app, cmd)
     next.game.board.get(pos("e4")) shouldBe Some(Piece(Color.White, PieceType.Pawn))
     next.game.board.get(pos("e2")) shouldBe None
@@ -123,7 +123,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
 
   test("illegal move produces an error message and does not change board") {
     val app  = AppState.initial
-    val cmd  = Command.MakeMove(Move(pos("e2"), pos("e5")))  // pawn can't jump
+    val cmd  = Command.ProcessTurn("e2e5")  // pawn can't jump
     val next = GameController.handleCommand(app, cmd)
     next.game shouldBe app.game
     next.message.exists(_.contains("Illegal")) shouldBe true
@@ -131,7 +131,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
 
   test("undo after first move returns to initial board") {
     val app   = AppState.initial
-    val after = GameController.handleCommand(app, Command.MakeMove(Move(pos("e2"), pos("e4"))))
+    val after = GameController.handleCommand(app, Command.ProcessTurn("e2e4"))
     val undo  = GameController.handleCommand(after, Command.Undo)
     undo.game.board shouldBe app.game.board
     undo.game.activeColor shouldBe Color.White
@@ -166,7 +166,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
 
   test("NewGame resets the game state") {
     val app   = AppState.initial
-    val moved = GameController.handleCommand(app, Command.MakeMove(Move(pos("e2"), pos("e4"))))
+    val moved = GameController.handleCommand(app, Command.ProcessTurn("e2e4"))
     val fresh = GameController.handleCommand(moved, Command.NewGame)
     fresh.game.board shouldBe Board.initial
     fresh.game.activeColor shouldBe Color.White
@@ -227,7 +227,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
 
   test("Move on a finished game shows error") {
     val app = AppState.initial.copy(status = GameStatus.Stalemate)
-    val next = GameController.handleCommand(app, Command.MakeMove(Move(pos("e2"), pos("e4"))))
+    val next = GameController.handleCommand(app, Command.ProcessTurn("e2e4"))
     next.message.exists(_.contains("Game is over")) shouldBe true
   }
 
@@ -236,9 +236,9 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     val board = Board.empty.put(pos("f7"), Piece(Color.White, PieceType.Pawn))
                              .put(pos("e8"), Piece(Color.Black, PieceType.King))
                              .put(pos("e1"), Piece(Color.White, PieceType.King))
-    val app = AppState.initial.copy(game = GameState.initial.copy(board = board, activeColor = Color.White))
+    val app = AppState.initial.copy(game = GameState.initial.withActiveColor(Color.White).copy(board = board))
     
-    val next = GameController.handleCommand(app, Command.MakeMove(Move(pos("f7"), pos("f8"))))
+    val next = GameController.handleCommand(app, Command.ProcessTurn("f7f8"))
     next.message.exists(_.contains("Pawn promotion required")) shouldBe true
   }
 
@@ -246,13 +246,13 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     val board = Board.empty.put(pos("e1"), Piece(Color.White, PieceType.Rook))
                              .put(pos("e8"), Piece(Color.Black, PieceType.King))
                              .put(pos("a1"), Piece(Color.White, PieceType.King))
-    val app = AppState.initial.copy(game = GameState.initial.copy(board = board, activeColor = Color.White))
+    val app = AppState.initial.copy(game = GameState.initial.withActiveColor(Color.White).copy(board = board))
     
     // Move rook to e8 to check black king (actually it captures the king here but let's just do a normal check)
     val checkBoard = Board.empty.put(pos("e2"), Piece(Color.White, PieceType.Rook)).put(pos("e8"), Piece(Color.Black, PieceType.King)).put(pos("a1"), Piece(Color.White, PieceType.King))
-    val checkApp = AppState.initial.copy(game = GameState.initial.copy(board = checkBoard, activeColor = Color.White))
+    val checkApp = AppState.initial.copy(game = GameState.initial.withActiveColor(Color.White).copy(board = checkBoard))
     
-    val next = GameController.handleCommand(checkApp, Command.MakeMove(Move(pos("e2"), pos("e7"))))
+    val next = GameController.handleCommand(checkApp, Command.ProcessTurn("e2e7"))
     next.message.exists(_.contains("Check!")) shouldBe true
   }
 
@@ -280,10 +280,10 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     // Scholar's mate but against white or any fastest mate for Black wins
     // f3, e5, g4, Qh4#
     val start = AppState.initial
-    val f3 = GameController.handleCommand(start, Command.MakeMove(Move(pos("f2"), pos("f3"))))
-    val e5 = GameController.handleCommand(f3,    Command.MakeMove(Move(pos("e7"), pos("e5"))))
-    val g4 = GameController.handleCommand(e5,    Command.MakeMove(Move(pos("g2"), pos("g4"))))
-    val qh4 = GameController.handleCommand(g4,   Command.MakeMove(Move(pos("d8"), pos("h4"))))
+    val f3 = GameController.handleCommand(start, Command.ProcessTurn("f2f3"))
+    val e5 = GameController.handleCommand(f3,    Command.ProcessTurn("e7e5"))
+    val g4 = GameController.handleCommand(e5,    Command.ProcessTurn("g2g4"))
+    val qh4 = GameController.handleCommand(g4,   Command.ProcessTurn("d8h4"))
     qh4.message.exists(_.contains("Black wins")) shouldBe true
   }
 
@@ -293,7 +293,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     val board = Board.empty.put(pos("a1"), Piece(Color.White, PieceType.King))
                            .put(pos("c2"), Piece(Color.Black, PieceType.Queen))
                            .put(pos("h8"), Piece(Color.Black, PieceType.King))
-    val game = GameState.initial.copy(board = board, activeColor = Color.White)
+    val game = GameState.initial.withActiveColor(Color.White).copy(board = board)
     val app = AppState.initial.copy(game = game, status = GameRules.computeStatus(game))
     app.status shouldBe GameStatus.Stalemate
   }
@@ -315,17 +315,16 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     val board = Board.empty.put(pos("a8"), Piece(Color.Black, PieceType.King))
                            .put(pos("c7"), Piece(Color.White, PieceType.Queen))
                            .put(pos("e1"), Piece(Color.White, PieceType.King))
-    val app = AppState.initial.copy(game = GameState.initial.copy(board = board, activeColor = Color.White))
-    
-    val next = GameController.handleCommand(app, Command.MakeMove(Move(pos("c7"), pos("c8")))) // This doesn't actually stalemate if d7 is free, but let's assume valid. Wait, it's not a legal move if it's protected? Actually c7-c8 is not mate.
+    val app = AppState.initial.copy(game = GameState.initial.withActiveColor(Color.White).copy(board = board))
+    val next = GameController.handleCommand(app, Command.ProcessTurn("c7c8")) // This doesn't actually stalemate if d7 is free, but let's assume valid. Wait, it's not a legal move if it's protected? Actually c7-c8 is not mate.
     // Let's rely on standard logic. Actually, we can just construct a Stalemate status manually but the message logic is in handleMove. 
     // To trigger stalemate message, we must make a legal move that causes stalemate. 
     // Ka8, Qc7 is a stalemate if it is black's turn. If white moves from d7 to c7 it stalemates.
     val board2 = Board.empty.put(pos("a8"), Piece(Color.Black, PieceType.King))
                             .put(pos("d7"), Piece(Color.White, PieceType.Queen))
                             .put(pos("e1"), Piece(Color.White, PieceType.King))
-    val app2 = AppState.initial.copy(game = GameState.initial.copy(board = board2, activeColor = Color.White))
-    val next2 = GameController.handleCommand(app2, Command.MakeMove(Move(pos("d7"), pos("c7"))))
+    val app2 = AppState.initial.copy(game = GameState.initial.withActiveColor(Color.White).copy(board = board2))
+    val next2 = GameController.handleCommand(app2, Command.ProcessTurn("d7c7"))
     next2.message.exists(_.contains("Stalemate")) shouldBe true
   }
 
@@ -333,8 +332,8 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     // Insufficient material (King vs King)
     val board = Board.empty.put(pos("e1"), Piece(Color.White, PieceType.King))
                            .put(pos("e8"), Piece(Color.Black, PieceType.King))
-    val app = AppState.initial.copy(game = GameState.initial.copy(board = board, activeColor = Color.White))
-    val next = GameController.handleCommand(app, Command.MakeMove(Move(pos("e1"), pos("d1"))))
+    val app = AppState.initial.copy(game = GameState.initial.withActiveColor(Color.White).copy(board = board))
+    val next = GameController.handleCommand(app, Command.ProcessTurn("e1d1"))
     next.message.exists(_.contains("Draw by")) shouldBe true
   }
 
@@ -351,7 +350,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
   }
 
   test("Undo successful message is displayed") {
-    val app1 = GameController.handleCommand(AppState.initial, Command.MakeMove(Move(pos("e2"), pos("e4"))))
+    val app1 = GameController.handleCommand(AppState.initial, Command.ProcessTurn("e2e4"))
     val app2 = GameController.handleCommand(app1, Command.Undo)
     app2.message.exists(_.contains("Last move undone")) shouldBe true
   }

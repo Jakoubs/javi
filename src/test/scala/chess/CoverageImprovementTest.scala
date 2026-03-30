@@ -184,9 +184,9 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
   test("CommandParser accepts remaining aliases and promotion pieces") {
     CommandParser.parse("?") shouldBe Command.Help
     CommandParser.parse("q") shouldBe Command.Quit
-    CommandParser.parse("A7A8R") shouldBe Command.MakeMove(Move(pos("a7"), pos("a8"), Some(PieceType.Rook)))
-    CommandParser.parse("a7a8b") shouldBe Command.MakeMove(Move(pos("a7"), pos("a8"), Some(PieceType.Bishop)))
-    CommandParser.parse("a7a8n") shouldBe Command.MakeMove(Move(pos("a7"), pos("a8"), Some(PieceType.Knight)))
+    CommandParser.parse("A7A8R") shouldBe Command.ProcessTurn("a7a8r")
+    CommandParser.parse("a7a8b") shouldBe Command.ProcessTurn("a7a8b")
+    CommandParser.parse("a7a8n") shouldBe Command.ProcessTurn("a7a8n")
     CommandParser.parse("   ") shouldBe a[Command.Unknown]
   }
 
@@ -208,7 +208,7 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
       game = stateFromFen("7k/8/8/8/8/8/8/R3K3 w - - 0 1"),
       status = GameStatus.Playing
     )
-    val afterCheck = GameController.handleCommand(checkApp, Command.MakeMove(Move(pos("a1"), pos("a8"))))
+    val afterCheck = GameController.handleCommand(checkApp, Command.ProcessTurn("a1a8"))
     afterCheck.status shouldBe GameStatus.Check(Color.Black)
     afterCheck.message.getOrElse(fail("Expected check message")) should include("Check!")
   }

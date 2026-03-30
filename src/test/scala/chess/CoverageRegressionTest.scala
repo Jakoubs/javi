@@ -118,10 +118,10 @@ class CoverageRegressionTest extends AnyFunSuite with Matchers:
       game = stateFromFen("7k/4P3/8/8/8/8/8/4K3 w - - 0 1"),
       status = GameStatus.Playing
     )
-    messageOf(GameController.handleCommand(promotionApp, Command.MakeMove(Move(pos("e7"), pos("e8"))))) should include("promotion required")
+    messageOf(GameController.handleCommand(promotionApp, Command.ProcessTurn("e7e8"))) should include("promotion required")
 
     val finishedApp = AppState.initial.copy(status = GameStatus.Stalemate)
-    messageOf(GameController.handleCommand(finishedApp, Command.MakeMove(Move(pos("e2"), pos("e4"))))) should include("Game is over")
+    messageOf(GameController.handleCommand(finishedApp, Command.ProcessTurn("e2e4"))) should include("Game is over")
 
     val resigned = GameController.handleCommand(AppState.initial, Command.Resign)
     resigned.status shouldBe GameStatus.Checkmate(Color.White)
@@ -161,7 +161,7 @@ class CoverageRegressionTest extends AnyFunSuite with Matchers:
 
     val queenSideCastle = stateFromFen("r3k3/8/8/8/8/8/8/R3K3 w Qq - 0 1")
     MoveGenerator.legalMovesFrom(queenSideCastle, pos("e1")).map(_.to) should contain(pos("c1"))
-    MoveGenerator.legalMovesFrom(queenSideCastle.copy(activeColor = Color.Black), pos("e8")).map(_.to) should contain(pos("c8"))
+    MoveGenerator.legalMovesFrom(queenSideCastle.withActiveColor(Color.Black).copy(), pos("e8")).map(_.to) should contain(pos("c8"))
 
     val noRookCastle = stateFromFen("4k3/8/8/8/8/8/8/4K3 w K - 0 1")
     MoveGenerator.legalMovesFrom(noRookCastle, pos("e1")).map(_.to) should not contain pos("g1")

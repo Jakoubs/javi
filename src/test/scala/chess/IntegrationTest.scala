@@ -31,22 +31,22 @@ class IntegrationTest extends AnyFunSuite with Matchers:
     var app = AppState.initial
 
     val move1 = Move(Pos(4, 1), Pos(4, 3))
-    app = GameController.handleCommand(app, Command.MakeMove(move1))
+    app = GameController.handleCommand(app, Command.ProcessTurn(move1.toInputString))
     app.game.activeColor shouldBe Color.Black
     app.lastMove shouldBe Some(move1)
     app.message shouldBe None
 
     val move2 = Move(Pos(4, 6), Pos(4, 4))
-    app = GameController.handleCommand(app, Command.MakeMove(move2))
+    app = GameController.handleCommand(app, Command.ProcessTurn(move2.toInputString))
     app.game.activeColor shouldBe Color.White
     app.lastMove shouldBe Some(move2)
     app.message shouldBe None
   }
 
   test("Command parser should handle all commands") {
-    CommandParser.parse("e2e4") shouldBe a[Command.MakeMove]
-    CommandParser.parse("e7e5") shouldBe a[Command.MakeMove]
-    CommandParser.parse("e7e8q") shouldBe a[Command.MakeMove]
+    CommandParser.parse("e2e4") shouldBe a[Command.ProcessTurn]
+    CommandParser.parse("e7e5") shouldBe a[Command.ProcessTurn]
+    CommandParser.parse("e7e8q") shouldBe a[Command.ProcessTurn]
 
     CommandParser.parse("flip") shouldBe Command.Flip
     CommandParser.parse("undo") shouldBe Command.Undo
