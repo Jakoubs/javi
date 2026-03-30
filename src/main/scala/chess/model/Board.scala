@@ -139,6 +139,24 @@ sealed trait GameState:
     val enPassant = enPassantTarget.map(_.toAlgebraic).getOrElse("-")
     s"${board.toFenPlacement} ${GameState.colorToFen(activeColor)} ${castlingRights.toFen} $enPassant $halfMoveClock $fullMoveNumber"
 
+extension (s: GameState)
+  def copy(
+    board:           Board           = s.board,
+    castlingRights:  CastlingRights  = s.castlingRights,
+    enPassantTarget: Option[Pos]     = s.enPassantTarget,
+    halfMoveClock:   Int             = s.halfMoveClock,
+    fullMoveNumber:  Int             = s.fullMoveNumber,
+    history:         List[GameState] = s.history
+  ): GameState = s match
+    case w: WhiteToMove => w.copy(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history)
+    case b: BlackToMove => b.copy(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history)
+
+  def withActiveColor(color: Color): GameState = (s, color) match
+    case (w: WhiteToMove, Color.White) => w
+    case (b: BlackToMove, Color.Black) => b
+    case (w: WhiteToMove, Color.Black) => BlackToMove(w.board, w.castlingRights, w.enPassantTarget, w.halfMoveClock, w.fullMoveNumber, w.history)
+    case (b: BlackToMove, Color.White) => WhiteToMove(b.board, b.castlingRights, b.enPassantTarget, b.halfMoveClock, b.fullMoveNumber, b.history)
+
 case class WhiteToMove(
   board:           Board,
   castlingRights:  CastlingRights,

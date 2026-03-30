@@ -72,7 +72,15 @@ case class Move(
   from: Pos,
   to: Pos,
   promotion: Option[PieceType] = None
-)
+):
+  def toInputString: String = 
+    val base = s"${from.toAlgebraic}${to.toAlgebraic}"
+    promotion match
+      case Some(PieceType.Queen)  => base + "q"
+      case Some(PieceType.Rook)   => base + "r"
+      case Some(PieceType.Bishop) => base + "b"
+      case Some(PieceType.Knight) => base + "n"
+      case _                      => base
 
 case class CastlingRights(
   whiteKingSide: Boolean = true,
