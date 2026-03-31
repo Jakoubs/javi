@@ -3,9 +3,15 @@ package chess.ai
 import chess.model.*
 
 /**
+ * Interface for AI training strategies.
+ */
+trait Trainer:
+  def train(game: GameState, status: GameStatus): Unit
+
+/**
  * Learns from completed games by adjusting evaluation weights.
  */
-object PassiveTrainer:
+object PassiveTrainer extends Trainer:
 
   private val learningRate = 0.5
 
@@ -25,11 +31,7 @@ object PassiveTrainer:
       case _ => ()
 
   private def updateWeights(game: GameState, reward: Double): Unit =
-    // Simple approach: for each piece on the board, adjust its weight
-    // if White wins (reward > 0), increase weight of White pieces, etc.
-    // However, it's better to adjust the global weights.
-    
-    val pieces = game.board.pieces.values.toList
-    for piece <- pieces do
+    for (pos, piece) <- game.board.pieces do
       val adjustment = reward * (if piece.color == Color.White then 1.0 else -1.0) * learningRate
-      Evaluator.updateWeights(adjustment, piece.pieceType)
+      Evaluator.updateWeights(adjustment, piece.pieceType, piece.color, Some(pos))
+    // Note: saveWeights() is called once by the trainer after all games complete

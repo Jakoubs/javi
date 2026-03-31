@@ -4,6 +4,10 @@ import chess.model.*
 
 object AiEngine:
 
+  // Cache key uses FEN (compact board representation without history)
+  private val transpositionTable = new java.util.concurrent.ConcurrentHashMap[(String, Int), Double]()
+  private val MAX_CACHE_SIZE = 100000
+
   /**
    * Find the best move for the active player using Minimax with Alpha-Beta pruning.
    * @param epsilon Probability of choosing a random move (for training/exploration)
@@ -35,12 +39,17 @@ object AiEngine:
       bestMove
 
   private def minimax(state: GameState, depth: Int, alpha: Double, beta: Double, isMaximizing: Boolean): Double =
+    // Transposition Table Lookup using FEN (no history, fast hash)
+    val cacheKey = (state.toFen, depth)
+    if transpositionTable.containsKey(cacheKey) then
+      return transpositionTable.get(cacheKey)
+
     val status = GameRules.computeStatus(state)
-    status match
+    val result: Double = status match
       case GameStatus.Checkmate(winner) =>
         if winner == Color.White then 1000000.0 else -1000000.0
       case GameStatus.Stalemate | GameStatus.Draw(_) => 0.0
-      case _ if depth == 0 => Evaluator.evaluate(state)
+      case _ if depth <= 0 => Evaluator.evaluate(state)
       case _ =>
         val legalMoves = MoveGenerator.legalMoves(state)
         var currentAlpha = alpha
@@ -66,3 +75,9 @@ object AiEngine:
               currentBeta = Math.min(currentBeta, eval)
               if currentBeta <= currentAlpha then scala.util.boundary.break() // Alpha-Beta Pruning
           minEval
+
+    // Store in Transposition Table (with simple size management)
+    if transpositionTable.size() < MAX_CACHE_SIZE then
+      transpositionTable.put(cacheKey, result)
+    
+    result

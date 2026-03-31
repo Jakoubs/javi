@@ -1,137 +1,97 @@
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E008] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:49:43 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m49 |[0m      [33mcase[0m [31m"new"[0m | [31m"newgame"[0m    => Command.NewGame[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                   ^^^^^^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0mvalue NewGame is not a member of object chess.controller.Command - did you mean Command.NewGamet?[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:121:15 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m121 |[0m  [33mdef[0m [36minitial[0m: [35mAppState[0m =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m               ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m               Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:66:29 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m66 |[0m    [33mcase[0m PieceType.Pawn   => pawnWeight.get()[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                             ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                             Not found: pawnWeight[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:67:29 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m67 |[0m    [33mcase[0m PieceType.Knight => knightWeight.get()[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                             ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                             Not found: knightWeight[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:68:29 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m68 |[0m    [33mcase[0m PieceType.Bishop => bishopWeight.get()[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                             ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                             Not found: bishopWeight[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:69:29 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m69 |[0m    [33mcase[0m PieceType.Rook   => rookWeight.get()[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                             ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                             Not found: rookWeight[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:161:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m161 |[0m        pawnWeight.set(lines([31m0[0m).toDouble)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m        ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m        Not found: pawnWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E050] Type Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:124:4 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m124 |[0m    AppState(game = game, status = status)[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m    ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m  [33mobject[0m [35mAppState[0m in [33mpackage[0m [35mchess.controller[0m does not take parameters[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:162:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m162 |[0m        knightWeight.set(lines([31m1[0m).toDouble)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m        ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m        Not found: knightWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:150:30 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m150 |[0m  [33mprivate[0m [33mdef[0m renderFull(app: AppState, console: ConsoleIO): Unit =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                              ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                              Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:163:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m163 |[0m        bishopWeight.set(lines([31m2[0m).toDouble)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m        ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m        Not found: bishopWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:165:25 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m165 |[0m  [33mdef[0m [36mhandleCommand[0m([36mapp[0m: [35mAppState[0m, [36mcmd[0m: [35mCommand[0m): [35mAppState[0m =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                         ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                         Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:164:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m164 |[0m        rookWeight.set(lines([31m3[0m).toDouble)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m        ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m        Not found: rookWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:165:50 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m165 |[0m  [33mdef[0m [36mhandleCommand[0m([36mapp[0m: [35mAppState[0m, [36mcmd[0m: [35mCommand[0m): [35mAppState[0m =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                                  ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                              Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:183:16 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m183 |[0m    out.println(pawnWeight.get())[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                Not found: pawnWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:212:30 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m212 |[0m  [33mprivate[0m [33mdef[0m handleTurn(app: AppState, input: String): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                              ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                              Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:184:16 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m184 |[0m    out.println(knightWeight.get())[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                Not found: knightWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:212:56 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m212 |[0m  [33mprivate[0m [33mdef[0m handleTurn(app: AppState, input: String): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                                        ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                              Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:185:16 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m185 |[0m    out.println(bishopWeight.get())[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                Not found: bishopWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:283:35 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m283 |[0m  [33mprivate[0m [33mdef[0m handleShowMoves(app: AppState, pos: Pos): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                   ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                   Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:186:16 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m186 |[0m    out.println(rookWeight.get())[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                Not found: rookWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:283:56 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m283 |[0m  [33mprivate[0m [33mdef[0m handleShowMoves(app: AppState, pos: Pos): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                                        ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                              Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:201:41 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m201 |[0m      [33mcase[0m PieceType.Pawn   => atomicAdd(pawnWeight,   delta)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                         ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                         Not found: pawnWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:298:30 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m298 |[0m  [33mprivate[0m [33mdef[0m handleUndo(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                              ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                              Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:202:41 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m202 |[0m      [33mcase[0m PieceType.Knight => atomicAdd(knightWeight, delta)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                         ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                         Not found: knightWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:298:41 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m298 |[0m  [33mprivate[0m [33mdef[0m handleUndo(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                         ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                         Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:203:41 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m203 |[0m      [33mcase[0m PieceType.Bishop => atomicAdd(bishopWeight, delta)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                         ^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                         Not found: bishopWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:314:32 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m314 |[0m  [33mprivate[0m [33mdef[0m handleResign(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                Not found: type AppState[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/ai/Evaluator.scala:204:41 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m204 |[0m      [33mcase[0m PieceType.Rook   => atomicAdd(rookWeight,   delta)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                         ^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                         Not found: rookWeight[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:314:43 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m314 |[0m  [33mprivate[0m [33mdef[0m handleResign(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                           ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                           Not found: type AppState[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:326:30 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m326 |[0m  [33mprivate[0m [33mdef[0m handleDraw(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                              ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                              Not found: type AppState[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:326:41 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m326 |[0m  [33mprivate[0m [33mdef[0m handleDraw(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                         ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                         Not found: type AppState[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:174:11 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m174 |[0m      [33mcase[0m NewGame        => AppState.initial.copy(message = Some(TerminalView.info([31m"New game started."[0m)))[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m           ^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m           Not found: NewGame[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:271:32 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m271 |[0m  [33mprivate[0m [33mdef[0m handleAiMove(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                Not found: type AppState[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:271:43 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m271 |[0m  [33mprivate[0m [33mdef[0m handleAiMove(app: AppState): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                           ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                           Not found: type AppState[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:250:40 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m250 |[0m  [33mprivate[0m [33mdef[0m handleAiTrain(initialApp: AppState, numGames: Int): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                        ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                        Not found: type AppState[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:250:66 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m250 |[0m  [33mprivate[0m [33mdef[0m handleAiTrain(initialApp: AppState, numGames: Int): AppState =[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                                                  ^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                              Not found: type AppState[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:287:26 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m287 |[0m      [33mcase[0m Some(piece) [33mif[0m piece.color != app.game.activeColor =>[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                          ^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                          Not found: piece[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/controller/GameController.scala:303:48 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m303 |[0m        [33mval[0m [36mnewStatus[0m = GameRules.computeStatus(prev)[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m    |[0m                                                ^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m                                                Not found: prev[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m    |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m23 errors found[0m
+[0m[[0m[31merror[0m] [0m[0m16 errors found[0m

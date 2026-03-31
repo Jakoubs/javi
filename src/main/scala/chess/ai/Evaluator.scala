@@ -4,22 +4,31 @@ import chess.model.*
 import java.io.{File, PrintWriter}
 import scala.io.Source
 import scala.util.Try
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Evaluation function for board states.
- * Uses material weights and Piece-Square Tables (PST).
- * Weights are persistent and can be updated for learning.
+ * Uses material weights and Piece-Square Tables (PSTs).
+ * Weights are thread-safe via AtomicReference and can be updated for learning.
  */
 object Evaluator:
 
-  // --- Material Weights ---
-  private var pawnWeight   = 100.0
-  private var knightWeight = 320.0
-  private var bishopWeight = 330.0
-  private var rookWeight   = 500.0
-  private var queenWeight  = 900.0
+  // --- Thread-safe Material Weights ---
+  // AtomicReference[Double] allows concurrent compare-and-swap updates
+  private val pawnWeight   = AtomicReference(100.0)
+  private val knightWeight = AtomicReference(320.0)
+  private val bishopWeight = AtomicReference(330.0)
+  private val rookWeight   = AtomicReference(500.0)
+  private val queenWeight  = AtomicReference(900.0)
 
   private val weightsFile = "ai_weights.txt"
+
+  // Thread-safe atomic add: loops until CAS succeeds
+  private def atomicAdd(ref: AtomicReference[Double], delta: Double): Unit =
+    var updated = false
+    while !updated do
+      val current = ref.get()
+      updated = ref.compareAndSet(current, current + delta)
 
   /**
    * Evaluate the board from White's perspective.
@@ -41,25 +50,19 @@ object Evaluator:
     score
 
   private def weightOf(pt: PieceType): Double = pt match
-    case PieceType.Pawn   => pawnWeight
-    case PieceType.Knight => knightWeight
-    case PieceType.Bishop => bishopWeight
-    case PieceType.Rook   => rookWeight
-    case PieceType.Queen  => queenWeight
+    case PieceType.Pawn   => pawnWeight.get()
+    case PieceType.Knight => knightWeight.get()
+    case PieceType.Bishop => bishopWeight.get()
+    case PieceType.Rook   => rookWeight.get()
+    case PieceType.Queen  => queenWeight.get()
     case PieceType.King   => 20000.0
   
-  /** Piece-Square Tables to encourage better positioning */
+  /** Piece-Square Tables — reads from trainable pstWeights */
   private def pstScore(piece: Piece, pos: Pos): Double =
     val (c, r) = (pos.col, pos.row)
     val (relC, relR) = if piece.color == Color.White then (c, r) else (c, 7 - r)
-    
-    piece.pieceType match
-      case PieceType.Pawn   => pawnPst(relR)(relC)
-      case PieceType.Knight => knightPst(relR)(relC)
-      case PieceType.Bishop => bishopPst(relR)(relC)
-      case PieceType.Rook   => rookPst(relR)(relC)
-      case PieceType.Queen  => queenPst(relR)(relC)
-      case PieceType.King   => kingPst(relR)(relC)
+    val index = relR * 8 + relC
+    pstWeights(piece.pieceType)(index).get()
 
   // --- PST Tables (Simplified) ---
   private val pawnPst = Array(
@@ -128,36 +131,84 @@ object Evaluator:
     Array( 20, 30, 10,  0,  0, 10, 30, 20)
   )
 
-  // --- Persistence & Learning ---
+  // --- Trainable PST weights (initialized from hardcoded tables above) ---
+  // IMPORTANT: This MUST be defined AFTER the PST arrays above!
+  private val pstWeights: Map[PieceType, Array[AtomicReference[Double]]] = {
+    val tables: Array[(PieceType, Array[Array[Int]])] = Array(
+      (PieceType.Pawn,   pawnPst),
+      (PieceType.Knight, knightPst),
+      (PieceType.Bishop, bishopPst),
+      (PieceType.Rook,   rookPst),
+      (PieceType.Queen,  queenPst),
+      (PieceType.King,   kingPst)
+    )
+    tables.map { case (pt, table) =>
+      val flat = new Array[AtomicReference[Double]](64)
+      for (r <- 0 until 8; c <- 0 until 8) do
+        flat(r * 8 + c) = AtomicReference(table(r)(c).toDouble)
+      pt -> flat
+    }.toMap
+  }
 
-  def loadWeights(): Unit =
+  // --- Persistence & Learning ---
+  
+  /**
+   * Load weights from a file. 
+   * @param path Optional file path; defaults to "ai_weights.txt"
+   */
+  def loadWeights(path: String = weightsFile): Unit =
     Try {
-      val source = Source.fromFile(weightsFile)
+      val source = Source.fromFile(path)
       val lines = source.getLines().toList
       source.close()
       if lines.size >= 5 then
-        pawnWeight   = lines(0).toDouble
-        knightWeight = lines(1).toDouble
-        bishopWeight = lines(2).toDouble
-        rookWeight   = lines(3).toDouble
-        queenWeight  = lines(4).toDouble
+        pawnWeight.set(lines(0).toDouble)
+        knightWeight.set(lines(1).toDouble)
+        bishopWeight.set(lines(2).toDouble)
+        rookWeight.set(lines(3).toDouble)
+        queenWeight.set(lines(4).toDouble)
+      // Load PSTs (lines 5..388)
+      if lines.size >= 389 then
+        var idx = 5
+        val pieceOrder = Array(PieceType.Pawn, PieceType.Knight, PieceType.Bishop, PieceType.Rook, PieceType.Queen, PieceType.King)
+        for pt <- pieceOrder do
+          val arr = pstWeights(pt)
+          for i <- 0 until 64 do
+            arr(i).set(lines(idx).toDouble)
+            idx += 1
     }
 
-  def saveWeights(): Unit =
-    val out = new PrintWriter(new File(weightsFile))
-    out.println(pawnWeight)
-    out.println(knightWeight)
-    out.println(bishopWeight)
-    out.println(rookWeight)
-    out.println(queenWeight)
+  /**
+   * Save current weights to a file (5 material + 384 PST = 389 total).
+   */
+  def saveWeights(path: String = weightsFile): Unit = synchronized {
+    val out = new PrintWriter(new File(path))
+    out.println(pawnWeight.get())
+    out.println(knightWeight.get())
+    out.println(bishopWeight.get())
+    out.println(rookWeight.get())
+    out.println(queenWeight.get())
+    val pieceOrder = Array(PieceType.Pawn, PieceType.Knight, PieceType.Bishop, PieceType.Rook, PieceType.Queen, PieceType.King)
+    for pt <- pieceOrder do
+      val arr = pstWeights(pt)
+      for i <- 0 until 64 do
+        out.println(arr(i).get())
     out.close()
+  }
 
-  def updateWeights(delta: Double, pieceType: PieceType): Unit =
+  // Thread-safe weight update — material + optional positional
+  def updateWeights(delta: Double, pieceType: PieceType, color: Color, pos: Option[Pos] = None): Unit =
+    // Material update
     pieceType match
-      case PieceType.Pawn   => pawnWeight   += delta
-      case PieceType.Knight => knightWeight += delta
-      case PieceType.Bishop => bishopWeight += delta
-      case PieceType.Rook   => rookWeight   += delta
-      case PieceType.Queen  => queenWeight  += delta
+      case PieceType.Pawn   => atomicAdd(pawnWeight,   delta)
+      case PieceType.Knight => atomicAdd(knightWeight, delta)
+      case PieceType.Bishop => atomicAdd(bishopWeight, delta)
+      case PieceType.Rook   => atomicAdd(rookWeight,   delta)
+      case PieceType.Queen  => atomicAdd(queenWeight,  delta)
       case _ => ()
-    saveWeights()
+    // PST update
+    pos.foreach { p =>
+      val relR = if color == Color.White then p.row else 7 - p.row
+      val index = relR * 8 + p.col
+      atomicAdd(pstWeights(pieceType)(index), delta * 0.1) // smaller LR for positional
+    }

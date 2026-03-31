@@ -27,11 +27,12 @@ enum Command:
   case Undo
   case Resign
   case OfferDraw
-  case NewGamet
+  case NewGame
   case Help
   case Quit
   case AiMove
   case AiTrain(n: Int)
+  case PlayVsAi   // toggle: human vs AI mode
   case Unknown(input: String)
 
 // ─── CommandParser ────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ object CommandParser:
       case "help" | "?"         => Command.Help
       case "quit" | "exit" | "q"=> Command.Quit
       case "ai"                 => Command.AiMove
+      case "vsai" | "playai"   => Command.PlayVsAi
       case s if s.startsWith("train ") =>
         val nStr = s.drop(6).trim
         nStr.toIntOption match
@@ -105,16 +107,17 @@ object MoveParser:
 // ─── AppState ─────────────────────────────────────────────────────────────────
 
 /** Everything the controller needs to know about the current UI state */
-  case class AppState(
-  game:       GameState,
-  status:     GameStatus,
-  flipped:    Boolean         = false,
-  highlights: Set[Pos]        = Set.empty,
-  lastMove:   Option[Move]    = None,
-  message:    Option[String]  = None,   // one-shot message shown after next render
-  drawOffer:  Boolean         = false,
-  running:    Boolean         = true,
-  training:   Boolean         = false   // New field to track if training is in progress
+case class AppState(
+  game:        GameState,
+  status:      GameStatus,
+  flipped:     Boolean         = false,
+  highlights:  Set[Pos]        = Set.empty,
+  lastMove:    Option[Move]    = None,
+  message:     Option[String]  = None,
+  drawOffer:   Boolean         = false,
+  running:     Boolean         = true,
+  training:    Boolean         = false,
+  aiOpponent:  Boolean         = false   // when true, AI auto-replies after each human move
 )
 
 object AppState:
@@ -123,11 +126,19 @@ object AppState:
     val status = GameRules.computeStatus(game)
     AppState(game = game, status = status)
 
+  def initialVsAi: AppState = initial.copy(aiOpponent = true)
+
 // ─── GameController ───────────────────────────────────────────────────────────
 
 object GameController:
   import scala.concurrent.Future
-  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent.ExecutionContext
+  import java.util.concurrent.Executors
+
+  // Unbounded cached thread pool: creates a new thread per game if needed.
+  // Much more concurrent than the default ForkJoinPool (which caps at CPU cores).
+  private val trainingEC: ExecutionContext =
+    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()))
 
   // ── Main loop ──────────────────────────────────────────────────────────────
 
@@ -141,6 +152,9 @@ object GameController:
       console.readLine() match
         case Some(input) =>
           app = handleCommand(app, CommandParser.parse(input.trim))
+          // If vs-AI mode: let AI reply once after each human command
+          if app.aiOpponent && app.status == GameStatus.Playing then
+            app = handleAiMove(app)
           renderFull(app, console)
         case None =>
           app = app.copy(running = false)
@@ -158,6 +172,8 @@ object GameController:
     ))
     if app.training then
       console.print(TerminalView.info("AI is currently training in the background..."))
+    if app.aiOpponent then
+      console.print(TerminalView.info(s"Playing vs AI | You are ${app.game.activeColor} | Type 'vsai' to disable"))
     app.message.foreach(console.print)
 
   // ── Command dispatch ───────────────────────────────────────────────────────
@@ -171,11 +187,12 @@ object GameController:
       case Undo           => handleUndo(app)
       case Resign         => handleResign(app)
       case OfferDraw      => handleDraw(app)
-      case NewGame        => AppState.initial.copy(message = Some(TerminalView.info("New game started.")))
+      case NewGame        => AppState.initial.copy(aiOpponent = app.aiOpponent, message = Some(TerminalView.info("New game started.")))
       case Help           => app.copy(message = Some(TerminalView.helpText))
       case Quit           => app.copy(running = false, message = None)
       case AiMove         => handleAiMove(app)
       case AiTrain(n)     => handleAiTrain(app, n)
+      case PlayVsAi       => handleToggleVsAi(app)
       case Unknown(msg)   => app.copy(message = Some(TerminalView.error(msg)), highlights = Set.empty)
 
   // ── Move handler ───────────────────────────────────────────────────────────
@@ -211,61 +228,96 @@ object GameController:
 
   private def handleTurn(app: AppState, input: String): AppState =
     // Game already over?
-    app.status match
-      case GameStatus.Checkmate(_) | GameStatus.Stalemate | GameStatus.Draw(_) =>
-        return app.copy(message = Some(TerminalView.error("Game is over. Type 'new' to start again.")))
-      case _ => ()
+    val isGameOver = app.status match
+      case GameStatus.Checkmate(_) | GameStatus.Stalemate | GameStatus.Draw(_) => true
+      case _ => false
 
-    // Run Monadic Railway
-    processTurn(input, app.game) match {
-      case Right((move, newGame)) =>
-        val newStatus = GameRules.computeStatus(newGame)
-        val msg = newStatus match
-          case GameStatus.Checkmate(loser)  =>
-            val winner = if loser == Color.White then "Black" else "White"
-            Some(TerminalView.success(s"Checkmate! $winner wins!"))
-          case GameStatus.Stalemate        => Some(TerminalView.info("Stalemate — draw!"))
-          case GameStatus.Draw(reason)     => Some(TerminalView.info(s"Draw by $reason."))
-          case GameStatus.Check(_)         => Some(TerminalView.info("Check!"))
-          case GameStatus.Playing          => None
+    if isGameOver then
+      app.copy(message = Some(TerminalView.error("Game is over. Type 'new' to start again.")))
+    else
+      // Run Monadic Railway
+      processTurn(input, app.game) match {
+        case Right((move, newGame)) =>
+          val newStatus = GameRules.computeStatus(newGame)
+          val msg = newStatus match
+            case GameStatus.Checkmate(loser)  =>
+              val winner = if loser == Color.White then "Black" else "White"
+              Some(TerminalView.success(s"Checkmate! $winner wins!"))
+            case GameStatus.Stalemate        => Some(TerminalView.info("Stalemate — draw!"))
+            case GameStatus.Draw(reason)     => Some(TerminalView.info(s"Draw by $reason."))
+            case GameStatus.Check(_)         => Some(TerminalView.info("Check!"))
+            case GameStatus.Playing          => None
 
-        app.copy(
-          game       = newGame,
-          status     = newStatus,
-          lastMove   = Some(move),
-          highlights = Set.empty,
-          message    = msg,
-          drawOffer  = false
-        ) match {
-          case next if next.status != GameStatus.Playing =>
-            chess.ai.PassiveTrainer.train(next.game, next.status)
-            next
-          case other => other
-        }
+          val nextApp = app.copy(
+            game       = newGame,
+            status     = newStatus,
+            lastMove   = Some(move),
+            highlights = Set.empty,
+            message    = msg,
+            drawOffer  = false
+          )
+          
+          if nextApp.status != GameStatus.Playing then
+            chess.ai.PassiveTrainer.train(nextApp.game, nextApp.status)
+          
+          nextApp
 
-      case Left(errorMsg) =>
-        app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty)
-    }
+        case Left(errorMsg) =>
+          app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty)
+      }
+
+  private val MAX_MOVES_PER_GAME = 200
+
+  private def simulateGame(): Unit =
+    var gameApp = AppState.initial
+    var moveCount = 0
+    while gameApp.status == GameStatus.Playing && moveCount < MAX_MOVES_PER_GAME do
+      val move = chess.ai.AiEngine.bestMove(gameApp.game, 2, epsilon = 0.1)
+      move match
+        case Some(m) => gameApp = handleTurn(gameApp, m.toInputString)
+        case None    => gameApp = gameApp.copy(status = GameStatus.Draw("no legal moves"))
+      moveCount += 1
+    if gameApp.status == GameStatus.Playing then
+      gameApp = gameApp.copy(status = GameStatus.Draw("max moves reached"))
+
+  private def handleToggleVsAi(app: AppState): AppState =
+    if app.aiOpponent then
+      app.copy(aiOpponent = false, message = Some(TerminalView.info("AI opponent disabled.")))
+    else
+      val msg = TerminalView.success(s"AI opponent enabled! You play as ${app.game.activeColor}. AI will auto-reply.")
+      app.copy(aiOpponent = true, message = Some(msg))
 
   private def handleAiTrain(initialApp: AppState, numGames: Int): AppState =
-    Future {
-      println(s"Starting automated training for $numGames games in background...")
-      for i <- 1 to numGames do
-        var gameApp = AppState.initial
-        while gameApp.status == GameStatus.Playing do
-          val move = chess.ai.AiEngine.bestMove(gameApp.game, 2, epsilon = 0.1)
-          move match
-            case Some(m) => gameApp = handleTurn(gameApp, m.toInputString)
-            case None    => gameApp = gameApp.copy(status = GameStatus.Draw("no legal moves"))
+    import java.util.concurrent.atomic.AtomicInteger
+    given ExecutionContext = trainingEC  // all Future ops in this scope use trainingEC
+
+    val completed = AtomicInteger(0)
+    val checkpointInterval = 50000 // user suggested 50,000 blocks
+
+    // Launch games on the fixed thread pool
+    val allGames = Future.traverse((1 to numGames).toList) { _ =>
+      Future(simulateGame()).map { _ =>
+        val done = completed.incrementAndGet()
         
-        if (i % 10 == 0 || i == numGames) then
-           println(s"\rTraining progress: $i/$numGames games completed.")
-      println("Training session completed! Weights updated.")
+        // Progress message
+        if (done % 500 == 0 || done == numGames) then
+          println(s"Training progress: $done/$numGames games completed.")
+          
+        // Checkpoint saving
+        if (done % checkpointInterval == 0) then
+          chess.ai.Evaluator.saveWeights()
+          println(s"Checkpoint reached ($done games): Weights saved to Google Drive/local disk.")
+      }
     }
-    
+
+    allGames.foreach { _ =>
+      chess.ai.Evaluator.saveWeights()
+      println(s"Training session completed! All $numGames games done. Final weights saved.")
+    }
+
     initialApp.copy(
       training = true,
-      message = Some(TerminalView.success(s"Started background training for $numGames games."))
+      message = Some(TerminalView.success(s"Started parallel training: $numGames games. Checkpoints every $checkpointInterval."))
     )
 
   private def handleAiMove(app: AppState): AppState =
