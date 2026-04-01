@@ -121,5 +121,17 @@ enum GameStatus:
   case Playing
   case Check(color: Color)
   case Checkmate(loser: Color)
+  case Timeout(loser: Color)
   case Stalemate
   case Draw(reason: String)
+
+case class ClockState(
+  whiteMillis: Long,
+  blackMillis: Long,
+  incrementMillis: Long,
+  lastTickSysTime: Option[Long] = None,
+  isActive: Boolean = true
+):
+  def activeMillis(color: Color): Long = color match
+    case Color.White => whiteMillis
+    case Color.Black => blackMillis

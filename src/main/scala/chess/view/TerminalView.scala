@@ -92,7 +92,7 @@ object TerminalView:
               else s"$bg    $RESET"
             case Some(piece) =>
               val fg = if piece.color == Color.White then s"$FG_WHITE$BOLD" else FG_BLACK
-              s"$bg$fg ${piece.symbol}  $RESET"
+              s"$bg$fg ${piece.letter}  $RESET"
 
         sb.append(cell)
       }
@@ -128,6 +128,9 @@ object TerminalView:
         s"\n  ${FG_RED}${BOLD}Checkmate!${RESET} $winner wins!"
       case GameStatus.Stalemate =>
         s"\n  ${FG_YELLOW}${BOLD}Stalemate!${RESET} The game is a draw. 🤝"
+      case GameStatus.Timeout(loser) =>
+        val winner = if loser == Color.White then s"${FG_CYAN}${BOLD}Black${RESET}" else s"${FG_WHITE}${BOLD}White${RESET}"
+        s"\n  ${FG_RED}${BOLD}Timeout!${RESET} $winner wins on time!"
       case GameStatus.Draw(reason) =>
         s"\n  ${FG_YELLOW}${BOLD}Draw${RESET} by $reason. 🤝"
 

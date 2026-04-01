@@ -1,2 +1,74 @@
-[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/test-classes.bak[0m
-[0m[[0m[0mdebug[0m] [0m[0mRemoving the temporary directory used for backing up class files: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/test-classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = D:\SoftwareArchitektur\javi\target\scala-3.3.1\test-classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CommandParserTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypesTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	FunctionalProgrammingTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageRegressionTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageImprovementTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MoveGeneratorTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PerformanceBenchmark.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ModelFenCoverageTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	IntegrationTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest$FakeConsole.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CommandParserTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypesTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	FunctionalProgrammingTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageRegressionTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageImprovementTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MoveGeneratorTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PerformanceBenchmark.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ModelFenCoverageTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	IntegrationTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest$FakeConsole.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CommandParserTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypesTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	FunctionalProgrammingTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageRegressionTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageImprovementTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MoveGeneratorTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PerformanceBenchmark.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ModelFenCoverageTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	IntegrationTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest$FakeConsole.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CommandParserTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypesTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	FunctionalProgrammingTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageRegressionTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageImprovementTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MoveGeneratorTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PerformanceBenchmark.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ModelFenCoverageTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	IntegrationTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest$FakeConsole.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = D:\SoftwareArchitektur\javi\target\scala-3.3.1\test-classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0mRegistering generated classes:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CommandParserTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypesTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	FunctionalProgrammingTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageRegressionTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageImprovementTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MoveGeneratorTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PerformanceBenchmark.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ModelFenCoverageTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	IntegrationTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest$FakeConsole.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CommandParserTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TypesTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	FunctionalProgrammingTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageRegressionTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	CoverageImprovementTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MoveGeneratorTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PerformanceBenchmark.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ModelFenCoverageTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	IntegrationTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest$FakeConsole.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0mRemoving the temporary directory used for backing up class files: D:\SoftwareArchitektur\javi\target\scala-3.3.1\test-classes.bak[0m

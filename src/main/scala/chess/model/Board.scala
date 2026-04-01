@@ -157,6 +157,20 @@ extension (s: GameState)
     case (w: WhiteToMove, Color.Black) => BlackToMove(w.board, w.castlingRights, w.enPassantTarget, w.halfMoveClock, w.fullMoveNumber, w.history)
     case (b: BlackToMove, Color.White) => WhiteToMove(b.board, b.castlingRights, b.enPassantTarget, b.halfMoveClock, b.fullMoveNumber, b.history)
 
+  /** Returns all pieces of the given color that have been captured (missing from board compared to starting position) */
+  def capturedPieces(color: Color): List[PieceType] =
+    val startingCounts = Map(
+      PieceType.Pawn -> 8, PieceType.Knight -> 2, PieceType.Bishop -> 2,
+      PieceType.Rook -> 2, PieceType.Queen -> 1
+    )
+    val currentPieces = s.board.allPiecesOf(color).map(_._2.pieceType)
+    val currentCounts = currentPieces.groupBy(identity).view.mapValues(_.size).toMap
+    
+    startingCounts.flatMap { (pt, initialCount) =>
+      val currentCount = currentCounts.getOrElse(pt, 0)
+      List.fill(Math.max(0, initialCount - currentCount))(pt)
+    }.toList
+
 case class WhiteToMove(
   board:           Board,
   castlingRights:  CastlingRights,

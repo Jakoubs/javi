@@ -6,7 +6,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "chess-functional-improvements",
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-swing" % "3.0.0",
+      "org.scalafx" %% "scalafx" % "20.0.0-R31",
       // Web API (http4s + circe)
       "org.http4s"             %% "http4s-ember-server" % "0.23.30",
       "org.http4s"             %% "http4s-dsl"          % "0.23.30",
