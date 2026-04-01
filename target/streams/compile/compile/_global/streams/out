@@ -1,5 +1,7 @@
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Tui.scala:37:11 
-[error] 37 |    if app.aiOpponent then
-[error]    |       ^^^^^^^^^^^^^^
-[error]    |       value aiOpponent is not a member of chess.controller.AppState
+[error] -- [E120] Naming Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:68:14 
+[error] 68 |  private var gameOverPopupShown: Boolean = false
+[error]    |              ^
+[error]    |Double definition:
+[error]    |private[this] var gameOverPopupShown: Boolean in object Gui at line 65 and
+[error]    |private[this] var gameOverPopupShown: Boolean in object Gui at line 68
 [error] one error found

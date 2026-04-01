@@ -22,7 +22,7 @@ object StdConsoleIO extends ConsoleIO:
 
 enum Command:
   case ProcessTurn(input: String)
-  case ShowMoves(pos: Pos)
+  case SelectSquare(pos: Option[Pos])
   case Flip
   case Undo
   case Resign
@@ -36,52 +36,16 @@ enum Command:
   case AiSuggest
   case AiTrain(n: Int)
   case ToggleAi(color: Color) // toggle AI for specific color
+  case LoadPgn(pgn: String)
+  case LoadFen(fen: String)
+  case StepBack
+  case StepForward
+  case FirstHistory
+  case LastHistory
+  case JumpToHistory(index: Int)
   case Unknown(input: String)
 
-// ─── CommandParser ────────────────────────────────────────────────────────────
-
-object CommandParser:
-
-  def parse(input: String): Command =
-    val trimmed = input.trim.toLowerCase
-
-    trimmed match
-      case "flip"               => Command.Flip
-      case "undo"               => Command.Undo
-      case "resign"             => Command.Resign
-      case "draw"               => Command.OfferDraw
-      case "new" | "newgame"    => Command.NewGame
-      case "help" | "?"         => Command.Help
-      case "quit" | "exit" | "q"=> Command.Quit
-      case "ai"                 => Command.AiMove
-      case "ai w" | "ai white"  => Command.ToggleAi(Color.White)
-      case "ai b" | "ai black"  => Command.ToggleAi(Color.Black)
-      case s if s.startsWith("train ") =>
-        val nStr = s.drop(6).trim
-        nStr.toIntOption match
-          case Some(n) if n > 0 => Command.AiTrain(n)
-          case _                => Command.Unknown(s"Invalid training count: $nStr")
-      case s if s.startsWith("moves ") =>
-        val posStr = s.drop(6).trim
-        Pos.fromAlgebraic(posStr) match
-          case Some(pos) => Command.ShowMoves(pos)
-          case None      => Command.Unknown(s"Invalid position: $posStr")
-      case s if (s.length >= 4 && s.length <= 7) =>
-        val normalized = s.replace("-", "")
-        if (normalized.length == 4 || normalized.length == 5) then
-          val fromPos = Pos.fromAlgebraic(normalized.take(2))
-          val toPos   = Pos.fromAlgebraic(normalized.substring(2, 4))
-          val promo   = normalized.drop(4)
-          val validPromo = promo.isEmpty || (promo.length == 1 && "qrbn".contains(promo.head))
-          
-          if fromPos.isDefined && toPos.isDefined && validPromo then
-            Command.ProcessTurn(s)
-          else
-            Command.Unknown(s"Invalid move format: $s")
-        else
-          Command.Unknown(s"Invalid move format: $s")
-      case s =>
-        Command.Unknown(s"Unknown command: $s")
+// ─── MoveParser ────────────────────────────────────────────────────────────
 
 object MoveParser:
   import scala.util.Try
@@ -116,6 +80,7 @@ case class AppState(
   status:      GameStatus,
   flipped:     Boolean         = false,
   highlights:  Set[Pos]        = Set.empty,
+  selectedPos: Option[Pos]     = None,
   lastMove:    Option[Move]    = None,
   message:     Option[String]  = None,
   drawOffer:   Boolean         = false,
@@ -123,7 +88,8 @@ case class AppState(
   training:    Boolean         = false,
   aiWhite:     Boolean         = false, // when true, AI plays for White
   aiBlack:     Boolean         = false, // when true, AI plays for Black
-  clock:       Option[ClockState] = None
+  clock:       Option[ClockState] = None,
+  viewIndex:   Int             = 0    // which history state we are viewing
 )
 
 object AppState:
@@ -180,8 +146,8 @@ object GameController extends Observable[AppState]:
     import Command.*
     cmd match
       case ProcessTurn(input) => handleTurn(app, input)
-      case ShowMoves(pos) => handleShowMoves(app, pos)
-      case Flip           => app.copy(highlights = Set.empty, message = None, flipped = !app.flipped)
+      case SelectSquare(pos) => handleSelectSquare(app, pos)
+      case Flip           => app.copy(highlights = Set.empty, selectedPos = None, message = None, flipped = !app.flipped)
       case Undo           => handleUndo(app)
       case Resign         => handleResign(app)
       case OfferDraw      => handleDraw(app)
@@ -189,6 +155,11 @@ object GameController extends Observable[AppState]:
       case StartGame(clock) => 
         val initClock = clock.map { case (init, inc) => ClockState(init, init, inc, None) }
         AppState.initial.copy(clock = initClock, aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some(TerminalView.info("New game started.")))
+      case StepBack       => app.copy(viewIndex = Math.max(0, app.viewIndex - 1))
+      case StepForward    => app.copy(viewIndex = Math.min(app.game.history.size, app.viewIndex + 1))
+      case FirstHistory   => app.copy(viewIndex = 0)
+      case LastHistory    => app.copy(viewIndex = app.game.history.size)
+      case JumpToHistory(i) => app.copy(viewIndex = Math.max(0, Math.min(app.game.history.size, i)))
       case TimeExpired(l) => app.copy(
         status = GameStatus.Timeout(l), 
         clock = app.clock.map(_.copy(isActive = false)),
@@ -200,6 +171,18 @@ object GameController extends Observable[AppState]:
       case AiSuggest      => handleAiSuggest(app)
       case AiTrain(n)     => handleAiTrain(app, n)
       case ToggleAi(c)    => handleToggleAi(app, c)
+      case LoadPgn(pgn)   => 
+        chess.util.Pgn.importPgn(pgn) match
+          case scala.util.Success(state) => 
+            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("PGN loaded successfully.")))
+          case scala.util.Failure(exception) => 
+            app.copy(message = Some(TerminalView.error(s"PGN Error: ${exception.getMessage}")), highlights = Set.empty)
+      case LoadFen(fen)   =>
+        chess.model.GameState.fromFen(fen) match
+          case Right(state) => 
+            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("FEN loaded successfully.")))
+          case Left(errorMessage) => 
+            app.copy(message = Some(TerminalView.error(s"FEN Error: $errorMessage")), highlights = Set.empty)
       case Unknown(msg)   => app.copy(message = Some(TerminalView.error(msg)), highlights = Set.empty)
 
   // ── Move handler ───────────────────────────────────────────────────────────
@@ -299,9 +282,11 @@ object GameController extends Observable[AppState]:
             status     = newStatus,
             lastMove   = Some(move),
             highlights = Set.empty,
+            selectedPos= None,
             message    = msg,
             drawOffer  = false,
-            clock      = nextClock
+            clock      = nextClock,
+            viewIndex  = newGame.history.size
           )
           
           if nextApp.status != GameStatus.Playing then
@@ -310,7 +295,7 @@ object GameController extends Observable[AppState]:
           nextApp
 
         case Left(errorMsg) =>
-          app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty)
+          app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty, selectedPos = None)
       }
 
   private val MAX_MOVES_PER_GAME = 200
@@ -389,18 +374,22 @@ object GameController extends Observable[AppState]:
 
   // ── Show legal moves for a square ─────────────────────────────────────────
 
-  private def handleShowMoves(app: AppState, pos: Pos): AppState =
-    app.game.board.get(pos) match
+  private def handleSelectSquare(app: AppState, optPos: Option[Pos]): AppState =
+    optPos match
       case None =>
-        app.copy(message = Some(TerminalView.error(s"No piece on ${pos.toAlgebraic}.")), highlights = Set.empty)
-      case Some(piece) if piece.color != app.game.activeColor =>
-        app.copy(message = Some(TerminalView.error("That is not your piece.")), highlights = Set.empty)
-      case Some(_) =>
-        val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
-        if targets.isEmpty then
-          app.copy(message = Some(TerminalView.info("No legal moves for that piece.")), highlights = Set.empty)
-        else
-          app.copy(highlights = targets, message = None)
+        app.copy(selectedPos = None, highlights = Set.empty, message = None)
+      case Some(pos) =>
+        app.game.board.get(pos) match
+          case None =>
+            app.copy(message = Some(TerminalView.error(s"No piece on ${pos.toAlgebraic}.")), highlights = Set.empty, selectedPos = None)
+          case Some(piece) if piece.color != app.game.activeColor =>
+            app.copy(message = Some(TerminalView.error("That is not your piece.")), highlights = Set.empty, selectedPos = None)
+          case Some(_) =>
+            val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
+            if targets.isEmpty then
+              app.copy(message = Some(TerminalView.info("No legal moves for that piece.")), highlights = Set.empty, selectedPos = Some(pos))
+            else
+              app.copy(highlights = targets, selectedPos = Some(pos), message = None)
 
   // ── Undo ───────────────────────────────────────────────────────────────────
 
@@ -415,6 +404,7 @@ object GameController extends Observable[AppState]:
           status     = newStatus,
           lastMove   = None,
           highlights = Set.empty,
+          selectedPos= None,
           message    = Some(TerminalView.info("Last move undone."))
         )
 

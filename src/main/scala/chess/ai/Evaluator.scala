@@ -21,6 +21,19 @@ object Evaluator:
   private val rookWeight   = AtomicReference(500.0)
   private val queenWeight  = AtomicReference(900.0)
 
+  // --- Trainable Opening Heuristics ---
+  private val openingCenterPawn       = AtomicReference(50.0)
+  private val openingCenterKnight     = AtomicReference(40.0)
+  private val openingUndevelopedMinor = AtomicReference(80.0)
+  private val openingPawnPushPenalty  = AtomicReference(40.0)
+  private val openingEarlyQueen       = AtomicReference(150.0)
+  private val openingCastledBonus     = AtomicReference(250.0)
+  private val openingLostCastle       = AtomicReference(150.0)
+  private val openingUncastled        = AtomicReference(200.0)
+  private val openingConnectedRooks   = AtomicReference(80.0)
+  private val openingWeakPawnF        = AtomicReference(40.0)
+  private val openingWeakPawnH        = AtomicReference(30.0)
+
   private val weightsFile = "ai_weights.txt"
 
   // Thread-safe atomic add: loops until CAS succeeds
@@ -46,6 +59,79 @@ object Evaluator:
         score += material + pstBonus
       else
         score -= material + pstBonus
+
+    // Bestimme Spielphase (Opening Weight)
+    // Maximale Materialsumme (ohne König) ist ca. 7800. 
+    // Eröffnungs-Regeln verblassen fließend zwischen 6500 und 4500.
+    val totalMaterial = board.pieces.values.filter(_.pieceType != PieceType.King).map(p => weightOf(p.pieceType)).sum
+    val openingWeight = math.max(0.0, math.min(1.0, (totalMaterial - 4500) / 2000.0))
+    
+    if openingWeight > 0 then
+      val wOpening = evaluateOpening(state, Color.White)
+      val bOpening = evaluateOpening(state, Color.Black)
+      score += (wOpening - bOpening) * openingWeight
+
+    score
+
+  // --- Opening Heuristics ---
+  private def evaluateOpening(state: GameState, color: Color): Double =
+    var score = 0.0
+    val board = state.board
+    val startRow = if color == Color.White then 0 else 7
+    val pawnRow = if color == Color.White then 1 else 6
+    val forward = if color == Color.White then 1 else -1
+
+    // 1 & 7. Center Control
+    val ePawnPos = Pos(4, startRow + 3 * forward)
+    val dPawnPos = Pos(3, startRow + 3 * forward)
+    if board.get(ePawnPos).contains(Piece(color, PieceType.Pawn)) then score += openingCenterPawn.get()
+    if board.get(dPawnPos).contains(Piece(color, PieceType.Pawn)) then score += openingCenterPawn.get()
+    for c <- Seq(2, 5) do
+      val nPos = Pos(c, startRow + 2 * forward)
+      if board.get(nPos).contains(Piece(color, PieceType.Knight)) then score += openingCenterKnight.get()
+
+    // 2. Develop minor pieces quickly (penalty for undeveloped)
+    var undevelopedMinors = 0
+    if board.get(Pos(1, startRow)).contains(Piece(color, PieceType.Knight)) then undevelopedMinors += 1
+    if board.get(Pos(6, startRow)).contains(Piece(color, PieceType.Knight)) then undevelopedMinors += 1
+    if board.get(Pos(2, startRow)).contains(Piece(color, PieceType.Bishop)) then undevelopedMinors += 1
+    if board.get(Pos(5, startRow)).contains(Piece(color, PieceType.Bishop)) then undevelopedMinors += 1
+    score -= undevelopedMinors * openingUndevelopedMinor.get()
+
+    // 5. Moved pawns vs Development
+    val unmovedPawns = (0 to 7).count(c => board.get(Pos(c, pawnRow)).contains(Piece(color, PieceType.Pawn)))
+    val movedPawns = 8 - unmovedPawns
+    if movedPawns > 3 && undevelopedMinors > 1 then
+      score -= (movedPawns - 3) * openingPawnPushPenalty.get()
+
+    // 6. Queen out too early
+    if !board.get(Pos(3, startRow)).contains(Piece(color, PieceType.Queen)) && undevelopedMinors > 1 then
+      score -= openingEarlyQueen.get()
+
+    // 3. King Safety (Castling rights)
+    val kingPos = board.findKing(color)
+    val castlingRights = state.castlingRights
+    val kSideAllowed = if color == Color.White then castlingRights.whiteKingSide else castlingRights.blackKingSide
+    val qSideAllowed = if color == Color.White then castlingRights.whiteQueenSide else castlingRights.blackQueenSide
+    
+    val kingMoved = kingPos.exists(p => p != Pos(4, startRow))
+    if kingMoved then
+      if kingPos.exists(p => p.col == 6 || p.col == 2) then
+        score += openingCastledBonus.get()
+      else
+        if !kSideAllowed && !qSideAllowed then score -= openingLostCastle.get()
+    else
+      if !kSideAllowed && !qSideAllowed then score -= openingUncastled.get()
+
+    // 4. Connect Rooks
+    if board.get(Pos(0, startRow)).contains(Piece(color, PieceType.Rook)) &&
+       board.get(Pos(7, startRow)).contains(Piece(color, PieceType.Rook)) then
+         val anyPieceBetween = (1 to 6).map(c => board.get(Pos(c, startRow))).exists(_.isDefined)
+         if !anyPieceBetween then score += openingConnectedRooks.get()
+
+    // 8. Avoid unnecessary weaknesses (f & h pawns drawn early)
+    if !board.get(Pos(5, pawnRow)).contains(Piece(color, PieceType.Pawn)) then score -= openingWeakPawnF.get()
+    if !board.get(Pos(7, pawnRow)).contains(Piece(color, PieceType.Pawn)) then score -= openingWeakPawnH.get()
 
     score
 
@@ -176,6 +262,20 @@ object Evaluator:
           for i <- 0 until 64 do
             arr(i).set(lines(idx).toDouble)
             idx += 1
+      // Load Openings (lines 389..399)
+      if lines.size >= 400 then
+        var idx = 389
+        openingCenterPawn.set(lines(idx).toDouble); idx += 1
+        openingCenterKnight.set(lines(idx).toDouble); idx += 1
+        openingUndevelopedMinor.set(lines(idx).toDouble); idx += 1
+        openingPawnPushPenalty.set(lines(idx).toDouble); idx += 1
+        openingEarlyQueen.set(lines(idx).toDouble); idx += 1
+        openingCastledBonus.set(lines(idx).toDouble); idx += 1
+        openingLostCastle.set(lines(idx).toDouble); idx += 1
+        openingUncastled.set(lines(idx).toDouble); idx += 1
+        openingConnectedRooks.set(lines(idx).toDouble); idx += 1
+        openingWeakPawnF.set(lines(idx).toDouble); idx += 1
+        openingWeakPawnH.set(lines(idx).toDouble)
     }
 
   /**
@@ -193,6 +293,20 @@ object Evaluator:
       val arr = pstWeights(pt)
       for i <- 0 until 64 do
         out.println(arr(i).get())
+    
+    // Save Openings
+    out.println(openingCenterPawn.get())
+    out.println(openingCenterKnight.get())
+    out.println(openingUndevelopedMinor.get())
+    out.println(openingPawnPushPenalty.get())
+    out.println(openingEarlyQueen.get())
+    out.println(openingCastledBonus.get())
+    out.println(openingLostCastle.get())
+    out.println(openingUncastled.get())
+    out.println(openingConnectedRooks.get())
+    out.println(openingWeakPawnF.get())
+    out.println(openingWeakPawnH.get())
+
     out.close()
   }
 
@@ -212,3 +326,20 @@ object Evaluator:
       val index = relR * 8 + p.col
       atomicAdd(pstWeights(pieceType)(index), delta * 0.1) // smaller LR for positional
     }
+
+  // General atomic addition for any AtomicReference 
+  def updateGlobalWeight(ref: AtomicReference[Double], delta: Double): Unit =
+    atomicAdd(ref, delta)
+    
+  // Export references for the trainer
+  def getOpeningCenterPawn = openingCenterPawn
+  def getOpeningCenterKnight = openingCenterKnight
+  def getOpeningUndevelopedMinor = openingUndevelopedMinor
+  def getOpeningPawnPushPenalty = openingPawnPushPenalty
+  def getOpeningEarlyQueen = openingEarlyQueen
+  def getOpeningCastledBonus = openingCastledBonus
+  def getOpeningLostCastle = openingLostCastle
+  def getOpeningUncastled = openingUncastled
+  def getOpeningConnectedRooks = openingConnectedRooks
+  def getOpeningWeakPawnF = openingWeakPawnF
+  def getOpeningWeakPawnH = openingWeakPawnH
