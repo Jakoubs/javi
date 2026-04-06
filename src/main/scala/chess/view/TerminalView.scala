@@ -92,7 +92,7 @@ object TerminalView:
               else s"$bg    $RESET"
             case Some(piece) =>
               val fg = if piece.color == Color.White then s"$FG_WHITE$BOLD" else FG_BLACK
-              s"$bg$fg ${piece.letter}  $RESET"
+              s"$bg$fg ${piece.symbol}  $RESET"
 
         sb.append(cell)
       }

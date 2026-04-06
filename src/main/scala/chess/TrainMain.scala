@@ -142,7 +142,7 @@ object TrainMain:
       val move = chess.ai.AiEngine.bestMove(gameApp.game, 2, epsilon = 0.1)
       move match
         case Some(m) =>
-          gameApp = GameController.handleCommand(gameApp, Command.ProcessTurn(m.toInputString))
+          gameApp = GameController.handleCommand(gameApp, Command.ApplyMove(m))
         case None =>
           gameApp = gameApp.copy(status = chess.model.GameStatus.Draw("no legal moves"))
       moveCount += 1

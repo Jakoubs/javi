@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
-import chess.view.TerminalView
+import chess.view.{TerminalView, CommandParser, MoveParser}
 import chess.Main
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, PrintStream}
@@ -118,10 +118,10 @@ class CoverageRegressionTest extends AnyFunSuite with Matchers:
       game = stateFromFen("7k/4P3/8/8/8/8/8/4K3 w - - 0 1"),
       status = GameStatus.Playing
     )
-    messageOf(GameController.handleCommand(promotionApp, Command.ProcessTurn("e7e8"))) should include("promotion required")
+    messageOf(GameController.handleCommand(promotionApp, Command.ApplyMove(Move(pos("e7"), pos("e8"))))) should include("promotion required")
 
     val finishedApp = AppState.initial.copy(status = GameStatus.Stalemate)
-    messageOf(GameController.handleCommand(finishedApp, Command.ProcessTurn("e2e4"))) should include("Game is over")
+    messageOf(GameController.handleCommand(finishedApp, Command.ApplyMove(Move(pos("e2"), pos("e4"))))) should include("Game is over")
 
     val resigned = GameController.handleCommand(AppState.initial, Command.Resign)
     resigned.status shouldBe GameStatus.Checkmate(Color.White)
@@ -133,13 +133,13 @@ class CoverageRegressionTest extends AnyFunSuite with Matchers:
 
   test("show moves rejects opponent piece and pieces without legal targets") {
     val opponentPieceApp = AppState.initial
-    messageOf(GameController.handleCommand(opponentPieceApp, Command.ShowMoves(pos("e7")))) should include("not your piece")
+    messageOf(GameController.handleCommand(opponentPieceApp, Command.SelectSquare(Some(pos("e7"))))) should include("not your piece")
 
     val blockedApp = AppState(
       game = stateFromFen("4k3/8/8/8/8/4p3/4P3/4K3 w - - 0 1"),
       status = GameStatus.Playing
     )
-    messageOf(GameController.handleCommand(blockedApp, Command.ShowMoves(pos("e2")))) should include("No legal moves")
+    messageOf(GameController.handleCommand(blockedApp, Command.SelectSquare(Some(pos("e2"))))) should include("No legal moves")
   }
 
   test("command parser accepts aliases and rejects invalid promotion suffix") {

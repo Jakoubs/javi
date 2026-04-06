@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import chess.model.*
 import chess.controller.*
-import chess.view.TerminalView
+import chess.view.{TerminalView, CommandParser}
 
 class FunctionalProgrammingTest extends AnyFunSuite with Matchers with ScalaCheckPropertyChecks:
 

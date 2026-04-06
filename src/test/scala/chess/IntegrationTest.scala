@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
-import chess.view.TerminalView
+import chess.view.{TerminalView, CommandParser, MoveParser}
 
 class IntegrationTest extends AnyFunSuite with Matchers:
 
@@ -31,22 +31,22 @@ class IntegrationTest extends AnyFunSuite with Matchers:
     var app = AppState.initial
 
     val move1 = Move(Pos(4, 1), Pos(4, 3))
-    app = GameController.handleCommand(app, Command.ProcessTurn(move1.toInputString))
+    app = GameController.handleCommand(app, Command.ApplyMove(move1))
     app.game.activeColor shouldBe Color.Black
     app.lastMove shouldBe Some(move1)
     app.message shouldBe None
 
     val move2 = Move(Pos(4, 6), Pos(4, 4))
-    app = GameController.handleCommand(app, Command.ProcessTurn(move2.toInputString))
+    app = GameController.handleCommand(app, Command.ApplyMove(move2))
     app.game.activeColor shouldBe Color.White
     app.lastMove shouldBe Some(move2)
     app.message shouldBe None
   }
 
   test("Command parser should handle all commands") {
-    CommandParser.parse("e2e4") shouldBe a[Command.ProcessTurn]
-    CommandParser.parse("e7e5") shouldBe a[Command.ProcessTurn]
-    CommandParser.parse("e7e8q") shouldBe a[Command.ProcessTurn]
+    CommandParser.parse("e2e4") shouldBe a[Command.ApplyMove]
+    CommandParser.parse("e7e5") shouldBe a[Command.ApplyMove]
+    CommandParser.parse("e7e8q") shouldBe a[Command.ApplyMove]
 
     CommandParser.parse("flip") shouldBe Command.Flip
     CommandParser.parse("undo") shouldBe Command.Undo
@@ -56,7 +56,7 @@ class IntegrationTest extends AnyFunSuite with Matchers:
     CommandParser.parse("help") shouldBe Command.Help
     CommandParser.parse("quit") shouldBe Command.Quit
 
-    CommandParser.parse("moves e2") shouldBe a[Command.ShowMoves]
+    CommandParser.parse("moves e2") shouldBe a[Command.SelectSquare]
 
     CommandParser.parse("invalid") shouldBe a[Command.Unknown]
     CommandParser.parse("xyz") shouldBe a[Command.Unknown]

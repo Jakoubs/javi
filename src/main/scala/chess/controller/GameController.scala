@@ -21,7 +21,7 @@ object StdConsoleIO extends ConsoleIO:
 // ─── Command ADT ─────────────────────────────────────────────────────────────
 
 enum Command:
-  case ProcessTurn(input: String)
+  case ApplyMove(move: Move)
   case SelectSquare(pos: Option[Pos])
   case Flip
   case Undo
@@ -45,34 +45,7 @@ enum Command:
   case JumpToHistory(index: Int)
   case Unknown(input: String)
 
-// ─── MoveParser ────────────────────────────────────────────────────────────
-
-object MoveParser:
-  import scala.util.Try
-  def parseInput(input: String): Try[Move] = Try {
-    val cleaned = input.trim.toLowerCase
-    val parts = if cleaned.contains('-') then cleaned.split('-').mkString else cleaned
-    if parts.length < 4 then throw new IllegalArgumentException("Input too short")
-
-    val fromStr   = parts.take(2)
-    val toStr     = parts.substring(2, 4)
-    val promoChar = parts.drop(4).headOption
-
-    val from = Pos.fromAlgebraic(fromStr).getOrElse(throw new IllegalArgumentException(s"Ungültiges Startfeld: $fromStr"))
-    val to   = Pos.fromAlgebraic(toStr).getOrElse(throw new IllegalArgumentException(s"Ungültiges Zielfeld: $toStr"))
-
-    val promo = promoChar match
-      case Some('q') => Some(PieceType.Queen)
-      case Some('r') => Some(PieceType.Rook)
-      case Some('b') => Some(PieceType.Bishop)
-      case Some('n') => Some(PieceType.Knight)
-      case Some(c)   => throw new IllegalArgumentException(s"Ungültige Promotion: $c")
-      case None      => None
-
-    Move(from, to, promo)
-  }
-
-// ─── AppState ─────────────────────────────────────────────────────────────────
+// AppState ─────────────────────────────────────────────────────────────────
 
 /** Everything the controller needs to know about the current UI state */
 case class AppState(
@@ -145,7 +118,7 @@ object GameController extends Observable[AppState]:
   def handleCommand(app: AppState, cmd: Command): AppState =
     import Command.*
     cmd match
-      case ProcessTurn(input) => handleTurn(app, input)
+      case ApplyMove(move) => handleMove(app, move)
       case SelectSquare(pos) => handleSelectSquare(app, pos)
       case Flip           => app.copy(highlights = Set.empty, selectedPos = None, message = None, flipped = !app.flipped)
       case Undo           => handleUndo(app)
@@ -187,12 +160,9 @@ object GameController extends Observable[AppState]:
 
   // ── Move handler ───────────────────────────────────────────────────────────
 
-  private def processTurn(input: String, state: GameState): Either[String, (Move, GameState)] =
+  private def validateMove(moveCoords: Move, state: GameState): Either[String, (Move, GameState)] =
     for {
-      // 1. Unpack Try: Input validieren
-      moveCoords <- MoveParser.parseInput(input).toEither.left.map(e => s"Ungültiges Format! ${e.getMessage}")
-      
-      // 2. Unpack Option: Ist auf dem Startfeld eine Figur?
+      // 1. Unpack Option: Ist auf dem Startfeld eine Figur?
       piece <- state.board.get(moveCoords.from).toRight("Feld ist leer!")
       
       // 3. Either-Logik: Turn-Check (State-Pattern)
@@ -216,7 +186,7 @@ object GameController extends Observable[AppState]:
       newState = GameRules.applyMove(state, moveCoords)
     } yield (moveCoords, newState)
 
-  private def handleTurn(app: AppState, input: String): AppState =
+  private def handleMove(app: AppState, move: Move): AppState =
     val now = System.currentTimeMillis()
     
     // Time check first
@@ -244,7 +214,7 @@ object GameController extends Observable[AppState]:
       app.copy(message = Some(TerminalView.error("Game is over. Type 'new' to start again.")))
     else
       // Run Monadic Railway
-      processTurn(input, app.game) match {
+      validateMove(move, app.game) match {
         case Right((move, newGame)) =>
           val newStatus = GameRules.computeStatus(newGame)
           val msg = newStatus match
@@ -306,7 +276,7 @@ object GameController extends Observable[AppState]:
     while gameApp.status == GameStatus.Playing && moveCount < MAX_MOVES_PER_GAME do
       val move = chess.ai.AiEngine.bestMove(gameApp.game, 2, epsilon = 0.1)
       move match
-        case Some(m) => gameApp = handleTurn(gameApp, m.toInputString)
+        case Some(m) => gameApp = handleMove(gameApp, m)
         case None    => gameApp = gameApp.copy(status = GameStatus.Draw("no legal moves"))
       moveCount += 1
     if gameApp.status == GameStatus.Playing then
@@ -358,7 +328,7 @@ object GameController extends Observable[AppState]:
     else
       chess.ai.AiEngine.bestMove(app.game, 3) match
         case Some(move) => 
-          handleTurn(app, move.toInputString)
+          handleMove(app, move)
         case None => 
           app.copy(message = Some(TerminalView.error("AI found no legal moves.")))
 

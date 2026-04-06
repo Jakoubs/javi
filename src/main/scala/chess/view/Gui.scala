@@ -183,7 +183,7 @@ object Gui extends JFXApp3 with Observer[AppState]:
 
     val navBar = new HBox {
       spacing = 5
-      alignment = Pos.Center
+      alignment = Pos.CenterLeft
       padding = Insets(5)
       style = "-fx-background-color: #2c3e50;"
       children = Seq(
@@ -236,7 +236,10 @@ object Gui extends JFXApp3 with Observer[AppState]:
       children = Seq(topBar, grid, botBar)
     }
 
-    val leftColumn = new VBox(historyScrollPane, navBar)
+    val leftColumn = new VBox {
+      children = Seq(historyScrollPane, navBar)
+      VBox.setVgrow(historyScrollPane, Priority.Always)
+    }
     val gameArea = new HBox(leftColumn, boardArea, sideMenu)
     val root = new VBox(menuBar, gameArea)
 
@@ -416,24 +419,22 @@ object Gui extends JFXApp3 with Observer[AppState]:
           else if state.game.board.isOccupiedBy(pos, state.game.activeColor) then
             GameController.eval(Command.SelectSquare(Some(pos)))
           else
-            val moveStr = s"${from.toAlgebraic}${pos.toAlgebraic}"
-            val isPawn = state.game.board.get(from).exists(_.pieceType == chess.model.PieceType.Pawn)
+            val isPawn = state.game.board.get(from).exists(_.pieceType == PieceType.Pawn)
             val isPromotionRow = (pos.row == 0 || pos.row == 7)
-            val finalMoveStr = if isPawn && isPromotionRow then
+            val promo = if isPawn && isPromotionRow then
               val choices = Seq("Queen ♛", "Rook ♜", "Bishop ♝", "Knight ♞")
               val dialog = new ChoiceDialog(defaultChoice = "Queen ♛", choices = choices) {
                 title = "Pawn Promotion"
                 headerText = "Choose the piece your pawn promotes to:"
               }
-              val promo = dialog.showAndWait() match
-                case Some("Rook ♜")   => "r"
-                case Some("Bishop ♝") => "b"
-                case Some("Knight ♞") => "n"
-                case _                => "q"
-              moveStr + promo
-            else moveStr
+              dialog.showAndWait() match
+                case Some("Rook ♜")   => Some(PieceType.Rook)
+                case Some("Bishop ♝") => Some(PieceType.Bishop)
+                case Some("Knight ♞") => Some(PieceType.Knight)
+                case _                => Some(PieceType.Queen)
+            else None
             
-            GameController.eval(Command.ProcessTurn(finalMoveStr))
+            GameController.eval(Command.ApplyMove(chess.model.Move(from, pos, promo)))
     else
       // Just jump to latest? Or do nothing?
       val alert = new Alert(Alert.AlertType.Warning) {
