@@ -63,6 +63,14 @@ object Gui extends JFXApp3 with Observer[AppState]:
   
   // State for user interaction
   private var gameOverPopupShown: Boolean = false
+  private var lastFailedAttempts: Int = 0
+  private lazy val flashOverlay = new Rectangle {
+    width = 8 * tileSize
+    height = 8 * tileSize
+    fill = Color.Red
+    opacity = 0.0
+    mouseTransparent = true
+  }
 
   def formatTime(ms: Long): String =
     val totalSec = Math.max(0, ms) / 1000
@@ -196,6 +204,10 @@ object Gui extends JFXApp3 with Observer[AppState]:
         squares(row)(col) = stack
         grid.add(stack, col, row)
 
+    val boardWithOverlay = new StackPane {
+      children = Seq(grid, flashOverlay)
+    }
+
     val navBar = new HBox {
       spacing = 5
       alignment = Pos.CenterLeft
@@ -225,6 +237,7 @@ object Gui extends JFXApp3 with Observer[AppState]:
         new Button("Resign") { style = btnStyle; onAction = _ => GameController.eval(Command.Resign) },
         new Button("Offer Draw") { style = btnStyle; onAction = _ => GameController.eval(Command.OfferDraw) },
         new Button("New Game") { style = btnStyle; onAction = _ => GameController.eval(Command.NewGame) },
+        new Button("Odyssey Mode") { style = btnStyle; onAction = _ => GameController.eval(Command.EnterOdyssey) },
         new Button("AI Suggestion") { style = btnStyle; onAction = _ => GameController.eval(Command.AiSuggest) },
         new Button("Train AI (100)") { style = btnStyle; onAction = _ => GameController.eval(Command.AiTrain(100)) },
         new Separator(),
@@ -248,7 +261,7 @@ object Gui extends JFXApp3 with Observer[AppState]:
       padding = Insets(15)
       alignment = Pos.Center
       style = "-fx-background-color: #ecf0f1;"
-      children = Seq(topBar, grid, botBar)
+      children = Seq(topBar, boardWithOverlay, botBar)
     }
 
     val leftColumn = new VBox {
@@ -411,12 +424,47 @@ object Gui extends JFXApp3 with Observer[AppState]:
                 s"Draw! Reason: $reason"
               case _ => "The game is over."
               
-            val alert = new scalafx.scene.control.Alert(scalafx.scene.control.Alert.AlertType.Information) {
-              title = "Game Over"
-              headerText = "We have a result!"
-              contentText = msg
-            }
-            alert.showAndWait()
+              val alert = new scalafx.scene.control.Alert(scalafx.scene.control.Alert.AlertType.Information) {
+                title = "Game Over"
+                headerText = "We have a result!"
+                contentText = msg
+              }
+              alert.showAndWait()
+              
+    // Show Odyssey popups if entered
+    state.odyssey.foreach { ody =>
+      if ody.failedAttempts > lastFailedAttempts then
+        lastFailedAttempts = ody.failedAttempts
+        val ft = new scalafx.animation.FadeTransition(scalafx.util.Duration(600), flashOverlay)
+        ft.fromValue = 0.8
+        ft.toValue = 0.0
+        ft.cycleCount = 1
+        ft.play()
+
+      if ody.currentChallenge.isEmpty && state.message.exists(_.contains("Entering Odyssey")) then
+        showOdysseyMapDialog(ody)
+    }
+
+  private def showOdysseyMapDialog(state: chess.model.OdysseyState): Unit =
+    val items = state.challenges.sortBy(_.id).map { c =>
+      val statusText = 
+        if state.completedIds.contains(c.id) then "[Done]"
+        else if state.isUnlocked(c.id) then "[Next]"
+        else "[Locked]"
+      s"Level ${c.id}: ${c.name} $statusText"
+    }
+
+    val dialog = new ChoiceDialog(defaultChoice = items.headOption.getOrElse(""), choices = items) {
+      title = "Odyssey Map"
+      headerText = "Select a challenge to start:"
+    }
+    
+    dialog.showAndWait() match
+      case Some(choice) =>
+        val idStr = choice.split(":").headOption.map(_.replace("Level ", "")).getOrElse("")
+        idStr.toIntOption.foreach(id => GameController.eval(Command.StartChallenge(id)))
+      case None =>
+        GameController.eval(Command.ExitOdyssey)
 
   private def handleSquareClick(pos: ChessPos): Unit =
     val state = GameController.appState

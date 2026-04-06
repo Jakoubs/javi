@@ -1,0 +1,73 @@
+[
+  {
+    "id": 1,
+    "name": "The First Step",
+    "description": "Deliver a simple checkmate with the Rook.",
+    "initialFen": "4k3/R7/8/8/8/8/8/4K2R w - - 0 1",
+    "goal": {
+      "type": "mate",
+      "n": 1,
+      "loser": "black"
+    },
+    "difficulty": 1
+  },
+  {
+    "id": 2,
+    "name": "Knight Fork",
+    "description": "Find the fork that wins the Queen.",
+    "initialFen": "r3k3/8/3q4/8/3N4/8/8/4K3 w - - 0 1",
+    "goal": {
+      "type": "puzzle",
+      "moves": ["d4f5"]
+    },
+    "difficulty": 2
+  },
+  {
+    "id": 3,
+    "name": "Back Rank Checkmate",
+    "description": "The enemy king is trapped behind his own pawns.",
+    "initialFen": "6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1",
+    "goal": {
+      "type": "mate",
+      "n": 1,
+      "loser": "black"
+    },
+    "difficulty": 3
+  },
+  {
+    "id": 4,
+    "name": "Scholar's Mate",
+    "description": "Deliver the classic fast checkmate.",
+    "initialFen": "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4",
+    "goal": {
+      "type": "mate",
+      "n": 1,
+      "loser": "black"
+    },
+    "difficulty": 1
+  },
+  {
+    "id": 5,
+    "name": "Ladder Mate",
+    "description": "Finish the ladder checkmate.",
+    "initialFen": "4k3/R7/1R6/8/8/8/8/4K3 w - - 0 1",
+    "goal": {
+      "type": "mate",
+      "n": 1,
+      "loser": "black"
+    },
+    "difficulty": 2
+  },
+  {
+    "id": 6,
+    "name": "Smothered Mate",
+    "description": "A beautiful mate delivered solely by a Knight.",
+    "initialFen": "6rk/6pp/7N/8/8/8/8/7K w - - 0 1",
+    "goal": {
+      "type": "mate",
+      "n": 1,
+      "loser": "black"
+    },
+    "difficulty": 4
+  }
+]

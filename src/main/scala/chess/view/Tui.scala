@@ -38,6 +38,12 @@ class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
       console.print(TerminalView.info("AI playing for White | Type 'ai white' to disable"))
     if app.aiBlack then
       console.print(TerminalView.info("AI playing for Black | Type 'ai black' to disable"))
+    
+    app.odyssey.foreach { ody =>
+      if ody.currentChallenge.isEmpty then
+        console.print(TerminalView.renderOdysseyMap(ody))
+    }
+
     app.message.foreach(console.print)
 
 object CommandParser:
@@ -59,6 +65,14 @@ object CommandParser:
       case "ai"                 => Command.AiMove
       case "ai w" | "ai white"  => Command.ToggleAi(Color.White)
       case "ai b" | "ai black"  => Command.ToggleAi(Color.Black)
+      case "odyssey"            => Command.EnterOdyssey
+      case "exit"               => Command.ExitOdyssey
+      case "map"                => Command.EnterOdyssey
+      case s if s.startsWith("level ") =>
+        val nStr = s.drop(6).trim
+        nStr.toIntOption match
+          case Some(n) => Command.StartChallenge(n)
+          case _       => Command.Unknown(s"Invalid level: $nStr")
       case s if s.startsWith("train ") =>
         val nStr = s.drop(6).trim
         nStr.toIntOption match

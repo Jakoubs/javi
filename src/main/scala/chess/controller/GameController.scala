@@ -46,6 +46,9 @@ enum Command:
   case JumpToHistory(index: Int)
   case ShowPgn
   case ShowFen
+  case EnterOdyssey
+  case ExitOdyssey
+  case StartChallenge(id: Int)
   case Unknown(input: String)
 
 // AppState ─────────────────────────────────────────────────────────────────
@@ -67,7 +70,8 @@ case class AppState(
   clock:       Option[ClockState] = None,
   viewIndex:   Int             = 0,    // which history state we are viewing
   activePgnParser: String    = "regex",
-  activeMoveParser: String   = "coordinate"
+  activeMoveParser: String   = "coordinate",
+  odyssey: Option[OdysseyState] = None
 )
 
 object AppState:
@@ -184,6 +188,9 @@ object GameController extends Observable[AppState]:
       case ShowFen        => 
         val fen = app.game.toFen
         app.copy(message = Some(TerminalView.info(s"FEN: $fen")))
+      case EnterOdyssey   => handleEnterOdyssey(app)
+      case ExitOdyssey    => handleExitOdyssey(app)
+      case StartChallenge(id) => handleStartChallenge(app, id)
       case Unknown(msg)   => app.copy(message = Some(TerminalView.error(msg)), highlights = Set.empty)
 
   // ── Move handler ───────────────────────────────────────────────────────────
@@ -287,10 +294,39 @@ object GameController extends Observable[AppState]:
             viewIndex  = newGame.history.size
           )
           
-          if nextApp.status != GameStatus.Playing then
-            chess.ai.PassiveTrainer.train(nextApp.game, nextApp.status)
+          val odysseyApp = nextApp.odyssey match {
+            case Some(ody) if ody.currentChallenge.isDefined =>
+              val challenge = ody.currentChallenge.get
+              val newCount = ody.currentMoveCount + 1
+              
+              if challenge.goal.isCompleted(newGame, Some(move), newCount) then
+                val newCompleted = ody.completedIds + challenge.id
+                chess.util.OdysseyManager.saveProgress(newCompleted)
+                nextApp.copy(
+                  odyssey = Some(ody.copy(completedIds = newCompleted, currentChallenge = None, currentMoveCount = 0)),
+                  message = Some(TerminalView.success(s"Challenge Completed: ${challenge.name}! Level unlocked."))
+                )
+              else if challenge.goal.isFailed(newGame, Some(move), newCount) then
+                GameState.fromFen(challenge.initialFen) match {
+                  case Right(initialState) =>
+                    nextApp.copy(
+                      game = initialState,
+                      status = GameRules.computeStatus(initialState),
+                      odyssey = Some(ody.copy(currentMoveCount = 0, failedAttempts = ody.failedAttempts + 1)),
+                      message = Some(TerminalView.error("Challenge Failed! Resetting...")),
+                      viewIndex = initialState.history.size // Update viewIndex to avoid out of bounds in GUI
+                    )
+                  case _ => nextApp
+                }
+              else
+                nextApp.copy(odyssey = Some(ody.copy(currentMoveCount = newCount)))
+            case _ => nextApp
+          }
+
+          if odysseyApp.status != GameStatus.Playing && odysseyApp.odyssey.isEmpty then
+            chess.ai.PassiveTrainer.train(odysseyApp.game, odysseyApp.status)
           
-          nextApp
+          odysseyApp
 
         case Left(errorMsg) =>
           app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty, selectedPos = None)
@@ -433,3 +469,33 @@ object GameController extends Observable[AppState]:
         drawOffer = true,
         message   = Some(TerminalView.info(s"${app.game.activeColor} offers a draw. Type 'draw' to accept."))
       )
+
+  // ── Odyssey Handlers ───────────────────────────────────────────────────────
+
+  private def handleEnterOdyssey(app: AppState): AppState =
+    val odyssey = app.odyssey.getOrElse(chess.util.OdysseyManager.initializeState())
+    app.copy(odyssey = Some(odyssey), message = Some("Entering Odyssey mode. Type 'map' to see challenges."))
+
+  private def handleExitOdyssey(app: AppState): AppState =
+    app.copy(odyssey = None, message = Some("Exiting Odyssey mode."))
+
+  private def handleStartChallenge(app: AppState, id: Int): AppState =
+    val odyssey = app.odyssey.getOrElse(chess.util.OdysseyManager.initializeState())
+    odyssey.challenges.find(_.id == id) match
+      case Some(challenge) =>
+        if odyssey.isUnlocked(id) then
+          GameState.fromFen(challenge.initialFen) match
+            case Right(state) =>
+              app.copy(
+                game = state,
+                status = GameRules.computeStatus(state),
+                highlights = Set.empty,
+                selectedPos = None,
+                message = Some(TerminalView.info(s"Challenge: ${challenge.name}\n${challenge.description}")),
+                odyssey = Some(odyssey.copy(currentChallenge = Some(challenge), currentMoveCount = 0)),
+                viewIndex = state.history.size
+              )
+            case Left(err) => app.copy(message = Some(TerminalView.error(s"FEN Error: $err")))
+        else
+          app.copy(odyssey = Some(odyssey), message = Some(TerminalView.error("Level locked! Complete previous levels first.")))
+      case None => app.copy(odyssey = Some(odyssey), message = Some(TerminalView.error(s"Challenge $id not found.")))

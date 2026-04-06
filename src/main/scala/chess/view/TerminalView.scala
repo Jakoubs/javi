@@ -136,6 +136,25 @@ object TerminalView:
 
     statusLine + "\n"
 
+  def renderOdysseyMap(state: OdysseyState): String =
+    val sb = new StringBuilder
+    sb.append(s"\n  ${BOLD}${FG_CYAN}Odyssey Map${RESET}\n")
+    sb.append(s"  ${DIM}─────────────────────────────────────${RESET}\n")
+    
+    state.challenges.sortBy(_.id).foreach { c =>
+      val status = 
+        if state.completedIds.contains(c.id) then s"${FG_GREEN}${BOLD}[Done]${RESET}"
+        else if state.isUnlocked(c.id) then s"${FG_YELLOW}${BOLD}[Next]${RESET}"
+        else s"${DIM}[Locked]${RESET}"
+      
+      val prefix = if c.id == 1 then "  " else "   ║\n  "
+      if c.id > 1 then sb.append(prefix)
+      sb.append(s"  ($status)──[Level ${c.id}: ${c.name}]\n")
+    }
+    sb.append(s"  ${DIM}─────────────────────────────────────${RESET}\n")
+    sb.append(s"  Type 'level <n>' to start a challenge.\n")
+    sb.toString
+
   // ── Help text ─────────────────────────────────────────────────────────────
 
   val helpText: String =
@@ -155,6 +174,10 @@ object TerminalView:
   ${BOLD}pgn${RESET}           Export game as PGN
   ${BOLD}fen${RESET}           Export game as FEN
   ${BOLD}parser <t> <v>${RESET} Switch parser (e.g. parser move san)
+  ${BOLD}odyssey${RESET}       Enter Odyssey mode (Puzzles)
+  ${BOLD}map${RESET}           Show Odyssey map
+  ${BOLD}level <n>${RESET}     Start level n
+  ${BOLD}exit${RESET}          Exit Odyssey mode
   ${BOLD}help${RESET}          Show this help
   ${BOLD}quit${RESET}          Quit
   ${DIM}─────────────────────────────────────${RESET}
