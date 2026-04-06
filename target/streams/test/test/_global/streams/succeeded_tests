@@ -1,9 +1,0 @@
-#Successful Tests
-#Mon Mar 30 16:59:45 CEST 2026
-chess.CoverageImprovementTest=1774882785253
-chess.FunctionalProgrammingTest=1774882785200
-chess.IntegrationTest=1774882784569
-chess.ModelFenCoverageTest=1774882784904
-chess.MoveGeneratorTest=1774882785172
-chess.PerformanceBenchmark=1774882785077
-chess.TypesTest=1774882785117
