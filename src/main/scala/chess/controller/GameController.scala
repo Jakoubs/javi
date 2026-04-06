@@ -38,6 +38,7 @@ enum Command:
   case ToggleAi(color: Color) // toggle AI for specific color
   case LoadPgn(pgn: String)
   case LoadFen(fen: String)
+  case SwitchParser(parserType: String, variant: String)
   case StepBack
   case StepForward
   case FirstHistory
@@ -62,7 +63,9 @@ case class AppState(
   aiWhite:     Boolean         = false, // when true, AI plays for White
   aiBlack:     Boolean         = false, // when true, AI plays for Black
   clock:       Option[ClockState] = None,
-  viewIndex:   Int             = 0    // which history state we are viewing
+  viewIndex:   Int             = 0,    // which history state we are viewing
+  activePgnParser: String    = "regex",
+  activeMoveParser: String   = "coordinate"
 )
 
 object AppState:
@@ -156,6 +159,23 @@ object GameController extends Observable[AppState]:
             app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("FEN loaded successfully.")))
           case Left(errorMessage) => 
             app.copy(message = Some(TerminalView.error(s"FEN Error: $errorMessage")), highlights = Set.empty)
+      case SwitchParser(pType, variant) =>
+        import chess.util.parser.ParserRegistry
+        pType.toLowerCase match
+          case "pgn" =>
+            ParserRegistry.pgnParsers.get(variant.toLowerCase) match
+              case Some(parser) =>
+                chess.util.parser.PgnParser.default = parser
+                app.copy(activePgnParser = variant.toLowerCase, message = Some(TerminalView.success(s"PGN Parser switched to $variant")))
+              case None =>
+                app.copy(message = Some(TerminalView.error(s"Unknown PGN parser variant: $variant")))
+          case "move" =>
+            if ParserRegistry.moveParsers.contains(variant.toLowerCase) then
+              app.copy(activeMoveParser = variant.toLowerCase, message = Some(TerminalView.success(s"Move Parser switched to $variant")))
+            else
+              app.copy(message = Some(TerminalView.error(s"Unknown Move parser variant: $variant")))
+          case _ =>
+            app.copy(message = Some(TerminalView.error(s"Unknown parser type: $pType")))
       case Unknown(msg)   => app.copy(message = Some(TerminalView.error(msg)), highlights = Set.empty)
 
   // ── Move handler ───────────────────────────────────────────────────────────

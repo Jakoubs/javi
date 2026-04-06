@@ -18,7 +18,7 @@ class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
       console.print(TerminalView.prompt)
       console.readLine() match
         case Some(input) =>
-          GameController.eval(CommandParser.parse(input.trim))
+          GameController.eval(CommandParser.parse(input.trim, GameController.appState))
         case None =>
           // Handle EOF/quit
           GameController.eval(chess.controller.Command.Quit)
@@ -43,7 +43,7 @@ class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
 object CommandParser:
   import chess.controller.Command
 
-  def parse(input: String): Command =
+  def parse(input: String, app: AppState): Command =
     val trimmed = input.trim.toLowerCase
 
     trimmed match
@@ -62,45 +62,23 @@ object CommandParser:
         nStr.toIntOption match
           case Some(n) if n > 0 => Command.AiTrain(n)
           case _                => Command.Unknown(s"Invalid training count: $nStr")
-      case s if s.startsWith("moves ") =>
-        val posStr = s.drop(6).trim
-        Pos.fromAlgebraic(posStr) match
-          case Some(pos) => Command.SelectSquare(Some(pos))
-          case None      => Command.Unknown(s"Invalid position: $posStr")
-      case s if s.length >= 4 && (s.contains('-') || s.forall(_.isLetterOrDigit)) =>
-        MoveParser.parseInput(s) match
+      case s if s.startsWith("parser ") =>
+        val parts = s.drop(7).trim.split("\\s+").filter(_.nonEmpty)
+        if parts.length == 2 then 
+          Command.SwitchParser(parts(0), parts(1))
+        else 
+          Command.Unknown("Usage: parser <type> <variant> (e.g. parser pgn fast)")
+      case s if s.length >= 2 =>
+        import chess.util.parser.ParserRegistry
+        val parser = ParserRegistry.moveParsers.getOrElse(app.activeMoveParser, chess.util.parser.CoordinateMoveParser)
+        parser.parse(s, app.game) match
           case scala.util.Success(move) => Command.ApplyMove(move)
-          case scala.util.Failure(e)    => Command.Unknown(s"Invalid move format: ${e.getMessage}")
+          case scala.util.Failure(e)    => 
+            // If it's a very short input and failed, maybe it's just garbage, but let's report it
+            if s.length >= 4 || app.activeMoveParser == "san" then
+              Command.Unknown(s"Invalid move format (${app.activeMoveParser}): ${e.getMessage}")
+            else
+              Command.Unknown(s"Unknown command: $s")
       case s =>
         Command.Unknown(s"Unknown command: $s")
 
-object MoveParser:
-  import chess.model.{Move, Pos, PieceType}
-  import scala.util.Try
-
-  /**
-   * Parses a coordinate-based move string (e.g. "e2e4", "e7e8q") into a Move object.
-   * Tolerates dashes (e.g. "e2-e4").
-   */
-  def parseInput(input: String): Try[Move] = Try {
-    val cleaned = input.trim.toLowerCase
-    val parts = if cleaned.contains('-') then cleaned.split('-').mkString else cleaned
-    if parts.length < 4 then throw new IllegalArgumentException("Input too short")
-
-    val fromStr   = parts.take(2)
-    val toStr     = parts.substring(2, 4)
-    val promoChar = parts.drop(4).headOption
-
-    val from = Pos.fromAlgebraic(fromStr).getOrElse(throw new IllegalArgumentException(s"Ungültiges Startfeld: $fromStr"))
-    val to   = Pos.fromAlgebraic(toStr).getOrElse(throw new IllegalArgumentException(s"Ungültiges Zielfeld: $toStr"))
-
-    val promo = promoChar match
-      case Some('q') => Some(PieceType.Queen)
-      case Some('r') => Some(PieceType.Rook)
-      case Some('b') => Some(PieceType.Bishop)
-      case Some('n') => Some(PieceType.Knight)
-      case Some(c)   => throw new IllegalArgumentException(s"Ungültige Promotion: $c")
-      case None      => None
-
-    Move(from, to, promo)
-  }

@@ -2,7 +2,7 @@ package chess.view
 
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
-import scalafx.scene.control.{Button, ChoiceDialog, Separator, TextArea, ScrollPane, TextInputDialog, Alert, MenuBar, Menu, MenuItem}
+import scalafx.scene.control.{Button, ChoiceDialog, Separator, TextArea, ScrollPane, TextInputDialog, Alert, MenuBar, Menu, MenuItem, RadioMenuItem, ToggleGroup, SeparatorMenuItem}
 import scalafx.scene.layout.{GridPane, StackPane, HBox, VBox, Priority}
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.Rectangle
@@ -148,6 +148,21 @@ object Gui extends JFXApp3 with Observer[AppState]:
           items = Seq(
             new MenuItem("PGN") { onAction = _ => showPgnImportDialog() },
             new MenuItem("FEN") { onAction = _ => showFenImportDialog() }
+          )
+        },
+        new Menu("Parsers") {
+          val pgnGroup = new ToggleGroup()
+          val moveGroup = new ToggleGroup()
+          
+          items = Seq(
+            new MenuItem("PGN Strategies") { disable = true },
+            new RadioMenuItem("Regex (Default)") { toggleGroup = pgnGroup; selected = true; onAction = _ => GameController.eval(Command.SwitchParser("pgn", "regex")) },
+            new RadioMenuItem("Combinators") { toggleGroup = pgnGroup; onAction = _ => GameController.eval(Command.SwitchParser("pgn", "combinator")) },
+            new RadioMenuItem("FastParse") { toggleGroup = pgnGroup; onAction = _ => GameController.eval(Command.SwitchParser("pgn", "fast")) },
+            new SeparatorMenuItem(),
+            new MenuItem("Move Input Modes") { disable = true },
+            new RadioMenuItem("Coordinate (e2e4)") { toggleGroup = moveGroup; selected = true; onAction = _ => GameController.eval(Command.SwitchParser("move", "coordinate")) },
+            new RadioMenuItem("Algebraic (SAN)") { toggleGroup = moveGroup; onAction = _ => GameController.eval(Command.SwitchParser("move", "san")) }
           )
         }
       )
