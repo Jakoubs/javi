@@ -54,6 +54,8 @@ object CommandParser:
       case "new" | "newgame"    => Command.NewGame
       case "help" | "?"         => Command.Help
       case "quit" | "exit" | "q"=> Command.Quit
+      case "pgn"                => Command.ShowPgn
+      case "fen"                => Command.ShowFen
       case "ai"                 => Command.AiMove
       case "ai w" | "ai white"  => Command.ToggleAi(Color.White)
       case "ai b" | "ai black"  => Command.ToggleAi(Color.Black)

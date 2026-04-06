@@ -28,80 +28,80 @@
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ProcessTurn.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ProcessTurn$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ProcessTurn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/StdConsoleIO$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/StdConsoleIO$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/StdConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/StdConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SelectSquare.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SelectSquare.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SelectSquare$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SelectSquare$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/GameController$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/GameController$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/GameController.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/GameController.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/ConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/ConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$LoadPgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$LoadPgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$LoadPgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$LoadPgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$Unknown.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$Unknown.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$Unknown$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$Unknown$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$TimeExpired.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$TimeExpired.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$TimeExpired$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$TimeExpired$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ToggleAi.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ToggleAi.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ToggleAi$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ToggleAi$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$JumpToHistory.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$JumpToHistory.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$JumpToHistory$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$JumpToHistory$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/AppState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/AppState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/AppState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/AppState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SwitchParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SwitchParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SwitchParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SwitchParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$StartGame.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$StartGame.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$StartGame$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$StartGame$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$AiTrain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$AiTrain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$AiTrain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$AiTrain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ApplyMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ApplyMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ApplyMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ApplyMove$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$LoadFen.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$LoadFen.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$LoadFen$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$LoadFen$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/StdConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/StdConsoleIO.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/ConsoleIO.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/ConsoleIO.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$TimeExpired.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$TimeExpired.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$TimeExpired$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$TimeExpired$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$StartGame.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$StartGame.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$StartGame$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$StartGame$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/StdConsoleIO$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/StdConsoleIO$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/StdConsoleIO.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/StdConsoleIO.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$JumpToHistory.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$JumpToHistory.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$JumpToHistory$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$JumpToHistory$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ToggleAi.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ToggleAi.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ToggleAi$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ToggleAi$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ApplyMove.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ApplyMove.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$ApplyMove$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$ApplyMove$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$$anon$1.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$$anon$1.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SwitchParser.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SwitchParser.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SwitchParser$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SwitchParser$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/AppState.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/AppState.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/AppState$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/AppState$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$LoadPgn.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$LoadPgn.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$LoadPgn$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$LoadPgn$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$AiTrain.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$AiTrain.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$AiTrain$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$AiTrain$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$Unknown.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$Unknown.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$Unknown$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$Unknown$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SelectSquare.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SelectSquare.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command$SelectSquare$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command$SelectSquare$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/GameController.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/GameController.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/ConsoleIO.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/ConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/AppState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/AppState.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/StdConsoleIO.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/StdConsoleIO.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/controller/Command.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/Command.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/controller/AppState.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/controller/AppState.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/model[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/model[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/model/MoveGenerator$$anon$1.class[0m
@@ -272,132 +272,132 @@
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/TerminalView.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/TerminalView.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/TerminalView.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$21.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$21.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$55.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$55.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$46.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$46.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$28.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$28.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$4.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$4.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$35.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$35.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$6.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$6.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$38.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$38.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$25.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$25.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$15.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$15.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$61.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$61.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$48.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$48.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$56.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$56.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$14.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$14.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$20.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$20.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$32.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$32.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$44.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$44.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$33.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$33.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$45.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$45.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$54.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$54.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$52.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$52.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$23.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$23.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$48.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$48.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$42.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$42.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$22.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$22.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$10.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$10.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$11.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$11.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$37.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$37.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$49.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$49.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$5.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$5.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$24.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$24.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$36.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$36.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$22.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$22.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$29.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$29.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$57.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$57.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$59.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$59.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$30.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$30.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$51.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$51.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$47.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$47.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$13.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$13.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$17.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$17.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$31.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$31.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$39.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$39.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$53.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$53.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$18.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$18.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$40.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$40.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$42.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$42.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$41.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$41.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$16.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$16.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$58.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$58.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$19.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$19.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$55.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$55.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$9.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$9.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$26.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$26.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$34.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$34.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$60.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$60.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$7.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$7.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$50.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$50.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$49.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$49.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$32.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$32.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$33.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$33.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$30.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$30.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$10.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$10.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$44.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$44.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$6.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$6.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$16.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$16.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$8.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$8.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$43.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$43.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$26.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$26.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$50.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$50.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$21.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$21.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$18.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$18.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$52.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$52.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$29.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$29.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$58.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$58.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$24.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$24.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$1.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$1.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$57.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$57.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$41.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$41.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$23.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$23.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$11.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$11.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$53.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$53.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$20.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$20.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$34.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$34.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$47.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$47.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$51.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$51.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$4.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$4.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$19.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$19.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$17.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$17.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$13.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$13.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$59.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$59.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$7.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$7.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$40.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$40.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$36.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$36.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$25.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$25.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$15.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$15.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$45.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$45.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$37.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$37.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$27.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$27.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$31.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$31.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$38.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$38.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$43.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$43.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$56.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$56.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$14.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$14.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$28.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$28.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$12.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$12.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$39.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$39.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$60.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$60.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui$$anon$61.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui$$anon$61.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Gui.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	  /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/target/scala-3.3.1/classes/chess/view/Gui.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	chess/view/Tui.class[0m

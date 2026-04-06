@@ -44,6 +44,8 @@ enum Command:
   case FirstHistory
   case LastHistory
   case JumpToHistory(index: Int)
+  case ShowPgn
+  case ShowFen
   case Unknown(input: String)
 
 // AppState ─────────────────────────────────────────────────────────────────
@@ -176,6 +178,12 @@ object GameController extends Observable[AppState]:
               app.copy(message = Some(TerminalView.error(s"Unknown Move parser variant: $variant")))
           case _ =>
             app.copy(message = Some(TerminalView.error(s"Unknown parser type: $pType")))
+      case ShowPgn        => 
+        val pgn = chess.util.Pgn.exportPgn(app.game)
+        app.copy(message = Some(TerminalView.info(s"PGN:\n$pgn")))
+      case ShowFen        => 
+        val fen = app.game.toFen
+        app.copy(message = Some(TerminalView.info(s"FEN: $fen")))
       case Unknown(msg)   => app.copy(message = Some(TerminalView.error(msg)), highlights = Set.empty)
 
   // ── Move handler ───────────────────────────────────────────────────────────

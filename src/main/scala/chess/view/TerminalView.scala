@@ -152,6 +152,9 @@ object TerminalView:
   ${BOLD}new${RESET}           Start a new game
   ${BOLD}ai${RESET}            Let AI suggest/make a move
   ${BOLD}train [n]${RESET}      Run n games of AI self-play to train
+  ${BOLD}pgn${RESET}           Export game as PGN
+  ${BOLD}fen${RESET}           Export game as FEN
+  ${BOLD}parser <t> <v>${RESET} Switch parser (e.g. parser move san)
   ${BOLD}help${RESET}          Show this help
   ${BOLD}quit${RESET}          Quit
   ${DIM}─────────────────────────────────────${RESET}
