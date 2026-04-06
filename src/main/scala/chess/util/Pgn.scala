@@ -68,42 +68,14 @@ object Pgn:
       }
     sb.toString()
 
+  import chess.util.parser.PgnParser
+
   /**
    * Parses a basic PGN string and recreates the final GameState by playing out the moves.
-   * Strips out tags, comments and move numbers, then brute-force maps SAN tokens.
+   * Delegates to the default configured PgnParser.
    */
-  def importPgn(pgn: String): Try[GameState] = Try {
-    // 1. Remove comments { ... }
-    val noComments = pgn.replaceAll("\\{.*?\\}", "")
-    // 2. Remove tags [ ... ] 
-    val noTags = noComments.replaceAll("\\[.*?\\]", "")
-    // 3. Remove move numbers like 1. or 1...
-    val noNumbers = noTags.replaceAll("\\d+\\.+", "")
-    // 4. Remove results
-    val noResults = noNumbers.replace("1-0", "").replace("0-1", "").replace("1/2-1/2", "").replace("*", "")
-    
-    // Split into SAN tokens
-    val tokens = noResults.split("\\s+").filter(_.nonEmpty)
-    
-    var state = GameState.initial
-    for token <- tokens do
-      val legalMoves = MoveGenerator.legalMoves(state)
-      // Wir suchen den Zug, dessen SAN-String mit dem Token übereinstimmt.
-      // Falls + oder # im Token fehlen, tolerieren wir das durch einen puren Vergleich.
-      val matchingMove = legalMoves.find { m =>
-        val next = GameRules.applyMove(state, m)
-        val san = toSan(state, m, next)
-        san == token || san.replace("+", "").replace("#", "") == token.replace("+", "").replace("#", "")
-      }
-      
-      matchingMove match
-        case Some(m) =>
-          state = GameRules.applyMove(state, m)
-        case None =>
-          throw new Exception(s"Invalid or illegal PGN move: $token")
-          
-    state
-  }
+  def importPgn(pgn: String): Try[GameState] = 
+    PgnParser.default.parse(pgn)
 
   /**
    * Versucht herauszufinden, welcher Zug von State A zu State B geführt hat.

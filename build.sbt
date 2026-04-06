@@ -14,8 +14,12 @@ lazy val root = (project in file("."))
       "io.circe"               %% "circe-core"          % "0.14.10",
       "io.circe"               %% "circe-generic"       % "0.14.10",
       // Testing dependencies
+      // Testing dependencies
       "org.scalatest" %% "scalatest" % "3.2.17" % Test,
-      "org.scalatestplus" %% "scalacheck-1-17" % "3.2.17.0" % Test
+      "org.scalatestplus" %% "scalacheck-1-17" % "3.2.17.0" % Test,
+      // Parser libraries
+      "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
+      "com.lihaoyi" %% "fastparse" % "3.1.1"
     ),
     // Enable running with `sbt run`
     Compile / mainClass := Some("chess.Main"),
