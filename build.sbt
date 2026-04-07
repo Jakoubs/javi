@@ -1,6 +1,7 @@
-ThisBuild / scalaVersion := "3.3.1"
+ThisBuild / scalaVersion := "3.3.4"
 ThisBuild / version      := "1.0.0"
-ThisBuild / organization := "chess"
+
+
 
 lazy val root = (project in file("."))
   .settings(
@@ -27,7 +28,8 @@ lazy val root = (project in file("."))
     Test / parallelExecution := false,
     Test / logBuffered := false,
     // Coverage configuration
-    coverageExcludedPackages := ".*\\.view\\..*;.*\\.web\\..*;.*\\.Main.*",
+    coverageExcludedPackages := "chess\\.view.*",
+      
     coverageMinimumStmtTotal := 85,
     coverageMinimumBranchTotal := 75,
     coverageFailOnMinimum := false,

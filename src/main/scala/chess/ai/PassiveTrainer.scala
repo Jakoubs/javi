@@ -48,7 +48,6 @@ object PassiveTrainer extends Trainer:
   private def updateOpeningWeightsForState(state: GameState, reward: Double, color: Color, lr: Double): Unit =
     val board = state.board
     val startRow = if color == Color.White then 0 else 7
-    val pawnRow = if color == Color.White then 1 else 6
     val forward = if color == Color.White then 1 else -1
 
     // R is positive if this color won. So if White won, White's features should be reinforced.
@@ -101,3 +100,11 @@ object PassiveTrainer extends Trainer:
        board.get(Pos(7, startRow)).contains(Piece(color, PieceType.Rook)) then
          val anyPieceBetween = (1 to 6).map(c => board.get(Pos(c, startRow))).exists(_.isDefined)
          if !anyPieceBetween then Evaluator.updateGlobalWeight(Evaluator.getOpeningConnectedRooks, r * lr * 10)
+
+    // Weak F and H pawns (- penalty)
+    val pawnRow = if color == Color.White then 1 else 6
+    if !board.get(Pos(5, pawnRow)).contains(Piece(color, PieceType.Pawn)) then
+      Evaluator.updateGlobalWeight(Evaluator.getOpeningWeakPawnF, -r * lr * 10)
+    if !board.get(Pos(7, pawnRow)).contains(Piece(color, PieceType.Pawn)) then
+      Evaluator.updateGlobalWeight(Evaluator.getOpeningWeakPawnH, -r * lr * 10)
+

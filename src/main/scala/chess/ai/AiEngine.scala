@@ -8,6 +8,8 @@ object AiEngine:
   private val transpositionTable = new java.util.concurrent.ConcurrentHashMap[(String, Int), Double]()
   private val MAX_CACHE_SIZE = 100000
 
+  def clearTranspositionTable(): Unit = transpositionTable.clear()
+
   /**
    * Find the best move for the active player using Minimax with Alpha-Beta pruning.
    * @param epsilon Probability of choosing a random move (for training/exploration)
@@ -46,8 +48,8 @@ object AiEngine:
 
     val status = GameRules.computeStatus(state)
     val result: Double = status match
-      case GameStatus.Checkmate(winner) =>
-        if winner == Color.White then 1000000.0 else -1000000.0
+      case GameStatus.Checkmate(loser) =>
+        if loser == Color.Black then 1000000.0 else -1000000.0
       case GameStatus.Stalemate | GameStatus.Draw(_) => 0.0
       case _ if depth <= 0 => Evaluator.evaluate(state)
       case _ =>

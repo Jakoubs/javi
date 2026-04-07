@@ -161,27 +161,40 @@ object MoveGenerator:
 
     moves.toList
 
-  def isAttackedBy(board: Board, pos: Pos, attacker: Color): Boolean =
+  def isAttackedBy(board: Board, pos: Pos, attacker: Color): Boolean = {
     val pawnDir = if attacker == Color.White then 1 else -1
-    if board.get(pos + (-1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn)) then return true
-    if board.get(pos + (1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn)) then return true
+    val pawnAttacked = 
+      board.get(pos + (-1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn)) ||
+      board.get(pos + (1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn))
+    
+    lazy val knightAttacked = {
+      val deltas = knightDeltas
+      var kIndex = 0
+      var found = false
+      while kIndex < deltas.length && !found do
+        val (dc, dr) = deltas(kIndex)
+        if board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.Knight)) then
+          found = true
+        kIndex += 1
+      found
+    }
 
-    val deltas = knightDeltas
-    var index = 0
-    while index < deltas.length do
-      val (dc, dr) = deltas(index)
-      if board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.Knight)) then return true
-      index += 1
+    lazy val kingAttacked = {
+      val kings = kingDirections
+      var kgIndex = 0
+      var found = false
+      while kgIndex < kings.length && !found do
+        val (dc, dr) = kings(kgIndex)
+        if board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.King)) then
+          found = true
+        kgIndex += 1
+      found
+    }
 
-    val kings = kingDirections
-    index = 0
-    while index < kings.length do
-      val (dc, dr) = kings(index)
-      if board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.King)) then return true
-      index += 1
-
+    pawnAttacked || knightAttacked || kingAttacked ||
     slidingAttack(board, pos, attacker, bishopDirections, PieceType.Bishop) ||
     slidingAttack(board, pos, attacker, rookDirections, PieceType.Rook)
+  }
 
   private def slidingAttack(
     board: Board,
@@ -189,22 +202,24 @@ object MoveGenerator:
     attacker: Color,
     directions: Array[(Int, Int)],
     primary: PieceType
-  ): Boolean =
+  ): Boolean = {
+    var found = false
     var dirIndex = 0
-    while dirIndex < directions.length do
+    while dirIndex < directions.length && !found do
       val (dc, dr) = directions(dirIndex)
       var current = pos + (dc, dr)
       var blocked = false
-      while current.isValid && !blocked do
+      while current.isValid && !blocked && !found do
         board.get(current) match
           case None =>
             current = current + (dc, dr)
           case Some(Piece(c, pt)) if c == attacker && (pt == primary || pt == PieceType.Queen) =>
-            return true
+            found = true
           case _ =>
             blocked = true
       dirIndex += 1
-    false
+    found
+  }
 
   private def leavesKingInCheck(state: GameState, move: Move): Boolean =
     val nextBoard = applyMoveToBoard(state, move)

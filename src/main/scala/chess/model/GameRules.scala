@@ -125,11 +125,22 @@ object GameRules:
   private def isInsufficientMaterial(state: GameState): Boolean =
     val pieces = state.board.pieces.values.toList
     val types  = pieces.map(_.pieceType)
-    types match
-      case List(PieceType.King)                       => true  // KK (shouldn't happen but safe)
-      case t if t.count(_ == PieceType.King) == 2 &&
-                t.size == 2                           => true  // K vs K
-      case t if t.count(_ == PieceType.King) == 2 &&
-                t.size == 3 &&
-                (t.contains(PieceType.Bishop) || t.contains(PieceType.Knight)) => true  // K+B vs K, K+N vs K
-      case _ => false
+    val counts = types.groupBy(identity).view.mapValues(_.size).toMap
+    
+    val kingCount   = counts.getOrElse(PieceType.King, 0)
+    val totalCount  = types.size
+    
+    if kingCount < 2 then return true // Should not happen in normal chess
+
+    if totalCount == 2 then true // K vs K
+    else if totalCount == 3 then
+      counts.contains(PieceType.Bishop) || counts.contains(PieceType.Knight) // K+B vs K or K+N vs K
+    else if totalCount == 4 && counts.getOrElse(PieceType.Bishop, 0) == 2 then
+      // K+B vs K+B (if same color)
+      val bishops = state.board.pieces.filter(_._2.pieceType == PieceType.Bishop).toList
+      if bishops.size == 2 then
+        val pos1 = bishops(0)._1
+        val pos2 = bishops(1)._1
+        (pos1.row + pos1.col) % 2 == (pos2.row + pos2.col) % 2
+      else false
+    else false

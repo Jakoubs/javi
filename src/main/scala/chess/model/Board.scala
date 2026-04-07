@@ -93,6 +93,9 @@ object Board:
         rankIndex += 1
       Right(Board(pieces))
 
+  /** Public convenience method for parsing a FEN placement string */
+  def fromFEN(fen: String): Either[String, Board] = fromFenPlacement(fen)
+
   private def parseRank(rank: String, row: Int): Either[String, Map[Pos, Piece]] =
     var col = 0
     var pieces = Map.empty[Pos, Piece]

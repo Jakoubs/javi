@@ -24,8 +24,8 @@ import scala.util.Try
  */
 object TrainMain:
 
-  private val MAX_MOVES_PER_GAME   = 200
-  private val CHECKPOINT_INTERVAL  = 50000
+  private[chess] var MAX_MOVES_PER_GAME   = 200
+  private[chess] var CHECKPOINT_INTERVAL  = 50000
   private val META_FILE            = "training_meta.txt"
   private val WEIGHTS_FILE         = "ai_weights.txt"
 
@@ -135,8 +135,8 @@ object TrainMain:
     pool.shutdown()
 
   /** Simulate one AI-vs-AI game */
-  private def simulateGame(): Unit =
-    var gameApp = AppState.initial
+  private[chess] def simulateGame(initialState: AppState = AppState.initial): Unit =
+    var gameApp = initialState
     var moveCount = 0
     while gameApp.status == chess.model.GameStatus.Playing && moveCount < MAX_MOVES_PER_GAME do
       val move = chess.ai.AiEngine.bestMove(gameApp.game, 2, epsilon = 0.1)

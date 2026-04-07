@@ -70,11 +70,7 @@ object Gui extends JFXApp3 with Observer[AppState]:
   // State for user interaction
   private var gameOverPopupShown: Boolean = false
 
-  def formatTime(ms: Long): String =
-    val totalSec = Math.max(0, ms) / 1000
-    val mn = totalSec / 60
-    val sc = totalSec % 60
-    f"$mn%02d:$sc%02d"
+  def formatTime(ms: Long): String = GuiHelper.formatTime(ms)
 
   override def update(state: AppState): Unit =
     // Update the UI on the JavaFX application thread
@@ -314,30 +310,17 @@ object Gui extends JFXApp3 with Observer[AppState]:
     updateBoard(GameController.appState)
     updateCapturedPieces(GameController.appState)
 
-  private def pieceValue(pt: PieceType): Int = pt match
-    case PieceType.Pawn   => 1
-    case PieceType.Knight => 3
-    case PieceType.Bishop => 3
-    case PieceType.Rook   => 5
-    case PieceType.Queen  => 9
-    case PieceType.King   => 0
+  private def pieceValue(pt: PieceType): Int = GuiHelper.pieceValue(pt)
 
   private def updateCapturedPieces(state: AppState): Unit =
     val capW = state.game.capturedPieces(ChessColor.White)
     val capB = state.game.capturedPieces(ChessColor.Black)
     
-    val valW = capW.map(pieceValue).sum
-    val valB = capB.map(pieceValue).sum
-    
-    val capturedWhiteStr = capW.map(pt => chess.model.Piece(ChessColor.White, pt).symbol).mkString(" ")
-    val capturedBlackStr = capB.map(pt => chess.model.Piece(ChessColor.Black, pt).symbol).mkString(" ")
+    val adv = GuiHelper.calculateAdvantages(capW, capB)
     
     // Captured White pieces are held by Black (top). Black's advantage = capW value - capB value
-    val diffB = valW - valB
-    val diffW = valB - valW
-    
-    topCapturedText.text = capturedWhiteStr + (if (diffB > 0) s"   +$diffB" else "")
-    botCapturedText.text = capturedBlackStr + (if (diffW > 0) s"   +$diffW" else "")
+    topCapturedText.text = adv.whiteCapturedSymbols + (if (adv.blackAdvantage > 0) s"   +${adv.blackAdvantage}" else "")
+    botCapturedText.text = adv.blackCapturedSymbols + (if (adv.whiteAdvantage > 0) s"   +${adv.whiteAdvantage}" else "")
     
     if state.aiBlack then
       topAiBtn.text = "💻 AI (On)"

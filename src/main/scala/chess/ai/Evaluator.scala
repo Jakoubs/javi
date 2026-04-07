@@ -4,44 +4,59 @@ import chess.model.*
 import java.io.{File, PrintWriter}
 import scala.io.Source
 import scala.util.Try
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicLong
+
+/**
+ * Thread-safe wrapper for atomic Double updates using AtomicLong and bit conversions.
+ * Avoids boxing-identity issues associated with AtomicReference[Double] in Scala.
+ */
+private class AtomicDouble(initialValue: Double):
+  private val bits = new AtomicLong(java.lang.Double.doubleToRawLongBits(initialValue))
+
+  def get(): Double = java.lang.Double.longBitsToDouble(bits.get())
+
+  def set(v: Double): Unit = bits.set(java.lang.Double.doubleToRawLongBits(v))
+
+  def add(delta: Double): Unit =
+    var updated = false
+    while !updated do
+      val currentLong = bits.get()
+      val currentDouble = java.lang.Double.longBitsToDouble(currentLong)
+      val newDouble = currentDouble + delta
+      val newLong = java.lang.Double.doubleToRawLongBits(newDouble)
+      updated = bits.compareAndSet(currentLong, newLong)
 
 /**
  * Evaluation function for board states.
  * Uses material weights and Piece-Square Tables (PSTs).
- * Weights are thread-safe via AtomicReference and can be updated for learning.
+ * Weights are thread-safe via AtomicDouble and can be updated for learning.
  */
 object Evaluator:
 
   // --- Thread-safe Material Weights ---
-  // AtomicReference[Double] allows concurrent compare-and-swap updates
-  private val pawnWeight   = AtomicReference(100.0)
-  private val knightWeight = AtomicReference(320.0)
-  private val bishopWeight = AtomicReference(330.0)
-  private val rookWeight   = AtomicReference(500.0)
-  private val queenWeight  = AtomicReference(900.0)
+  private val pawnWeight   = AtomicDouble(100.0)
+  private val knightWeight = AtomicDouble(320.0)
+  private val bishopWeight = AtomicDouble(330.0)
+  private val rookWeight   = AtomicDouble(500.0)
+  private val queenWeight  = AtomicDouble(900.0)
 
   // --- Trainable Opening Heuristics ---
-  private val openingCenterPawn       = AtomicReference(50.0)
-  private val openingCenterKnight     = AtomicReference(40.0)
-  private val openingUndevelopedMinor = AtomicReference(80.0)
-  private val openingPawnPushPenalty  = AtomicReference(40.0)
-  private val openingEarlyQueen       = AtomicReference(150.0)
-  private val openingCastledBonus     = AtomicReference(250.0)
-  private val openingLostCastle       = AtomicReference(150.0)
-  private val openingUncastled        = AtomicReference(200.0)
-  private val openingConnectedRooks   = AtomicReference(80.0)
-  private val openingWeakPawnF        = AtomicReference(40.0)
-  private val openingWeakPawnH        = AtomicReference(30.0)
+  private val openingCenterPawn       = AtomicDouble(50.0)
+  private val openingCenterKnight     = AtomicDouble(40.0)
+  private val openingUndevelopedMinor = AtomicDouble(80.0)
+  private val openingPawnPushPenalty  = AtomicDouble(40.0)
+  private val openingEarlyQueen       = AtomicDouble(150.0)
+  private val openingCastledBonus     = AtomicDouble(250.0)
+  private val openingLostCastle       = AtomicDouble(150.0)
+  private val openingUncastled        = AtomicDouble(200.0)
+  private val openingConnectedRooks   = AtomicDouble(80.0)
+  private val openingWeakPawnF        = AtomicDouble(40.0)
+  private val openingWeakPawnH        = AtomicDouble(30.0)
+
+  // Temporary for tests
+  private[ai] def pawnWeight_test_access = pawnWeight
 
   private val weightsFile = "ai_weights.txt"
-
-  // Thread-safe atomic add: loops until CAS succeeds
-  private def atomicAdd(ref: AtomicReference[Double], delta: Double): Unit =
-    var updated = false
-    while !updated do
-      val current = ref.get()
-      updated = ref.compareAndSet(current, current + delta)
 
   /**
    * Evaluate the board from White's perspective.
@@ -61,8 +76,6 @@ object Evaluator:
         score -= material + pstBonus
 
     // Bestimme Spielphase (Opening Weight)
-    // Maximale Materialsumme (ohne König) ist ca. 7800. 
-    // Eröffnungs-Regeln verblassen fließend zwischen 6500 und 4500.
     val totalMaterial = board.pieces.values.filter(_.pieceType != PieceType.King).map(p => weightOf(p.pieceType)).sum
     val openingWeight = math.max(0.0, math.min(1.0, (totalMaterial - 4500) / 2000.0))
     
@@ -219,7 +232,7 @@ object Evaluator:
 
   // --- Trainable PST weights (initialized from hardcoded tables above) ---
   // IMPORTANT: This MUST be defined AFTER the PST arrays above!
-  private val pstWeights: Map[PieceType, Array[AtomicReference[Double]]] = {
+  private val pstWeights: Map[PieceType, Array[AtomicDouble]] = {
     val tables: Array[(PieceType, Array[Array[Int]])] = Array(
       (PieceType.Pawn,   pawnPst),
       (PieceType.Knight, knightPst),
@@ -229,9 +242,9 @@ object Evaluator:
       (PieceType.King,   kingPst)
     )
     tables.map { case (pt, table) =>
-      val flat = new Array[AtomicReference[Double]](64)
+      val flat = new Array[AtomicDouble](64)
       for (r <- 0 until 8; c <- 0 until 8) do
-        flat(r * 8 + c) = AtomicReference(table(r)(c).toDouble)
+        flat(r * 8 + c) = AtomicDouble(table(r)(c).toDouble)
       pt -> flat
     }.toMap
   }
@@ -314,22 +327,22 @@ object Evaluator:
   def updateWeights(delta: Double, pieceType: PieceType, color: Color, pos: Option[Pos] = None): Unit =
     // Material update
     pieceType match
-      case PieceType.Pawn   => atomicAdd(pawnWeight,   delta)
-      case PieceType.Knight => atomicAdd(knightWeight, delta)
-      case PieceType.Bishop => atomicAdd(bishopWeight, delta)
-      case PieceType.Rook   => atomicAdd(rookWeight,   delta)
-      case PieceType.Queen  => atomicAdd(queenWeight,  delta)
+      case PieceType.Pawn   => pawnWeight.add(delta)
+      case PieceType.Knight => knightWeight.add(delta)
+      case PieceType.Bishop => bishopWeight.add(delta)
+      case PieceType.Rook   => rookWeight.add(delta)
+      case PieceType.Queen  => queenWeight.add(delta)
       case _ => ()
     // PST update
     pos.foreach { p =>
       val relR = if color == Color.White then p.row else 7 - p.row
       val index = relR * 8 + p.col
-      atomicAdd(pstWeights(pieceType)(index), delta * 0.1) // smaller LR for positional
+      pstWeights(pieceType)(index).add(delta * 0.1) // smaller LR for positional
     }
 
-  // General atomic addition for any AtomicReference 
-  def updateGlobalWeight(ref: AtomicReference[Double], delta: Double): Unit =
-    atomicAdd(ref, delta)
+  // General atomic addition for any AtomicDouble 
+  def updateGlobalWeight(ref: AtomicDouble, delta: Double): Unit =
+    ref.add(delta)
     
   // Export references for the trainer
   def getOpeningCenterPawn = openingCenterPawn
@@ -343,3 +356,37 @@ object Evaluator:
   def getOpeningConnectedRooks = openingConnectedRooks
   def getOpeningWeakPawnF = openingWeakPawnF
   def getOpeningWeakPawnH = openingWeakPawnH
+
+  /**
+   * Resets all weights to their default values.
+   * Useful for ensuring test isolation.
+   */
+  def resetWeights(): Unit =
+    pawnWeight.set(100.0)
+    knightWeight.set(320.0)
+    bishopWeight.set(330.0)
+    rookWeight.set(500.0)
+    queenWeight.set(900.0)
+    openingCenterPawn.set(50.0)
+    openingCenterKnight.set(40.0)
+    openingUndevelopedMinor.set(80.0)
+    openingPawnPushPenalty.set(40.0)
+    openingEarlyQueen.set(150.0)
+    openingCastledBonus.set(250.0)
+    openingLostCastle.set(150.0)
+    openingUncastled.set(200.0)
+    openingConnectedRooks.set(80.0)
+    openingWeakPawnF.set(40.0)
+    openingWeakPawnH.set(30.0)
+    
+    // Reset PSTs
+    val pieceOrder = Array(PieceType.Pawn, PieceType.Knight, PieceType.Bishop, PieceType.Rook, PieceType.Queen, PieceType.King)
+    val tables = Map(
+      PieceType.Pawn -> pawnPst, PieceType.Knight -> knightPst, PieceType.Bishop -> bishopPst,
+      PieceType.Rook -> rookPst, PieceType.Queen -> queenPst, PieceType.King -> kingPst
+    )
+    for pt <- pieceOrder do
+      val arr = pstWeights(pt)
+      val table = tables(pt)
+      for r <- 0 until 8; c <- 0 until 8 do
+        arr(r * 8 + c).set(table(r)(c).toDouble)
