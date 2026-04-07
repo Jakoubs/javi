@@ -150,10 +150,13 @@ object Gui extends JFXApp3 with Observer[AppState]:
             new MenuItem("10|0 Rapid") { onAction = _ => GameController.eval(Command.StartGame(Some(10 * 60 * 1000L, 0L))) }
           )
         },
-        new Menu("Import") {
+        new Menu("Import/Export") {
           items = Seq(
-            new MenuItem("PGN") { onAction = _ => showPgnImportDialog() },
-            new MenuItem("FEN") { onAction = _ => showFenImportDialog() }
+            new MenuItem("Import PGN") { onAction = _ => showPgnImportDialog() },
+            new MenuItem("Import FEN") { onAction = _ => showFenImportDialog() },
+            new SeparatorMenuItem(),
+            new MenuItem("Export PGN") { onAction = _ => showPgnExportDialog(GameController.appState.game) },
+            new MenuItem("Export FEN") { onAction = _ => showFenExportDialog(GameController.appState.game) }
           )
         },
         new Menu("Parsers") {

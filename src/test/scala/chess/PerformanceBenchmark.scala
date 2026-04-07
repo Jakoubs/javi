@@ -63,7 +63,7 @@ class PerformanceBenchmark extends AnyFunSuite with Matchers:
     
     // Test functional parsing
     val results = (1 to iterations).flatMap { _ =>
-      commands.map(CommandParser.parse)
+      commands.map(cmd => CommandParser.parse(cmd, AppState.initial))
     }
     
     val end = System.nanoTime()

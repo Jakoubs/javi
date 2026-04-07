@@ -59,6 +59,11 @@ object CommandParser:
       case "ai"                 => Command.AiMove
       case "ai w" | "ai white"  => Command.ToggleAi(Color.White)
       case "ai b" | "ai black"  => Command.ToggleAi(Color.Black)
+      case s if s.startsWith("moves ") =>
+        val posStr = s.drop(6).trim
+        Pos.fromAlgebraic(posStr) match
+          case Some(p) => Command.SelectSquare(Some(p))
+          case None    => Command.Unknown(s"Invalid position: $posStr")
       case s if s.startsWith("train ") =>
         val nStr = s.drop(6).trim
         nStr.toIntOption match
