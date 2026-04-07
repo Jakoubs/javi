@@ -22,6 +22,8 @@ object Gui extends JFXApp3 with Observer[AppState]:
   private val lightColor = Color.web("#f0d9b5")
   private val darkColor  = Color.web("#b58863")
   private val highlightColor = Color.web("#829769") // Greenish for selection/moves
+  private val selectedColor  = Color.web("#3498db") // Blue for selection
+  private val lastMoveColor  = Color.web("#f1c40f") // Yellow for last move
 
   // Store references to panes to update them later
   private val squares = Array.ofDim[StackPane](8, 8)
@@ -37,6 +39,10 @@ object Gui extends JFXApp3 with Observer[AppState]:
   }
   private lazy val botAiBtn = new Button("💻 AI (Off)") { 
     onAction = _ => GameController.eval(Command.ToggleAi(ChessColor.White)); style = "-fx-background-color: #ecf0f1;"
+  }
+
+  private lazy val statusLabel = new Text { 
+    font = Font.font("Arial", 16); fill = Color.web("#e67e22") 
   }
 
   private lazy val pgnArea = new TextArea {
@@ -184,13 +190,21 @@ object Gui extends JFXApp3 with Observer[AppState]:
         
         val textNode = new Text {
           font = Font.font("Arial", 48)
+          mouseTransparent = true // Ensure StackPane gets all clicks
         }
         
         val stack = new StackPane {
           alignment = Pos.Center
           children = Seq(bgRect, textNode)
           
-          onMouseClicked = _ => handleSquareClick(pos)
+          onMouseClicked = _ => {
+            val state = GameController.appState
+            val actualPos = if state.flipped then 
+              ChessPos(7 - col, row) 
+            else 
+              ChessPos(col, 7 - row)
+            handleSquareClick(actualPos)
+          }
         }
         
         squares(row)(col) = stack
@@ -248,7 +262,7 @@ object Gui extends JFXApp3 with Observer[AppState]:
       padding = Insets(15)
       alignment = Pos.Center
       style = "-fx-background-color: #ecf0f1;"
-      children = Seq(topBar, grid, botBar)
+      children = Seq(topBar, grid, botBar, statusLabel)
     }
 
     val leftColumn = new VBox {
@@ -341,6 +355,8 @@ object Gui extends JFXApp3 with Observer[AppState]:
     val renderedState = if state.viewIndex == state.game.history.size then state.game 
                         else state.game.history(state.viewIndex)
     
+    statusLabel.text = state.message.map(_.trim).getOrElse("")
+    
     val board = renderedState.board
     val lastMovePosSet: Set[ChessPos] = if state.viewIndex == state.game.history.size then
       state.lastMove.map(m => Set(m.from, m.to)).getOrElse(Set.empty)
@@ -355,12 +371,17 @@ object Gui extends JFXApp3 with Observer[AppState]:
 
     for row <- 0 until 8 do
       for col <- 0 until 8 do
-        val pos = ChessPos(col, 7 - row)
         val stack = squares(row)(col)
         val bgRect = stack.children(0).asInstanceOf[javafx.scene.shape.Rectangle]
         val textNode = stack.children(1).asInstanceOf[javafx.scene.text.Text]
         
-        val isLight = (col + (7 - row)) % 2 == 1
+        // Handle flipping: row 0 is top, row 7 is bottom
+        val pos = if state.flipped then 
+          ChessPos(7 - col, row) 
+        else 
+          ChessPos(col, 7 - row)
+        
+        val isLight = (pos.col + pos.row) % 2 == 1
         val isInCheck = board.findKing(renderedState.activeColor).contains(pos) && 
                         (GameRules.computeStatus(renderedState) match
                           case chess.model.GameStatus.Check(_) | chess.model.GameStatus.Checkmate(_) => true
@@ -370,7 +391,8 @@ object Gui extends JFXApp3 with Observer[AppState]:
         val baseColor = if isLight then lightColor else darkColor
         bgRect.setFill(
           if isInCheck then Color.Red
-          else if lastMovePosSet.contains(pos) then highlightColor.brighter()
+          else if state.selectedPos.contains(pos) then selectedColor
+          else if lastMovePosSet.contains(pos) then lastMoveColor
           else if state.highlights.contains(pos) && state.viewIndex == state.game.history.size then highlightColor
           else baseColor
         )

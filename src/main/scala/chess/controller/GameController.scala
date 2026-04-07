@@ -129,10 +129,13 @@ object GameController extends Observable[AppState]:
       case Undo           => handleUndo(app)
       case Resign         => handleResign(app)
       case OfferDraw      => handleDraw(app)
-      case NewGame        => AppState.initial.copy(aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some(TerminalView.info("New game started.")))
+      case NewGame        => 
+        val init = AppState.initial
+        init.copy(aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some(TerminalView.info("New game started.")), viewIndex = 0)
       case StartGame(clock) => 
         val initClock = clock.map { case (init, inc) => ClockState(init, init, inc, None) }
-        AppState.initial.copy(clock = initClock, aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some(TerminalView.info("New game started.")))
+        val init = AppState.initial
+        init.copy(clock = initClock, aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some(TerminalView.info("New game started.")), viewIndex = 0)
       case StepBack       => app.copy(viewIndex = Math.max(0, app.viewIndex - 1))
       case StepForward    => app.copy(viewIndex = Math.min(app.game.history.size, app.viewIndex + 1))
       case FirstHistory   => app.copy(viewIndex = 0)
@@ -152,13 +155,13 @@ object GameController extends Observable[AppState]:
       case LoadPgn(pgn)   => 
         chess.util.Pgn.importPgn(pgn) match
           case scala.util.Success(state) => 
-            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("PGN loaded successfully.")))
+            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("PGN loaded successfully.")), viewIndex = state.history.size)
           case scala.util.Failure(exception) => 
             app.copy(message = Some(TerminalView.error(s"PGN Error: ${exception.getMessage}")), highlights = Set.empty)
       case LoadFen(fen)   =>
         chess.model.GameState.fromFen(fen) match
           case Right(state) => 
-            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("FEN loaded successfully.")))
+            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("FEN loaded successfully.")), viewIndex = state.history.size)
           case Left(errorMessage) => 
             app.copy(message = Some(TerminalView.error(s"FEN Error: $errorMessage")), highlights = Set.empty)
       case SwitchParser(pType, variant) =>
@@ -403,7 +406,8 @@ object GameController extends Observable[AppState]:
           lastMove   = None,
           highlights = Set.empty,
           selectedPos= None,
-          message    = Some(TerminalView.info("Last move undone."))
+          message    = Some(TerminalView.info("Last move undone.")),
+          viewIndex  = prev.history.size
         )
 
   // ── Resign ─────────────────────────────────────────────────────────────────

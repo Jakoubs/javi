@@ -1,9 +1,0 @@
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E008] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/Tui.scala:57:43 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m57 |[0m      [33mcase[0m [31m"pgn"[0m                => Command.ShowPgn[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                   ^^^^^^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        value ShowPgn is not a member of object chess.controller.Command[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E008] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/Tui.scala:58:43 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m58 |[0m      [33mcase[0m [31m"fen"[0m                => Command.ShowFen[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                                   ^^^^^^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        value ShowFen is not a member of object chess.controller.Command[0m
-[0m[[0m[31merror[0m] [0m[0mtwo errors found[0m
