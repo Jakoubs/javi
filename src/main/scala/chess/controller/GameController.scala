@@ -46,6 +46,7 @@ enum Command:
   case JumpToHistory(index: Int)
   case ShowPgn
   case ShowFen
+  case AiProgress(msg: String)
   case Unknown(input: String)
 
 // AppState ─────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ case class AppState(
   drawOffer:   Boolean         = false,
   running:     Boolean         = true,
   training:    Boolean         = false,
+  trainingProgress: Option[String] = None,
   aiWhite:     Boolean         = false, // when true, AI plays for White
   aiBlack:     Boolean         = false, // when true, AI plays for Black
   clock:       Option[ClockState] = None,
@@ -151,6 +153,7 @@ object GameController extends Observable[AppState]:
       case AiMove         => handleAiMove(app)
       case AiSuggest      => handleAiSuggest(app)
       case AiTrain(n)     => handleAiTrain(app, n)
+      case AiProgress(p)  => app.copy(trainingProgress = Some(p))
       case ToggleAi(c)    => handleToggleAi(app, c)
       case LoadPgn(pgn)   => 
         chess.util.Pgn.importPgn(pgn) match
@@ -334,22 +337,23 @@ object GameController extends Observable[AppState]:
         
         // Progress message
         if (done % 500 == 0 || done == numGames) then
-          println(s"Training progress: $done/$numGames games completed.")
+          eval(Command.AiProgress(s"Training progress: $done/$numGames games completed."))
           
         // Checkpoint saving
         if (done % checkpointInterval == 0) then
           chess.ai.Evaluator.saveWeights()
-          println(s"Checkpoint reached ($done games): Weights saved to Google Drive/local disk.")
+          eval(Command.AiProgress(s"Checkpoint reached ($done games): Weights saved."))
       }
     }
 
     allGames.foreach { _ =>
       chess.ai.Evaluator.saveWeights()
-      println(s"Training session completed! All $numGames games done. Final weights saved.")
+      eval(Command.AiProgress(s"Training session completed! All $numGames games done."))
     }
 
     initialApp.copy(
       training = true,
+      trainingProgress = Some("Initializing training..."),
       message = Some(TerminalView.success(s"Started parallel training: $numGames games. Checkpoints every $checkpointInterval."))
     )
 

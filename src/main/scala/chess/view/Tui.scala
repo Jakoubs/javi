@@ -38,6 +38,7 @@ class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
       console.print(TerminalView.info("AI playing for White | Type 'ai white' to disable"))
     if app.aiBlack then
       console.print(TerminalView.info("AI playing for Black | Type 'ai black' to disable"))
+    app.trainingProgress.foreach(msg => console.print(TerminalView.info(msg)))
     app.message.foreach(console.print)
 
 object CommandParser:

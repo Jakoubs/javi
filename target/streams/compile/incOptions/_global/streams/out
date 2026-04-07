@@ -1,1154 +1,808 @@
-[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak[0m
-[0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$49.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$64.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$51.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$41.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$5.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$26.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$23.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$14.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$25.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$42.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$34.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$7.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$33.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observable.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$6.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$50.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$48.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$11.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$43.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$38.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$30.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$21.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$46.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$20.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$35.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$24.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$17.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$16.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$12.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$27.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$59.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$56.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$40.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$29.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$9.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$60.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$32.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$63.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$39.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$47.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$61.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$58.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$36.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$18.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$28.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$53.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$52.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$10.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$55.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$44.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$54.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$8.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$57.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Trainer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$45.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$31.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$22.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$15.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$37.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AtomicDouble.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$19.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$13.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$4.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$62.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$3.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$49.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$$anon$2.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$64.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$51.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$41.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$5.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$26.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$23.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$14.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$25.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$42.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$34.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$7.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$33.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observable.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$$anon$3.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$6.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$50.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$48.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$11.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$43.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$38.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$30.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$21.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$46.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$20.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$35.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$24.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$17.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$16.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$12.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$27.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$2.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$59.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$56.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$40.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$29.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$9.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$60.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$32.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$63.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$39.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$47.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$61.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$58.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$36.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$18.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$28.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$53.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$52.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$10.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$55.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$44.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$54.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$8.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$57.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Trainer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$45.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$31.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$22.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$15.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$37.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AtomicDouble.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$19.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$13.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$4.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$62.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$49.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$64.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$51.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$41.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$5.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$26.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$23.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$14.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$25.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$42.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$34.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$7.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$33.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observable.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$6.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$50.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$48.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$11.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$43.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$38.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$30.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$21.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$46.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$20.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$35.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$24.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$17.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$16.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$12.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$27.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$59.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$56.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$40.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$29.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$9.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$60.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$32.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$63.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$39.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$47.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$61.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$58.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$36.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$18.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$28.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$53.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$52.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$10.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$55.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$44.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$54.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$8.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$57.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Trainer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$45.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$31.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$22.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$15.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$37.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AtomicDouble.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$19.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$13.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$4.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$62.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$3.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$49.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$$anon$2.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$64.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$51.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$41.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$5.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$26.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$23.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$14.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$25.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$42.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$34.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$7.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$33.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observable.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$$anon$3.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$6.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$50.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$48.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$11.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$43.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$38.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$30.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$21.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$46.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$20.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$35.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$24.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$17.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$16.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$12.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$27.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$2.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$59.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$56.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$40.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$29.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$9.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$60.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$32.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$63.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$39.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$47.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$61.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$58.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$36.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$18.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$28.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$53.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$52.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$10.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$55.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$44.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$54.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$8.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$57.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Trainer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$45.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$31.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$22.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$15.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$37.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AtomicDouble.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$19.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$13.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$4.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$62.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak[0m
-[0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
-[0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
-[0m[[0m[0mdebug[0m] [0m[0mRegistering generated classes:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$49.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$64.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$51.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$41.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$5.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$26.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$23.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$14.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$25.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$42.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$34.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$7.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$33.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observable.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$$anon$3.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$6.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$50.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$48.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$11.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$43.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$38.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$30.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$21.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$46.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$20.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$35.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$24.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$17.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$16.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$12.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$27.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$2.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$59.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$56.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$40.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$29.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$9.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$60.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$32.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$63.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$39.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$47.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$61.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$58.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$36.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$18.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$28.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$53.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$52.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$10.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$55.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$44.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$54.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$8.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$57.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Trainer.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ConsoleIO.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$45.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$31.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$22.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$15.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$$anon$1.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$37.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AtomicDouble.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$19.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$13.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$4.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$62.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$3.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$49.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$$anon$2.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$64.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$51.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Move.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$41.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$5.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$26.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$23.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$14.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$25.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	StdConsoleIO$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$42.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$34.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$7.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$33.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observable.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$$anon$3.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$package$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Tui.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$6.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$50.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$48.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$11.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TerminalView$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$43.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$38.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Board.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Success.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$30.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CommandParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Check.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ApplyMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$21.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$46.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$CapturedAdvantage$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$20.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CastlingRights$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ClockState.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$35.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Draw.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CombinatorPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$24.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Observer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pos$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$17.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$TimeExpired.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$16.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$12.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$27.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AppState$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$2.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Pgn$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$59.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$56.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$40.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadPgn$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$29.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$9.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$60.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PieceType.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Result.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$JumpToHistory.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$32.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	DelegatingPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AiEngine$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$63.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Timeout.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SwitchParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$LoadFen$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameRules.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	PassiveTrainer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$39.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$47.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$61.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$58.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GuiHelper$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Failure$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Color$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$36.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$18.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$28.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$53.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Piece.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$52.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$10.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$55.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$44.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Evaluator$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$54.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$8.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$Unknown.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$57.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Trainer.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveGenerator.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ConsoleIO.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameController$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$45.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$31.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	GameStatus$Checkmate$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$StartGame.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$ToggleAi.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$22.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$15.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	BlackToMove$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	FastPgnParser$$anon$1.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$SelectSquare.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	WhiteToMove.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$AiTrain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$37.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	AtomicDouble.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Command$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$19.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$13.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	RegexPgnParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$4.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Gui$$anon$62.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0mRemoving the temporary directory used for backing up class files: D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak[0m
+[debug] Created transactional ClassFileManager with tempDir = D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak
+[debug] About to delete class files:
+[debug] 	Command$ApplyMove.class
+[debug] 	Command$LoadFen.class
+[debug] 	Command$TimeExpired$.class
+[debug] 	Tui$.class
+[debug] 	StdConsoleIO.class
+[debug] 	Command$SelectSquare$.class
+[debug] 	Main$.class
+[debug] 	Command$Unknown$.class
+[debug] 	StdConsoleIO$.class
+[debug] 	CommandParser$.class
+[debug] 	Tui.class
+[debug] 	AppState.class
+[debug] 	Command$LoadPgn.class
+[debug] 	Command$StartGame$.class
+[debug] 	Command$SwitchParser.class
+[debug] 	CommandParser.class
+[debug] 	Command$ApplyMove$.class
+[debug] 	Command$AiTrain$.class
+[debug] 	Command$JumpToHistory$.class
+[debug] 	Command$TimeExpired.class
+[debug] 	AppState$.class
+[debug] 	Main.class
+[debug] 	Command$ToggleAi$.class
+[debug] 	Command$LoadPgn$.class
+[debug] 	Command$JumpToHistory.class
+[debug] 	Command$SwitchParser$.class
+[debug] 	Command$LoadFen$.class
+[debug] 	Command$$anon$1.class
+[debug] 	GameController.class
+[debug] 	Command$Unknown.class
+[debug] 	Command.class
+[debug] 	ConsoleIO.class
+[debug] 	GameController$.class
+[debug] 	Command$StartGame.class
+[debug] 	Command$ToggleAi.class
+[debug] 	Command$SelectSquare.class
+[debug] 	Command$AiTrain.class
+[debug] 	Command$.class
+[debug] 	Command$ApplyMove.tasty
+[debug] 	Command$LoadFen.tasty
+[debug] 	Command$TimeExpired$.tasty
+[debug] 	Tui$.tasty
+[debug] 	StdConsoleIO.tasty
+[debug] 	Command$SelectSquare$.tasty
+[debug] 	Main$.tasty
+[debug] 	Command$Unknown$.tasty
+[debug] 	StdConsoleIO$.tasty
+[debug] 	CommandParser$.tasty
+[debug] 	Tui.tasty
+[debug] 	AppState.tasty
+[debug] 	Command$LoadPgn.tasty
+[debug] 	Command$StartGame$.tasty
+[debug] 	Command$SwitchParser.tasty
+[debug] 	CommandParser.tasty
+[debug] 	Command$ApplyMove$.tasty
+[debug] 	Command$AiTrain$.tasty
+[debug] 	Command$JumpToHistory$.tasty
+[debug] 	Command$TimeExpired.tasty
+[debug] 	AppState$.tasty
+[debug] 	Main.tasty
+[debug] 	Command$ToggleAi$.tasty
+[debug] 	Command$LoadPgn$.tasty
+[debug] 	Command$JumpToHistory.tasty
+[debug] 	Command$SwitchParser$.tasty
+[debug] 	Command$LoadFen$.tasty
+[debug] 	Command$$anon$1.tasty
+[debug] 	GameController.tasty
+[debug] 	Command$Unknown.tasty
+[debug] 	Command.tasty
+[debug] 	ConsoleIO.tasty
+[debug] 	GameController$.tasty
+[debug] 	Command$StartGame.tasty
+[debug] 	Command$ToggleAi.tasty
+[debug] 	Command$SelectSquare.tasty
+[debug] 	Command$AiTrain.tasty
+[debug] 	Command$.tasty
+[debug] We backup class files:
+[debug] 	Command$ApplyMove.class
+[debug] 	Command$LoadFen.class
+[debug] 	Command$TimeExpired$.class
+[debug] 	Tui$.class
+[debug] 	StdConsoleIO.class
+[debug] 	Command$SelectSquare$.class
+[debug] 	Main$.class
+[debug] 	Command$Unknown$.class
+[debug] 	StdConsoleIO$.class
+[debug] 	CommandParser$.class
+[debug] 	Tui.class
+[debug] 	AppState.class
+[debug] 	Command$LoadPgn.class
+[debug] 	Command$StartGame$.class
+[debug] 	Command$SwitchParser.class
+[debug] 	CommandParser.class
+[debug] 	Command$ApplyMove$.class
+[debug] 	Command$AiTrain$.class
+[debug] 	Command$JumpToHistory$.class
+[debug] 	Command$TimeExpired.class
+[debug] 	AppState$.class
+[debug] 	Main.class
+[debug] 	Command$ToggleAi$.class
+[debug] 	Command$LoadPgn$.class
+[debug] 	Command$JumpToHistory.class
+[debug] 	Command$SwitchParser$.class
+[debug] 	Command$LoadFen$.class
+[debug] 	Command$$anon$1.class
+[debug] 	GameController.class
+[debug] 	Command$Unknown.class
+[debug] 	Command.class
+[debug] 	ConsoleIO.class
+[debug] 	GameController$.class
+[debug] 	Command$StartGame.class
+[debug] 	Command$ToggleAi.class
+[debug] 	Command$SelectSquare.class
+[debug] 	Command$AiTrain.class
+[debug] 	Command$.class
+[debug] 	Command$ApplyMove.tasty
+[debug] 	Command$LoadFen.tasty
+[debug] 	Command$TimeExpired$.tasty
+[debug] 	Tui$.tasty
+[debug] 	StdConsoleIO.tasty
+[debug] 	Command$SelectSquare$.tasty
+[debug] 	Main$.tasty
+[debug] 	Command$Unknown$.tasty
+[debug] 	StdConsoleIO$.tasty
+[debug] 	CommandParser$.tasty
+[debug] 	Tui.tasty
+[debug] 	AppState.tasty
+[debug] 	Command$LoadPgn.tasty
+[debug] 	Command$StartGame$.tasty
+[debug] 	Command$SwitchParser.tasty
+[debug] 	CommandParser.tasty
+[debug] 	Command$ApplyMove$.tasty
+[debug] 	Command$AiTrain$.tasty
+[debug] 	Command$JumpToHistory$.tasty
+[debug] 	Command$TimeExpired.tasty
+[debug] 	AppState$.tasty
+[debug] 	Main.tasty
+[debug] 	Command$ToggleAi$.tasty
+[debug] 	Command$LoadPgn$.tasty
+[debug] 	Command$JumpToHistory.tasty
+[debug] 	Command$SwitchParser$.tasty
+[debug] 	Command$LoadFen$.tasty
+[debug] 	Command$$anon$1.tasty
+[debug] 	GameController.tasty
+[debug] 	Command$Unknown.tasty
+[debug] 	Command.tasty
+[debug] 	ConsoleIO.tasty
+[debug] 	GameController$.tasty
+[debug] 	Command$StartGame.tasty
+[debug] 	Command$ToggleAi.tasty
+[debug] 	Command$SelectSquare.tasty
+[debug] 	Command$AiTrain.tasty
+[debug] 	Command$.tasty
+[debug] Registering generated classes:
+[debug] 	Command$ApplyMove.class
+[debug] 	Command$LoadFen.class
+[debug] 	Command$TimeExpired$.class
+[debug] 	Tui$.class
+[debug] 	StdConsoleIO.class
+[debug] 	Command$SelectSquare$.class
+[debug] 	Main$.class
+[debug] 	Command$Unknown$.class
+[debug] 	Command$AiProgress$.class
+[debug] 	StdConsoleIO$.class
+[debug] 	CommandParser$.class
+[debug] 	Command$AiProgress.class
+[debug] 	Tui.class
+[debug] 	AppState.class
+[debug] 	Command$LoadPgn.class
+[debug] 	Command$StartGame$.class
+[debug] 	Command$SwitchParser.class
+[debug] 	CommandParser.class
+[debug] 	Command$ApplyMove$.class
+[debug] 	Command$AiTrain$.class
+[debug] 	Command$JumpToHistory$.class
+[debug] 	Command$TimeExpired.class
+[debug] 	AppState$.class
+[debug] 	Main.class
+[debug] 	Command$ToggleAi$.class
+[debug] 	Command$LoadPgn$.class
+[debug] 	Command$JumpToHistory.class
+[debug] 	Command$SwitchParser$.class
+[debug] 	Command$LoadFen$.class
+[debug] 	Command$$anon$1.class
+[debug] 	GameController.class
+[debug] 	Command$Unknown.class
+[debug] 	Command.class
+[debug] 	ConsoleIO.class
+[debug] 	GameController$.class
+[debug] 	Command$StartGame.class
+[debug] 	Command$ToggleAi.class
+[debug] 	Command$SelectSquare.class
+[debug] 	Command$AiTrain.class
+[debug] 	Command$.class
+[debug] 	Command$ApplyMove.tasty
+[debug] 	Command$LoadFen.tasty
+[debug] 	Command$TimeExpired$.tasty
+[debug] 	Tui$.tasty
+[debug] 	StdConsoleIO.tasty
+[debug] 	Command$SelectSquare$.tasty
+[debug] 	Main$.tasty
+[debug] 	Command$Unknown$.tasty
+[debug] 	Command$AiProgress$.tasty
+[debug] 	StdConsoleIO$.tasty
+[debug] 	CommandParser$.tasty
+[debug] 	Command$AiProgress.tasty
+[debug] 	Tui.tasty
+[debug] 	AppState.tasty
+[debug] 	Command$LoadPgn.tasty
+[debug] 	Command$StartGame$.tasty
+[debug] 	Command$SwitchParser.tasty
+[debug] 	CommandParser.tasty
+[debug] 	Command$ApplyMove$.tasty
+[debug] 	Command$AiTrain$.tasty
+[debug] 	Command$JumpToHistory$.tasty
+[debug] 	Command$TimeExpired.tasty
+[debug] 	AppState$.tasty
+[debug] 	Main.tasty
+[debug] 	Command$ToggleAi$.tasty
+[debug] 	Command$LoadPgn$.tasty
+[debug] 	Command$JumpToHistory.tasty
+[debug] 	Command$SwitchParser$.tasty
+[debug] 	Command$LoadFen$.tasty
+[debug] 	Command$$anon$1.tasty
+[debug] 	GameController.tasty
+[debug] 	Command$Unknown.tasty
+[debug] 	Command.tasty
+[debug] 	ConsoleIO.tasty
+[debug] 	GameController$.tasty
+[debug] 	Command$StartGame.tasty
+[debug] 	Command$ToggleAi.tasty
+[debug] 	Command$SelectSquare.tasty
+[debug] 	Command$AiTrain.tasty
+[debug] 	Command$.tasty
+[debug] About to delete class files:
+[debug] 	Gui$$anon$3.class
+[debug] 	Gui.class
+[debug] 	Gui$$anon$49.class
+[debug] 	Gui$$anon$64.class
+[debug] 	Command$ApplyMove.class
+[debug] 	Command$LoadFen.class
+[debug] 	Gui$$anon$51.class
+[debug] 	Command$TimeExpired$.class
+[debug] 	Gui$$anon$41.class
+[debug] 	Gui$$anon$5.class
+[debug] 	Tui$.class
+[debug] 	StdConsoleIO.class
+[debug] 	Gui$$anon$26.class
+[debug] 	Command$SelectSquare$.class
+[debug] 	Gui$$anon$23.class
+[debug] 	Main$.class
+[debug] 	Gui$$anon$14.class
+[debug] 	Command$Unknown$.class
+[debug] 	Gui$$anon$25.class
+[debug] 	Command$AiProgress$.class
+[debug] 	StdConsoleIO$.class
+[debug] 	Gui$$anon$42.class
+[debug] 	Gui$$anon$34.class
+[debug] 	CommandParser$.class
+[debug] 	Command$AiProgress.class
+[debug] 	Gui$$anon$7.class
+[debug] 	Gui$$anon$33.class
+[debug] 	Tui.class
+[debug] 	AppState.class
+[debug] 	Gui$$anon$6.class
+[debug] 	Command$LoadPgn.class
+[debug] 	Gui$$anon$50.class
+[debug] 	Gui$$anon$48.class
+[debug] 	Gui$$anon$1.class
+[debug] 	Gui$$anon$11.class
+[debug] 	Gui$$anon$43.class
+[debug] 	Command$StartGame$.class
+[debug] 	Gui$$anon$38.class
+[debug] 	Command$SwitchParser.class
+[debug] 	Gui$$anon$30.class
+[debug] 	CommandParser.class
+[debug] 	Command$ApplyMove$.class
+[debug] 	Gui$$anon$21.class
+[debug] 	Gui$$anon$46.class
+[debug] 	Gui$$anon$20.class
+[debug] 	Command$AiTrain$.class
+[debug] 	Gui$$anon$35.class
+[debug] 	Command$JumpToHistory$.class
+[debug] 	Gui$$anon$24.class
+[debug] 	Gui$$anon$17.class
+[debug] 	Command$TimeExpired.class
+[debug] 	Gui$$anon$16.class
+[debug] 	Gui$$anon$12.class
+[debug] 	TrainMain.class
+[debug] 	Gui$$anon$27.class
+[debug] 	AppState$.class
+[debug] 	Gui$$anon$2.class
+[debug] 	Gui$$anon$59.class
+[debug] 	Main.class
+[debug] 	TrainMain$.class
+[debug] 	Gui$$anon$56.class
+[debug] 	Gui$$anon$40.class
+[debug] 	Command$ToggleAi$.class
+[debug] 	Command$LoadPgn$.class
+[debug] 	Gui$$anon$29.class
+[debug] 	Gui$$anon$9.class
+[debug] 	Gui$$anon$60.class
+[debug] 	Command$JumpToHistory.class
+[debug] 	Gui$$anon$32.class
+[debug] 	Gui$$anon$63.class
+[debug] 	Command$SwitchParser$.class
+[debug] 	Command$LoadFen$.class
+[debug] 	Gui$$anon$39.class
+[debug] 	Command$$anon$1.class
+[debug] 	Gui$$anon$47.class
+[debug] 	Gui$$anon$61.class
+[debug] 	GameController.class
+[debug] 	Gui$$anon$58.class
+[debug] 	Gui$$anon$36.class
+[debug] 	Gui$$anon$18.class
+[debug] 	Gui$$anon$28.class
+[debug] 	Gui$$anon$53.class
+[debug] 	Gui$$anon$52.class
+[debug] 	Gui$$anon$10.class
+[debug] 	Gui$$anon$55.class
+[debug] 	Gui$$anon$44.class
+[debug] 	Gui$$anon$54.class
+[debug] 	Gui$$anon$8.class
+[debug] 	Command$Unknown.class
+[debug] 	Gui$$anon$57.class
+[debug] 	Command.class
+[debug] 	ConsoleIO.class
+[debug] 	GameController$.class
+[debug] 	Gui$$anon$45.class
+[debug] 	Gui$$anon$31.class
+[debug] 	Gui$.class
+[debug] 	Command$StartGame.class
+[debug] 	Command$ToggleAi.class
+[debug] 	Gui$$anon$22.class
+[debug] 	Gui$$anon$15.class
+[debug] 	Command$SelectSquare.class
+[debug] 	Command$AiTrain.class
+[debug] 	Gui$$anon$37.class
+[debug] 	Command$.class
+[debug] 	Gui$$anon$19.class
+[debug] 	Gui$$anon$13.class
+[debug] 	Gui$$anon$4.class
+[debug] 	Gui$$anon$62.class
+[debug] 	Gui$$anon$3.tasty
+[debug] 	Gui.tasty
+[debug] 	Gui$$anon$49.tasty
+[debug] 	Gui$$anon$64.tasty
+[debug] 	Command$ApplyMove.tasty
+[debug] 	Command$LoadFen.tasty
+[debug] 	Gui$$anon$51.tasty
+[debug] 	Command$TimeExpired$.tasty
+[debug] 	Gui$$anon$41.tasty
+[debug] 	Gui$$anon$5.tasty
+[debug] 	Tui$.tasty
+[debug] 	StdConsoleIO.tasty
+[debug] 	Gui$$anon$26.tasty
+[debug] 	Command$SelectSquare$.tasty
+[debug] 	Gui$$anon$23.tasty
+[debug] 	Main$.tasty
+[debug] 	Gui$$anon$14.tasty
+[debug] 	Command$Unknown$.tasty
+[debug] 	Gui$$anon$25.tasty
+[debug] 	Command$AiProgress$.tasty
+[debug] 	StdConsoleIO$.tasty
+[debug] 	Gui$$anon$42.tasty
+[debug] 	Gui$$anon$34.tasty
+[debug] 	CommandParser$.tasty
+[debug] 	Command$AiProgress.tasty
+[debug] 	Gui$$anon$7.tasty
+[debug] 	Gui$$anon$33.tasty
+[debug] 	Tui.tasty
+[debug] 	AppState.tasty
+[debug] 	Gui$$anon$6.tasty
+[debug] 	Command$LoadPgn.tasty
+[debug] 	Gui$$anon$50.tasty
+[debug] 	Gui$$anon$48.tasty
+[debug] 	Gui$$anon$1.tasty
+[debug] 	Gui$$anon$11.tasty
+[debug] 	Gui$$anon$43.tasty
+[debug] 	Command$StartGame$.tasty
+[debug] 	Gui$$anon$38.tasty
+[debug] 	Command$SwitchParser.tasty
+[debug] 	Gui$$anon$30.tasty
+[debug] 	CommandParser.tasty
+[debug] 	Command$ApplyMove$.tasty
+[debug] 	Gui$$anon$21.tasty
+[debug] 	Gui$$anon$46.tasty
+[debug] 	Gui$$anon$20.tasty
+[debug] 	Command$AiTrain$.tasty
+[debug] 	Gui$$anon$35.tasty
+[debug] 	Command$JumpToHistory$.tasty
+[debug] 	Gui$$anon$24.tasty
+[debug] 	Gui$$anon$17.tasty
+[debug] 	Command$TimeExpired.tasty
+[debug] 	Gui$$anon$16.tasty
+[debug] 	Gui$$anon$12.tasty
+[debug] 	TrainMain.tasty
+[debug] 	Gui$$anon$27.tasty
+[debug] 	AppState$.tasty
+[debug] 	Gui$$anon$2.tasty
+[debug] 	Gui$$anon$59.tasty
+[debug] 	Main.tasty
+[debug] 	TrainMain$.tasty
+[debug] 	Gui$$anon$56.tasty
+[debug] 	Gui$$anon$40.tasty
+[debug] 	Command$ToggleAi$.tasty
+[debug] 	Command$LoadPgn$.tasty
+[debug] 	Gui$$anon$29.tasty
+[debug] 	Gui$$anon$9.tasty
+[debug] 	Gui$$anon$60.tasty
+[debug] 	Command$JumpToHistory.tasty
+[debug] 	Gui$$anon$32.tasty
+[debug] 	Gui$$anon$63.tasty
+[debug] 	Command$SwitchParser$.tasty
+[debug] 	Command$LoadFen$.tasty
+[debug] 	Gui$$anon$39.tasty
+[debug] 	Command$$anon$1.tasty
+[debug] 	Gui$$anon$47.tasty
+[debug] 	Gui$$anon$61.tasty
+[debug] 	GameController.tasty
+[debug] 	Gui$$anon$58.tasty
+[debug] 	Gui$$anon$36.tasty
+[debug] 	Gui$$anon$18.tasty
+[debug] 	Gui$$anon$28.tasty
+[debug] 	Gui$$anon$53.tasty
+[debug] 	Gui$$anon$52.tasty
+[debug] 	Gui$$anon$10.tasty
+[debug] 	Gui$$anon$55.tasty
+[debug] 	Gui$$anon$44.tasty
+[debug] 	Gui$$anon$54.tasty
+[debug] 	Gui$$anon$8.tasty
+[debug] 	Command$Unknown.tasty
+[debug] 	Gui$$anon$57.tasty
+[debug] 	Command.tasty
+[debug] 	ConsoleIO.tasty
+[debug] 	GameController$.tasty
+[debug] 	Gui$$anon$45.tasty
+[debug] 	Gui$$anon$31.tasty
+[debug] 	Gui$.tasty
+[debug] 	Command$StartGame.tasty
+[debug] 	Command$ToggleAi.tasty
+[debug] 	Gui$$anon$22.tasty
+[debug] 	Gui$$anon$15.tasty
+[debug] 	Command$SelectSquare.tasty
+[debug] 	Command$AiTrain.tasty
+[debug] 	Gui$$anon$37.tasty
+[debug] 	Command$.tasty
+[debug] 	Gui$$anon$19.tasty
+[debug] 	Gui$$anon$13.tasty
+[debug] 	Gui$$anon$4.tasty
+[debug] 	Gui$$anon$62.tasty
+[debug] We backup class files:
+[debug] 	Gui$$anon$3.class
+[debug] 	Gui.class
+[debug] 	Gui$$anon$49.class
+[debug] 	Gui$$anon$64.class
+[debug] 	Gui$$anon$51.class
+[debug] 	Gui$$anon$41.class
+[debug] 	Gui$$anon$5.class
+[debug] 	Gui$$anon$26.class
+[debug] 	Gui$$anon$23.class
+[debug] 	Gui$$anon$14.class
+[debug] 	Gui$$anon$25.class
+[debug] 	Gui$$anon$42.class
+[debug] 	Gui$$anon$34.class
+[debug] 	Gui$$anon$7.class
+[debug] 	Gui$$anon$33.class
+[debug] 	Gui$$anon$6.class
+[debug] 	Gui$$anon$50.class
+[debug] 	Gui$$anon$48.class
+[debug] 	Gui$$anon$1.class
+[debug] 	Gui$$anon$11.class
+[debug] 	Gui$$anon$43.class
+[debug] 	Gui$$anon$38.class
+[debug] 	Gui$$anon$30.class
+[debug] 	Gui$$anon$21.class
+[debug] 	Gui$$anon$46.class
+[debug] 	Gui$$anon$20.class
+[debug] 	Gui$$anon$35.class
+[debug] 	Gui$$anon$24.class
+[debug] 	Gui$$anon$17.class
+[debug] 	Gui$$anon$16.class
+[debug] 	Gui$$anon$12.class
+[debug] 	TrainMain.class
+[debug] 	Gui$$anon$27.class
+[debug] 	Gui$$anon$2.class
+[debug] 	Gui$$anon$59.class
+[debug] 	TrainMain$.class
+[debug] 	Gui$$anon$56.class
+[debug] 	Gui$$anon$40.class
+[debug] 	Gui$$anon$29.class
+[debug] 	Gui$$anon$9.class
+[debug] 	Gui$$anon$60.class
+[debug] 	Gui$$anon$32.class
+[debug] 	Gui$$anon$63.class
+[debug] 	Gui$$anon$39.class
+[debug] 	Gui$$anon$47.class
+[debug] 	Gui$$anon$61.class
+[debug] 	Gui$$anon$58.class
+[debug] 	Gui$$anon$36.class
+[debug] 	Gui$$anon$18.class
+[debug] 	Gui$$anon$28.class
+[debug] 	Gui$$anon$53.class
+[debug] 	Gui$$anon$52.class
+[debug] 	Gui$$anon$10.class
+[debug] 	Gui$$anon$55.class
+[debug] 	Gui$$anon$44.class
+[debug] 	Gui$$anon$54.class
+[debug] 	Gui$$anon$8.class
+[debug] 	Gui$$anon$57.class
+[debug] 	Gui$$anon$45.class
+[debug] 	Gui$$anon$31.class
+[debug] 	Gui$.class
+[debug] 	Gui$$anon$22.class
+[debug] 	Gui$$anon$15.class
+[debug] 	Gui$$anon$37.class
+[debug] 	Gui$$anon$19.class
+[debug] 	Gui$$anon$13.class
+[debug] 	Gui$$anon$4.class
+[debug] 	Gui$$anon$62.class
+[debug] 	Gui$$anon$3.tasty
+[debug] 	Gui.tasty
+[debug] 	Gui$$anon$49.tasty
+[debug] 	Gui$$anon$64.tasty
+[debug] 	Gui$$anon$51.tasty
+[debug] 	Gui$$anon$41.tasty
+[debug] 	Gui$$anon$5.tasty
+[debug] 	Gui$$anon$26.tasty
+[debug] 	Gui$$anon$23.tasty
+[debug] 	Gui$$anon$14.tasty
+[debug] 	Gui$$anon$25.tasty
+[debug] 	Gui$$anon$42.tasty
+[debug] 	Gui$$anon$34.tasty
+[debug] 	Gui$$anon$7.tasty
+[debug] 	Gui$$anon$33.tasty
+[debug] 	Gui$$anon$6.tasty
+[debug] 	Gui$$anon$50.tasty
+[debug] 	Gui$$anon$48.tasty
+[debug] 	Gui$$anon$1.tasty
+[debug] 	Gui$$anon$11.tasty
+[debug] 	Gui$$anon$43.tasty
+[debug] 	Gui$$anon$38.tasty
+[debug] 	Gui$$anon$30.tasty
+[debug] 	Gui$$anon$21.tasty
+[debug] 	Gui$$anon$46.tasty
+[debug] 	Gui$$anon$20.tasty
+[debug] 	Gui$$anon$35.tasty
+[debug] 	Gui$$anon$24.tasty
+[debug] 	Gui$$anon$17.tasty
+[debug] 	Gui$$anon$16.tasty
+[debug] 	Gui$$anon$12.tasty
+[debug] 	TrainMain.tasty
+[debug] 	Gui$$anon$27.tasty
+[debug] 	Gui$$anon$2.tasty
+[debug] 	Gui$$anon$59.tasty
+[debug] 	TrainMain$.tasty
+[debug] 	Gui$$anon$56.tasty
+[debug] 	Gui$$anon$40.tasty
+[debug] 	Gui$$anon$29.tasty
+[debug] 	Gui$$anon$9.tasty
+[debug] 	Gui$$anon$60.tasty
+[debug] 	Gui$$anon$32.tasty
+[debug] 	Gui$$anon$63.tasty
+[debug] 	Gui$$anon$39.tasty
+[debug] 	Gui$$anon$47.tasty
+[debug] 	Gui$$anon$61.tasty
+[debug] 	Gui$$anon$58.tasty
+[debug] 	Gui$$anon$36.tasty
+[debug] 	Gui$$anon$18.tasty
+[debug] 	Gui$$anon$28.tasty
+[debug] 	Gui$$anon$53.tasty
+[debug] 	Gui$$anon$52.tasty
+[debug] 	Gui$$anon$10.tasty
+[debug] 	Gui$$anon$55.tasty
+[debug] 	Gui$$anon$44.tasty
+[debug] 	Gui$$anon$54.tasty
+[debug] 	Gui$$anon$8.tasty
+[debug] 	Gui$$anon$57.tasty
+[debug] 	Gui$$anon$45.tasty
+[debug] 	Gui$$anon$31.tasty
+[debug] 	Gui$.tasty
+[debug] 	Gui$$anon$22.tasty
+[debug] 	Gui$$anon$15.tasty
+[debug] 	Gui$$anon$37.tasty
+[debug] 	Gui$$anon$19.tasty
+[debug] 	Gui$$anon$13.tasty
+[debug] 	Gui$$anon$4.tasty
+[debug] 	Gui$$anon$62.tasty
+[debug] Registering generated classes:
+[debug] 	Gui$$anon$3.class
+[debug] 	Gui.class
+[debug] 	Gui$$anon$49.class
+[debug] 	Gui$$anon$64.class
+[debug] 	Command$ApplyMove.class
+[debug] 	Command$LoadFen.class
+[debug] 	Gui$$anon$51.class
+[debug] 	Command$TimeExpired$.class
+[debug] 	Gui$$anon$41.class
+[debug] 	Gui$$anon$5.class
+[debug] 	Tui$.class
+[debug] 	StdConsoleIO.class
+[debug] 	Gui$$anon$26.class
+[debug] 	Command$SelectSquare$.class
+[debug] 	Gui$$anon$23.class
+[debug] 	Main$.class
+[debug] 	Gui$$anon$14.class
+[debug] 	Command$Unknown$.class
+[debug] 	Gui$$anon$25.class
+[debug] 	Command$AiProgress$.class
+[debug] 	StdConsoleIO$.class
+[debug] 	Gui$$anon$42.class
+[debug] 	Gui$$anon$34.class
+[debug] 	CommandParser$.class
+[debug] 	Command$AiProgress.class
+[debug] 	Gui$$anon$7.class
+[debug] 	Gui$$anon$33.class
+[debug] 	Tui.class
+[debug] 	AppState.class
+[debug] 	Gui$$anon$6.class
+[debug] 	Command$LoadPgn.class
+[debug] 	Gui$$anon$50.class
+[debug] 	Gui$$anon$48.class
+[debug] 	Gui$$anon$1.class
+[debug] 	Gui$$anon$11.class
+[debug] 	Gui$$anon$43.class
+[debug] 	Command$StartGame$.class
+[debug] 	Gui$$anon$38.class
+[debug] 	Command$SwitchParser.class
+[debug] 	Gui$$anon$30.class
+[debug] 	CommandParser.class
+[debug] 	Command$ApplyMove$.class
+[debug] 	Gui$$anon$21.class
+[debug] 	Gui$$anon$46.class
+[debug] 	Gui$$anon$20.class
+[debug] 	Command$AiTrain$.class
+[debug] 	Gui$$anon$35.class
+[debug] 	Command$JumpToHistory$.class
+[debug] 	Gui$$anon$24.class
+[debug] 	Gui$$anon$17.class
+[debug] 	Command$TimeExpired.class
+[debug] 	Gui$$anon$16.class
+[debug] 	Gui$$anon$12.class
+[debug] 	TrainMain.class
+[debug] 	Gui$$anon$27.class
+[debug] 	AppState$.class
+[debug] 	Gui$$anon$2.class
+[debug] 	Gui$$anon$59.class
+[debug] 	Main.class
+[debug] 	TrainMain$.class
+[debug] 	Gui$$anon$56.class
+[debug] 	Gui$$anon$40.class
+[debug] 	Command$ToggleAi$.class
+[debug] 	Command$LoadPgn$.class
+[debug] 	Gui$$anon$29.class
+[debug] 	Gui$$anon$9.class
+[debug] 	Gui$$anon$60.class
+[debug] 	Command$JumpToHistory.class
+[debug] 	Gui$$anon$32.class
+[debug] 	Gui$$anon$63.class
+[debug] 	Command$SwitchParser$.class
+[debug] 	Command$LoadFen$.class
+[debug] 	Gui$$anon$39.class
+[debug] 	Command$$anon$1.class
+[debug] 	Gui$$anon$47.class
+[debug] 	Gui$$anon$61.class
+[debug] 	GameController.class
+[debug] 	Gui$$anon$58.class
+[debug] 	Gui$$anon$36.class
+[debug] 	Gui$$anon$18.class
+[debug] 	Gui$$anon$28.class
+[debug] 	Gui$$anon$53.class
+[debug] 	Gui$$anon$52.class
+[debug] 	Gui$$anon$10.class
+[debug] 	Gui$$anon$55.class
+[debug] 	Gui$$anon$44.class
+[debug] 	Gui$$anon$54.class
+[debug] 	Gui$$anon$8.class
+[debug] 	Command$Unknown.class
+[debug] 	Gui$$anon$57.class
+[debug] 	Command.class
+[debug] 	ConsoleIO.class
+[debug] 	GameController$.class
+[debug] 	Gui$$anon$45.class
+[debug] 	Gui$$anon$31.class
+[debug] 	Gui$.class
+[debug] 	Command$StartGame.class
+[debug] 	Command$ToggleAi.class
+[debug] 	Gui$$anon$22.class
+[debug] 	Gui$$anon$15.class
+[debug] 	Command$SelectSquare.class
+[debug] 	Command$AiTrain.class
+[debug] 	Gui$$anon$37.class
+[debug] 	Command$.class
+[debug] 	Gui$$anon$19.class
+[debug] 	Gui$$anon$13.class
+[debug] 	Gui$$anon$4.class
+[debug] 	Gui$$anon$62.class
+[debug] 	Gui$$anon$3.tasty
+[debug] 	Gui.tasty
+[debug] 	Gui$$anon$49.tasty
+[debug] 	Gui$$anon$64.tasty
+[debug] 	Command$ApplyMove.tasty
+[debug] 	Command$LoadFen.tasty
+[debug] 	Gui$$anon$51.tasty
+[debug] 	Command$TimeExpired$.tasty
+[debug] 	Gui$$anon$41.tasty
+[debug] 	Gui$$anon$5.tasty
+[debug] 	Tui$.tasty
+[debug] 	StdConsoleIO.tasty
+[debug] 	Gui$$anon$26.tasty
+[debug] 	Command$SelectSquare$.tasty
+[debug] 	Gui$$anon$23.tasty
+[debug] 	Main$.tasty
+[debug] 	Gui$$anon$14.tasty
+[debug] 	Command$Unknown$.tasty
+[debug] 	Gui$$anon$25.tasty
+[debug] 	Command$AiProgress$.tasty
+[debug] 	StdConsoleIO$.tasty
+[debug] 	Gui$$anon$42.tasty
+[debug] 	Gui$$anon$34.tasty
+[debug] 	CommandParser$.tasty
+[debug] 	Command$AiProgress.tasty
+[debug] 	Gui$$anon$7.tasty
+[debug] 	Gui$$anon$33.tasty
+[debug] 	Tui.tasty
+[debug] 	AppState.tasty
+[debug] 	Gui$$anon$6.tasty
+[debug] 	Command$LoadPgn.tasty
+[debug] 	Gui$$anon$50.tasty
+[debug] 	Gui$$anon$48.tasty
+[debug] 	Gui$$anon$1.tasty
+[debug] 	Gui$$anon$11.tasty
+[debug] 	Gui$$anon$43.tasty
+[debug] 	Command$StartGame$.tasty
+[debug] 	Gui$$anon$38.tasty
+[debug] 	Command$SwitchParser.tasty
+[debug] 	Gui$$anon$30.tasty
+[debug] 	CommandParser.tasty
+[debug] 	Command$ApplyMove$.tasty
+[debug] 	Gui$$anon$21.tasty
+[debug] 	Gui$$anon$46.tasty
+[debug] 	Gui$$anon$20.tasty
+[debug] 	Command$AiTrain$.tasty
+[debug] 	Gui$$anon$35.tasty
+[debug] 	Command$JumpToHistory$.tasty
+[debug] 	Gui$$anon$24.tasty
+[debug] 	Gui$$anon$17.tasty
+[debug] 	Command$TimeExpired.tasty
+[debug] 	Gui$$anon$16.tasty
+[debug] 	Gui$$anon$12.tasty
+[debug] 	TrainMain.tasty
+[debug] 	Gui$$anon$27.tasty
+[debug] 	AppState$.tasty
+[debug] 	Gui$$anon$2.tasty
+[debug] 	Gui$$anon$59.tasty
+[debug] 	Main.tasty
+[debug] 	TrainMain$.tasty
+[debug] 	Gui$$anon$56.tasty
+[debug] 	Gui$$anon$40.tasty
+[debug] 	Command$ToggleAi$.tasty
+[debug] 	Command$LoadPgn$.tasty
+[debug] 	Gui$$anon$29.tasty
+[debug] 	Gui$$anon$9.tasty
+[debug] 	Gui$$anon$60.tasty
+[debug] 	Command$JumpToHistory.tasty
+[debug] 	Gui$$anon$32.tasty
+[debug] 	Gui$$anon$63.tasty
+[debug] 	Command$SwitchParser$.tasty
+[debug] 	Command$LoadFen$.tasty
+[debug] 	Gui$$anon$39.tasty
+[debug] 	Command$$anon$1.tasty
+[debug] 	Gui$$anon$47.tasty
+[debug] 	Gui$$anon$61.tasty
+[debug] 	GameController.tasty
+[debug] 	Gui$$anon$58.tasty
+[debug] 	Gui$$anon$36.tasty
+[debug] 	Gui$$anon$18.tasty
+[debug] 	Gui$$anon$28.tasty
+[debug] 	Gui$$anon$53.tasty
+[debug] 	Gui$$anon$52.tasty
+[debug] 	Gui$$anon$10.tasty
+[debug] 	Gui$$anon$55.tasty
+[debug] 	Gui$$anon$44.tasty
+[debug] 	Gui$$anon$54.tasty
+[debug] 	Gui$$anon$8.tasty
+[debug] 	Command$Unknown.tasty
+[debug] 	Gui$$anon$57.tasty
+[debug] 	Command.tasty
+[debug] 	ConsoleIO.tasty
+[debug] 	GameController$.tasty
+[debug] 	Gui$$anon$45.tasty
+[debug] 	Gui$$anon$31.tasty
+[debug] 	Gui$.tasty
+[debug] 	Command$StartGame.tasty
+[debug] 	Command$ToggleAi.tasty
+[debug] 	Gui$$anon$22.tasty
+[debug] 	Gui$$anon$15.tasty
+[debug] 	Command$SelectSquare.tasty
+[debug] 	Command$AiTrain.tasty
+[debug] 	Gui$$anon$37.tasty
+[debug] 	Command$.tasty
+[debug] 	Gui$$anon$19.tasty
+[debug] 	Gui$$anon$13.tasty
+[debug] 	Gui$$anon$4.tasty
+[debug] 	Gui$$anon$62.tasty
+[debug] Removing the temporary directory used for backing up class files: D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak

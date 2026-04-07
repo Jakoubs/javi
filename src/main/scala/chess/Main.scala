@@ -12,7 +12,6 @@ object Main:
     Gui.main(args)
 
   def setup(args: Array[String]): Unit =
-    println("Starting Chess with ScalaFX GUI and TUI...")
     
     val tui = new Tui()
     GameController.addObserver(tui)
