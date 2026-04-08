@@ -4,7 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
-import chess.view.{CommandParser, MoveParser}
+import chess.view.{CommandParser}
+import chess.util.parser.MoveParser
 
 class 
 CoverageImprovementTest extends AnyFunSuite with Matchers:
@@ -183,12 +184,12 @@ CoverageImprovementTest extends AnyFunSuite with Matchers:
   }
 
   test("CommandParser accepts remaining aliases and promotion pieces") {
-    CommandParser.parse("?") shouldBe Command.Help
-    CommandParser.parse("q") shouldBe Command.Quit
-    CommandParser.parse("A7A8R") shouldBe Command.ApplyMove(Move(pos("a7"), pos("a8"), Some(PieceType.Rook)))
-    CommandParser.parse("a7a8b") shouldBe Command.ApplyMove(Move(pos("a7"), pos("a8"), Some(PieceType.Bishop)))
-    CommandParser.parse("a7a8n") shouldBe Command.ApplyMove(Move(pos("a7"), pos("a8"), Some(PieceType.Knight)))
-    CommandParser.parse("   ") shouldBe a[Command.Unknown]
+    CommandParser.parse("?", AppState.initial) shouldBe Command.Help
+    CommandParser.parse("q", AppState.initial) shouldBe Command.Quit
+    CommandParser.parse("A7A8R", AppState.initial) shouldBe Command.ApplyMove(Move(pos("a7"), pos("a8"), Some(PieceType.Rook)))
+    CommandParser.parse("a7a8b", AppState.initial) shouldBe Command.ApplyMove(Move(pos("a7"), pos("a8"), Some(PieceType.Bishop)))
+    CommandParser.parse("a7a8n", AppState.initial) shouldBe Command.ApplyMove(Move(pos("a7"), pos("a8"), Some(PieceType.Knight)))
+    CommandParser.parse("   ", AppState.initial) shouldBe a[Command.Unknown]
   }
 
   test("GameController exposes draw-offer and resign messaging for black to move") {

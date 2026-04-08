@@ -304,7 +304,7 @@ object GameController extends Observable[AppState]:
                 chess.util.OdysseyManager.saveProgress(newCompleted)
                 nextApp.copy(
                   odyssey = Some(ody.copy(completedIds = newCompleted, currentChallenge = None, currentMoveCount = 0)),
-                  message = Some(TerminalView.success(s"Challenge Completed: ${challenge.name}! Level unlocked."))
+                  message = Some(TerminalView.success(s"Challenge Completed: ${challenge.name}! Level unlocked. Opening Odyssey Map..."))
                 )
               else if challenge.goal.isFailed(newGame, Some(move), newCount) then
                 GameState.fromFen(challenge.initialFen) match {
@@ -474,7 +474,10 @@ object GameController extends Observable[AppState]:
 
   private def handleEnterOdyssey(app: AppState): AppState =
     val odyssey = app.odyssey.getOrElse(chess.util.OdysseyManager.initializeState())
-    app.copy(odyssey = Some(odyssey), message = Some("Entering Odyssey mode. Type 'map' to see challenges."))
+    app.copy(
+      odyssey = Some(odyssey.copy(currentChallenge = None)), 
+      message = Some("Opening Odyssey Map...")
+    )
 
   private def handleExitOdyssey(app: AppState): AppState =
     app.copy(odyssey = None, message = Some("Exiting Odyssey mode."))

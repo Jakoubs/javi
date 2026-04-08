@@ -4,7 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
-import chess.view.{TerminalView, CommandParser, MoveParser}
+import chess.view.{TerminalView, CommandParser}
+import chess.util.parser.MoveParser
 
 class IntegrationTest extends AnyFunSuite with Matchers:
 
@@ -44,22 +45,22 @@ class IntegrationTest extends AnyFunSuite with Matchers:
   }
 
   test("Command parser should handle all commands") {
-    CommandParser.parse("e2e4") shouldBe a[Command.ApplyMove]
-    CommandParser.parse("e7e5") shouldBe a[Command.ApplyMove]
-    CommandParser.parse("e7e8q") shouldBe a[Command.ApplyMove]
+    CommandParser.parse("e2e4", AppState.initial) shouldBe a[Command.ApplyMove]
+    CommandParser.parse("e7e5", AppState.initial) shouldBe a[Command.ApplyMove]
+    CommandParser.parse("e7e8q", AppState.initial) shouldBe a[Command.ApplyMove]
 
-    CommandParser.parse("flip") shouldBe Command.Flip
-    CommandParser.parse("undo") shouldBe Command.Undo
-    CommandParser.parse("resign") shouldBe Command.Resign
-    CommandParser.parse("draw") shouldBe Command.OfferDraw
-    CommandParser.parse("new") shouldBe Command.NewGame
-    CommandParser.parse("help") shouldBe Command.Help
-    CommandParser.parse("quit") shouldBe Command.Quit
+    CommandParser.parse("flip", AppState.initial) shouldBe Command.Flip
+    CommandParser.parse("undo", AppState.initial) shouldBe Command.Undo
+    CommandParser.parse("resign", AppState.initial) shouldBe Command.Resign
+    CommandParser.parse("draw", AppState.initial) shouldBe Command.OfferDraw
+    CommandParser.parse("new", AppState.initial) shouldBe Command.NewGame
+    CommandParser.parse("help", AppState.initial) shouldBe Command.Help
+    CommandParser.parse("quit", AppState.initial) shouldBe Command.Quit
 
-    CommandParser.parse("moves e2") shouldBe a[Command.SelectSquare]
+    CommandParser.parse("moves e2", AppState.initial) shouldBe a[Command.SelectSquare]
 
-    CommandParser.parse("invalid") shouldBe a[Command.Unknown]
-    CommandParser.parse("xyz") shouldBe a[Command.Unknown]
+    CommandParser.parse("invalid", AppState.initial) shouldBe a[Command.Unknown]
+    CommandParser.parse("xyz", AppState.initial) shouldBe a[Command.Unknown]
   }
 
   test("TerminalView should render without errors") {

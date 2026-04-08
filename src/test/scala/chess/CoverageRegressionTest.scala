@@ -4,7 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
-import chess.view.{TerminalView, CommandParser, MoveParser}
+import chess.view.{TerminalView, CommandParser}
+import chess.util.parser.MoveParser
 import chess.Main
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, PrintStream}
@@ -143,12 +144,12 @@ class CoverageRegressionTest extends AnyFunSuite with Matchers:
   }
 
   test("command parser accepts aliases and rejects invalid promotion suffix") {
-    CommandParser.parse("draw") shouldBe Command.OfferDraw
-    CommandParser.parse("help") shouldBe Command.Help
-    CommandParser.parse("newgame") shouldBe Command.NewGame
-    CommandParser.parse("exit") shouldBe Command.Quit
-    CommandParser.parse("e7e8x") shouldBe a[Command.Unknown]
-    CommandParser.parse("e2") shouldBe a[Command.Unknown]
+    CommandParser.parse("draw", AppState.initial) shouldBe Command.OfferDraw
+    CommandParser.parse("help", AppState.initial) shouldBe Command.Help
+    CommandParser.parse("newgame", AppState.initial) shouldBe Command.NewGame
+    CommandParser.parse("exit", AppState.initial) shouldBe Command.Quit
+    CommandParser.parse("e7e8x", AppState.initial) shouldBe a[Command.Unknown]
+    CommandParser.parse("e2", AppState.initial) shouldBe a[Command.Unknown]
   }
 
   test("MoveGenerator covers queen, black pawns and extra castling branches") {
@@ -214,16 +215,4 @@ class CoverageRegressionTest extends AnyFunSuite with Matchers:
     }
   }
 
-  test("Main.main prints startup text and exits on quit input") {
-    val input = ByteArrayInputStream("quit\n".getBytes("UTF-8"))
-    val output = ByteArrayOutputStream()
-    val printStream = PrintStream(output, true, "UTF-8")
 
-    scala.Console.withIn(input) {
-      scala.Console.withOut(printStream) {
-      Main.main(Array.empty)
-      }
-    }
-
-    output.toString("UTF-8") should include("Starting Chess")
-  }

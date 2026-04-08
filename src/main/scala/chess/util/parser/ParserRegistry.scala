@@ -32,7 +32,8 @@ object CoordinateMoveParser extends MoveParser:
       case Some('r') => Some(PieceType.Rook)
       case Some('b') => Some(PieceType.Bishop)
       case Some('n') => Some(PieceType.Knight)
-      case _         => None
+      case Some(c)   => throw new IllegalArgumentException(s"Invalid promotion character: $c")
+      case None      => None
 
     Move(from, to, promo)
   }

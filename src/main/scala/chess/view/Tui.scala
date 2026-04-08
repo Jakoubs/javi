@@ -59,7 +59,8 @@ object CommandParser:
       case "draw"               => Command.OfferDraw
       case "new" | "newgame"    => Command.NewGame
       case "help" | "?"         => Command.Help
-      case "quit" | "exit" | "q"=> Command.Quit
+      case "quit" | "q"         => Command.Quit
+      case "exit"               => if app.odyssey.isDefined then Command.ExitOdyssey else Command.Quit
       case "pgn"                => Command.ShowPgn
       case "fen"                => Command.ShowFen
       case "ai"                 => Command.AiMove
@@ -78,6 +79,11 @@ object CommandParser:
         nStr.toIntOption match
           case Some(n) if n > 0 => Command.AiTrain(n)
           case _                => Command.Unknown(s"Invalid training count: $nStr")
+      case s if s.startsWith("moves ") =>
+        val posStr = s.drop(6).trim
+        chess.model.Pos.fromAlgebraic(posStr) match
+          case Some(p) => Command.SelectSquare(Some(p))
+          case _       => Command.Unknown(s"Invalid square: $posStr")
       case s if s.startsWith("parser ") =>
         val parts = s.drop(7).trim.split("\\s+").filter(_.nonEmpty)
         if parts.length == 2 then 

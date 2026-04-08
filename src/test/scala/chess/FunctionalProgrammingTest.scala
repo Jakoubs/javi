@@ -45,8 +45,8 @@ class FunctionalProgrammingTest extends AnyFunSuite with Matchers with ScalaChec
     
     // Multiple parses of same input should give same result
     inputs.foreach { input =>
-      val result1 = CommandParser.parse(input)
-      val result2 = CommandParser.parse(input)
+      val result1 = CommandParser.parse(input, AppState.initial)
+      val result2 = CommandParser.parse(input, AppState.initial)
       result1 shouldBe result2
     }
   }

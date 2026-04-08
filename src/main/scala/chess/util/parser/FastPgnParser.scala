@@ -28,7 +28,7 @@ object FastPgnParser extends PgnParser:
   def result(using ctx: P[?]) = P(("1-0" | "0-1" | "1/2-1/2" | "*").!)
   
   def pgn(using ctx: P[?]): P[List[String]] = P(
-    ws ~ tags.? ~ (ws ~ (moveNum | comment | san | result)).rep ~ ws ~ End
+    ws ~ tags.? ~ (ws ~ (moveNum | comment | result | san)).rep ~ ws ~ End
   ).map { case (_, moves) =>
     moves.collect {
       case s: String if !s.contains(".") && !s.startsWith("{") && !s.contains("-") && s != "*" => s

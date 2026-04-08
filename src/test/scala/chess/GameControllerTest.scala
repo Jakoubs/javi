@@ -4,69 +4,70 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import chess.model.*
 import chess.controller.*
-import chess.view.{TerminalView, CommandParser, MoveParser}
+import chess.view.{TerminalView, CommandParser}
+import chess.util.parser.MoveParser
 import scala.collection.mutable.ArrayBuffer
 
 class CommandParserTest extends AnyFunSuite with Matchers:
 
   test("parses a simple move") {
-    CommandParser.parse("e2e4") shouldBe Command.ApplyMove(Move(Pos(4,1), Pos(4,3)))
+    CommandParser.parse("e2e4", AppState.initial) shouldBe Command.ApplyMove(Move(Pos(4,1), Pos(4,3)))
   }
 
   test("parses a move with promotion") {
-    CommandParser.parse("e7e8q") shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Queen)))
-    CommandParser.parse("e7e8r") shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Rook)))
-    CommandParser.parse("e7e8b") shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Bishop)))
-    CommandParser.parse("e7e8n") shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Knight)))
+    CommandParser.parse("e7e8q", AppState.initial) shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Queen)))
+    CommandParser.parse("e7e8r", AppState.initial) shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Rook)))
+    CommandParser.parse("e7e8b", AppState.initial) shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Bishop)))
+    CommandParser.parse("e7e8n", AppState.initial) shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Knight)))
   }
 
   test("parses 'moves e2'") {
-    CommandParser.parse("moves e2") shouldBe Command.SelectSquare(Some(Pos(4,1)))
+    CommandParser.parse("moves e2", AppState.initial) shouldBe Command.SelectSquare(Some(Pos(4,1)))
   }
 
   test("parses 'flip'") {
-    CommandParser.parse("flip") shouldBe Command.Flip
+    CommandParser.parse("flip", AppState.initial) shouldBe Command.Flip
   }
 
   test("parses 'undo'") {
-    CommandParser.parse("undo") shouldBe Command.Undo
+    CommandParser.parse("undo", AppState.initial) shouldBe Command.Undo
   }
 
   test("parses 'resign'") {
-    CommandParser.parse("resign") shouldBe Command.Resign
+    CommandParser.parse("resign", AppState.initial) shouldBe Command.Resign
   }
 
   test("parses 'new'") {
-    CommandParser.parse("new") shouldBe Command.NewGame
+    CommandParser.parse("new", AppState.initial) shouldBe Command.NewGame
   }
 
   test("parses 'quit'") {
-    CommandParser.parse("quit") shouldBe Command.Quit
+    CommandParser.parse("quit", AppState.initial) shouldBe Command.Quit
   }
 
   test("unknown input produces Unknown command") {
-    CommandParser.parse("banana") match
+    CommandParser.parse("banana", AppState.initial) match
       case Command.Unknown(_) => succeed
       case other              => fail(s"Expected Unknown, got $other")
   }
 
   test("parses 'draw'") {
-    CommandParser.parse("draw") shouldBe Command.OfferDraw
+    CommandParser.parse("draw", AppState.initial) shouldBe Command.OfferDraw
   }
 
   test("parses 'help'") {
-    CommandParser.parse("help") shouldBe Command.Help
-    CommandParser.parse("?") shouldBe Command.Help
+    CommandParser.parse("help", AppState.initial) shouldBe Command.Help
+    CommandParser.parse("?", AppState.initial) shouldBe Command.Help
   }
 
   test("invalid short string produces Unknown") {
-    CommandParser.parse("e2") match
+    CommandParser.parse("e2", AppState.initial) match
       case Command.Unknown(_) => succeed
       case other              => fail(s"Expected Unknown, got $other")
   }
 
   test("invalid characters in move string produces Unknown") {
-    CommandParser.parse("z9z9") match
+    CommandParser.parse("z9z9", AppState.initial) match
       case Command.Unknown(_) => succeed
       case other              => fail(s"Expected Unknown, got $other")
   }
@@ -74,13 +75,13 @@ class CommandParserTest extends AnyFunSuite with Matchers:
   test("invalid promotion char is ignored or produces Unknown") {
     // According to parseMove, if promoChar is defined but charToPromotion returns None, promo is None
     // However, length < 4 handled. If promo is empty and promoChar defined, it returns None -> Unknown
-    CommandParser.parse("e7e8z") match
+    CommandParser.parse("e7e8z", AppState.initial) match
       case Command.Unknown(_) => succeed
       case other              => fail(s"Expected Unknown, got $other")
   }
 
   test("invalid position in 'moves' produces Unknown") {
-    CommandParser.parse("moves z9") match
+    CommandParser.parse("moves z9", AppState.initial) match
       case Command.Unknown(_) => succeed
       case other              => fail(s"Expected Unknown, got $other")
   }
@@ -232,7 +233,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
   test("Checkmate message is displayed winning move") {
     // Setup Fool's mate for Black
     val moves = List("f2f3", "e7e5", "g2g4", "d8h4")
-    val app = moves.foldLeft(AppState.initial)((a, m) => GameController.handleCommand(a, CommandParser.parse(m)))
+    val app = moves.foldLeft(AppState.initial)((a, m) => GameController.handleCommand(a, CommandParser.parse(m, a)))
     app.status match
       case GameStatus.Checkmate(_) => succeed
       case _ => fail(s"Expected Checkmate, got ${app.status}")
@@ -242,7 +243,7 @@ class GameControllerTest extends AnyFunSuite with Matchers:
   test("Checkmate message is displayed when White wins") {
     // Scholar's mate
     val moves = List("e2e4", "e7e5", "f1c4", "b8c6", "d1h5", "g8f6", "h5f7")
-    val app = moves.foldLeft(AppState.initial)((a, m) => GameController.handleCommand(a, CommandParser.parse(m)))
+    val app = moves.foldLeft(AppState.initial)((a, m) => GameController.handleCommand(a, CommandParser.parse(m, a)))
     app.status match
       case GameStatus.Checkmate(Color.Black) => succeed
       case _ => fail(s"Expected Checkmate for Black, got ${app.status}")
@@ -272,13 +273,13 @@ class GameControllerTest extends AnyFunSuite with Matchers:
   }
 
   test("Move parser invalid from") {
-    CommandParser.parse("z9e4") match
+    CommandParser.parse("z9e4", AppState.initial) match
       case Command.Unknown(_) => succeed
       case _ => fail()
   }
 
   test("Move parser invalid to") {
-    CommandParser.parse("e2z9") match
+    CommandParser.parse("e2z9", AppState.initial) match
       case Command.Unknown(_) => succeed
       case _ => fail()
   }
@@ -325,4 +326,45 @@ class GameControllerTest extends AnyFunSuite with Matchers:
     val next = GameController.handleCommand(app, Command.Resign)
     next.status shouldBe GameStatus.Checkmate(Color.White)
     next.message.exists(_.contains("resigns. Black wins!")) shouldBe true
+  }
+
+  test("AiSuggest highlights best move") {
+    val app = AppState.initial
+    val next = GameController.handleCommand(app, Command.AiSuggest)
+    next.highlights should not be empty
+    next.message.exists(_.contains("AI suggests")) shouldBe true
+  }
+
+  test("SwitchParser updates active parser") {
+    val app = AppState.initial
+    val next = GameController.handleCommand(app, Command.SwitchParser("pgn", "regex"))
+    next.activePgnParser shouldBe "regex"
+    next.message.exists(_.contains("switched to regex")) shouldBe true
+    
+    val nextInvalid = GameController.handleCommand(app, Command.SwitchParser("pgn", "invalid"))
+    nextInvalid.message.exists(_.contains("Unknown PGN parser")) shouldBe true
+  }
+
+  test("Odyssey transitions") {
+    val app = AppState.initial
+    val next = GameController.handleCommand(app, Command.EnterOdyssey)
+    next.odyssey shouldBe defined
+    next.message.exists(_.contains("Map")) shouldBe true
+    
+    val back = GameController.handleCommand(next, Command.ExitOdyssey)
+    back.odyssey should be (None)
+    back.message.exists(_.contains("Exiting")) shouldBe true
+  }
+
+  test("StartChallenge loads challenge state") {
+    new java.io.File("odyssey_progress.json").delete() // Clear local state for test
+    val app = AppState.initial
+    // Level 1 is always unlocked
+    val next = GameController.handleCommand(app, Command.StartChallenge(1))
+    next.odyssey.flatMap(_.currentChallenge) shouldBe defined
+    next.message.exists(_.contains("Challenge:")) shouldBe true
+    
+    // Level 2 is locked
+    val locked = GameController.handleCommand(app, Command.StartChallenge(2))
+    locked.message.exists(_.contains("Level locked")) shouldBe true
   }

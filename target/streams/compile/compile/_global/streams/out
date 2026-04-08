@@ -1,6 +1,5 @@
-[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- [E030] Match case Unreachable Warning: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/Tui.scala:69:11 [0m[0m[0m
-[0m[[0m[33mwarn[0m] [0m[0m[33m69 |[0m      [33mcase[0m [31m"exit"[0m               => Command.ExitOdyssey[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- [E030] Match case Unreachable Warning: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/Tui.scala:70:11 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m70 |[0m      [33mcase[0m [31m"exit"[0m               => Command.ExitOdyssey[0m
 [0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m           ^^^^^^[0m[0m
 [0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m           Unreachable case[0m
-[0m[[0m[33mwarn[0m] [0m[0mone warning found[0m
 [0m[[0m[33mwarn[0m] [0m[0mone warning found[0m

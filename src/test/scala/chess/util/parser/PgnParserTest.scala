@@ -12,10 +12,8 @@ class PgnParserTest extends AnyFunSuite with Matchers:
   def testParser(name: String, parser: PgnParser): Unit =
     test(s"$name should parse a simple PGN") {
       val state = parser.parse(simplePgn).get
-      state.fullMoveNumber shouldBe 2 // After Nf3 Nc6, it's White's turn for move 3? 
-      // Wait, 1. e4 e5 (move 1 done), 2. Nf3 Nc6 (move 2 done). Active color white, move 3.
+      state.fullMoveNumber shouldBe 3 // After Nf3 Nc6, it's White's turn for move 3
       state.activeColor shouldBe Color.White
-      state.fullMoveNumber shouldBe 3
     }
 
     test(s"$name should handle comments and results") {

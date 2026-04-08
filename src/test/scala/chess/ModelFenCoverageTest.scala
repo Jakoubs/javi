@@ -128,11 +128,42 @@ class ModelFenCoverageTest extends AnyWordSpec with Matchers {
     }
 
     "handle black en-passant application to board" in {
-       // White just moved e2-e4. White pawn is on e4. Black pawn on d4 can capture e3.
-       val s = GameState.fromFen("8/8/8/8/3pP3/8/8/8 b - e3 0 1").toOption.get
-       val moves = MoveGenerator.legalMoves(s)
-       moves.contains(Move(Pos.fromAlgebraic("d4").get, Pos.fromAlgebraic("e3").get)) shouldBe true
-       moves.nonEmpty shouldBe true
+      // White just moved e2-e4. White pawn is on e4. Black pawn on d4 can capture e3.
+      val s = GameState.fromFen("8/8/8/8/3pP3/8/8/8 b - e3 0 1").toOption.get
+      val moves = MoveGenerator.legalMoves(s)
+      moves.contains(Move(Pos.fromAlgebraic("d4").get, Pos.fromAlgebraic("e3").get)) shouldBe true
+      moves.nonEmpty shouldBe true
+    }
+  }
+
+  "GameState helpers" should {
+    "correctly report captured pieces" in {
+      val state = GameState.initial
+      state.capturedPieces(Color.White) shouldBe empty
+      
+      // Remove a pawn and a knight from white
+      val board = Board.initial.remove(Pos(0, 1)).remove(Pos(1, 0))
+      val stateWithCaptures = state.copy(board = board)
+      
+      val captured = stateWithCaptures.capturedPieces(Color.White)
+      captured should contain (PieceType.Pawn)
+      captured should contain (PieceType.Knight)
+      captured.size shouldBe 2
+    }
+
+    "handle copy and activeColor transitions" in {
+      val s1 = GameState.initial
+      val s2 = s1.withActiveColor(Color.Black)
+      s2 shouldBe a[BlackToMove]
+      
+      val s3 = s2.withActiveColor(Color.White)
+      s3 shouldBe a[WhiteToMove]
+      
+      val s4 = s1.withActiveColor(Color.White)
+      s4 shouldBe s1
+      
+      val s5 = s2.withActiveColor(Color.Black)
+      s5 shouldBe s2
     }
   }
 }

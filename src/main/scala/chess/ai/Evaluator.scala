@@ -38,10 +38,13 @@ object Evaluator:
 
   // Thread-safe atomic add: loops until CAS succeeds
   private def atomicAdd(ref: AtomicReference[Double], delta: Double): Unit =
+    val rawRef = ref.asInstanceOf[AtomicReference[AnyRef]]
     var updated = false
     while !updated do
-      val current = ref.get()
-      updated = ref.compareAndSet(current, current + delta)
+      val currentObj = rawRef.get()
+      val currentVal = currentObj.asInstanceOf[java.lang.Double].doubleValue()
+      val nextObj = java.lang.Double.valueOf(currentVal + delta)
+      updated = rawRef.compareAndSet(currentObj, nextObj)
 
   /**
    * Evaluate the board from White's perspective.

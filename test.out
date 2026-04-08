@@ -1,0 +1,213 @@
+[info] welcome to sbt 1.12.6 (Red Hat, Inc. Java 25.0.2)
+[info] loading settings for project javi-build from plugins.sbt...
+[info] loading project definition from /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to chess-functional-improvements (in build file:/home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software%20Engineering/01_SoftwareArchitektur/firstTryClaude/javi/)
+[info] IntegrationTest:
+[info] - Game should start with correct initial state
+[info] - Initial FEN should parse back to the same game state
+[info] - Game status should be Playing initially
+[info] - App should handle basic move sequence
+[info] - Command parser should handle all commands
+[info] - TerminalView should render without errors
+[info] GameControllerTest:
+[info] - initial app state is Playing
+[info] - legal move updates board and switches active color
+[info] - illegal move produces an error message and does not change board
+[info] - undo after first move returns to initial board
+[info] - undo on empty history shows error
+[info] - SelectSquare highlights targets for a valid own piece
+[info] - SelectSquare on empty square shows error
+[info] - Flip toggles flipped flag
+[info] - NewGame resets the game state
+[info] - Quit sets running to false
+[info] - draw offer then accept produces Draw status
+[info] - Help command prints help text
+[info] - Unknown command prints error message
+[info] - Move on a finished game shows error
+[info] - Pawn promotion required gives error if not provided
+[info] - Check message is displayed when move results in check
+[info] - Checkmate message is displayed winning move
+[info] - Checkmate message is displayed when White wins
+[info] - Checkmate against White
+[info] - Stalemate message is properly triggered
+[info] - Move parser invalid from
+[info] - Move parser invalid to
+[info] - Stalemate message is displayed on stalemate
+[info] - Draw message is displayed when game is drawn
+[info] - SelectSquare for opponent's piece yields error
+[info] - SelectSquare with no legal moves yields error
+[info] - Undo successful message is displayed
+[info] - Resign updates status to Checkmate and shows message
+[info] - AiSuggest highlights best move
+[info] - SwitchParser updates active parser
+[info] - Odyssey transitions
+[info] - StartChallenge loads challenge state
+[info] CommandParserTest:
+[info] - parses a simple move
+[info] - parses a move with promotion
+[info] - parses 'moves e2'
+[info] - parses 'flip'
+[info] - parses 'undo'
+[info] - parses 'resign'
+[info] - parses 'new'
+[info] - parses 'quit'
+[info] - unknown input produces Unknown command
+[info] - parses 'draw'
+[info] - parses 'help'
+[info] - invalid short string produces Unknown
+[info] - invalid characters in move string produces Unknown
+[info] - invalid promotion char is ignored or produces Unknown
+[info] - invalid position in 'moves' produces Unknown
+[info] OdysseyTest:
+[info] Challenge Goals
+[info] - should correctly detect Mate in 1
+[info] - should fail if moves exceed N in MateGoal
+[info] - should correctly track Puzzle sequences
+[info] - should nextAvailableId should return first incomplete challenge
+[info] - should isUnlocked should handle more cases
+[info] ReachPositionGoal
+[info] - should be completed when FEN matches
+[info] - should ignore metadata in FEN comparison
+[info] OdysseyManager
+[info] - should load challenges from JSON
+[info] - should handle missing challenges file
+[info] - should save and load progress
+[info] ModelFenCoverageTest:
+[info] Board FEN parsing
+[info] - should handle invalid cases nicely to reach 100% coverage
+[info] GameState FEN parsing
+[info] - should fail defensively on corrupt FEN inputs
+[info] GameRules
+[info] - should update castling rights properly for corners and piece movements
+[info] - should compute status for insufficient material
+[info] MoveGenerator
+[info] - should handle isAttackedBy cases for various piece types
+[info] - should castling blocked by missing rooks despite castling rights being technically true
+[info] - should handle black en-passant application to board
+[info] GameState helpers
+[info] - should correctly report captured pieces
+[info] - should handle copy and activeColor transitions
+[info] CoverageRegressionTest:
+[info] - Board initial and empty serialize to expected FEN placement
+[info] - Board fromFenPlacement rejects malformed ranks and invalid pieces
+[info] - GameState fromFen rejects malformed metadata
+[info] - GameState withHistory appends the current state
+[info] - CastlingRights fromFen rejects duplicate rights
+[info] - Piece fromFenChar rejects non-letter characters
+[info] - GameRules detects fifty-move rule
+[info] - GameRules detects threefold repetition from history
+[info] - GameRules detects insufficient material
+[info] - GameRules detects king versus king as insufficient material
+[info] - applyMove updates castling rights for king move, rook move and rook capture
+[info] - applyMove updates promotion, en-passant target and clocks
+[info] - GameRules reports check without immediate draw override
+[info] - controller handles promotion-required, finished-game move, resign, help and unknown command
+[info] - show moves rejects opponent piece and pieces without legal targets
+[info] - command parser accepts aliases and rejects invalid promotion suffix
+[info] - MoveGenerator covers queen, black pawns and extra castling branches
+[info] - MoveGenerator attack detection covers missing king and blocked attacks
+[info] - TerminalView renders all footer states, highlights and flipped coordinates
+[info] - TerminalView helpers and StdConsoleIO are directly executable
+[info] PerformanceBenchmark:
+✅ Functional operations: 1000 iterations in 5.210369ms
+📊 Average per operation: 0.0026051845ms
+[info] - Functional GameController performance
+✅ TerminalView rendering: 100 renders in 24.75748ms
+📊 Average per render: 0.2475748ms
+[info] - TerminalView rendering performance
+✅ Command parsing: 6000 parses in 352.943302ms
+📊 Average per parse: 0.05882388366666667ms
+[info] - Command parsing performance
+✅ Move generation: 100 calculations in 3.479493ms
+📊 Average per calculation: 0.03479493ms
+[info] - Move generation performance
+[info] TypesTest:
+[info] - Color.opposite should return opposite color
+[info] - Piece.symbol should return correct Unicode symbols
+[info] - Piece.letter should return correct algebraic notation
+[info] - Pos.isValid should validate board positions
+[info] - Pos.fromAlgebraic should parse valid notation
+[info] - Pos.fromAlgebraic should reject invalid notation
+[info] - Pos.toAlgebraic should convert back to algebraic notation
+[info] - Pos addition should work correctly
+[info] - Move creation should work correctly
+[info] - Piece.fromFenChar should parse valid FEN pieces
+[info] - CastlingRights should round-trip FEN notation
+[info] - GameState should parse and serialize FEN
+[info] MoveGeneratorTest:
+[info] - white pawn on e2 can advance one or two squares
+[info] - white pawn cannot advance if blocked
+[info] - white pawn can capture diagonally
+[info] - pawn promotion generates 4 moves on the promotion square
+[info] - knight on e4 has 8 possible target squares in open position
+[info] - knight on a1 has only 2 target squares
+[info] - rook on e4 in open position has 14 moves
+[info] - bishop on e4 in open position has 13 moves
+[info] - king on e4 in open position has 8 moves
+[info] - king cannot move into check
+[info] - king in check must resolve the check
+[info] - isInCheck is true when queen attacks king
+[info] - en passant is legal when target square is set
+[info] - en passant capture removes the captured pawn
+[info] - castling is available when path is clear
+[info] - castling is blocked when a square is under attack
+[info] - FEN active color controls which side can move
+[info] - missing castling rights in FEN disable castling
+[info] PgnParserTest:
+[info] - RegexPgnParser should parse a simple PGN
+[info] - RegexPgnParser should handle comments and results
+[info] - CombinatorPgnParser should parse a simple PGN
+[info] - CombinatorPgnParser should handle comments and results
+[info] - FastPgnParser should parse a simple PGN
+[info] - FastPgnParser should handle comments and results
+[info] FunctionalProgrammingTest:
+[info] - GameController should use immutable state
+[info] - TerminalView should be pure functional
+[info] - CommandParser should be pure functional
+[info] - Piece operations should be functional
+[info] - Position operations should be functional
+[info] - Game operations should be functional
+[info] - Functional composition should work
+[info] CoverageImprovementTest:
+[info] - Board helpers and initial setup expose expected pieces
+[info] - Board put remove and movePiece cover replacement and missing-source cases
+[info] - Board fromFenPlacement parses valid mixed ranks
+[info] - Board fromFenPlacement parses fully populated and sparse rows
+[info] - Board toFenPlacement compresses leading middle and trailing empty squares
+[info] - GameState initial and parsing cover valid metadata branches
+[info] - GameState fromFen accepts black en-passant targets and preserves serialization
+[info] - GameState fromFen handles multiple valid metadata combinations
+[info] - CastlingRights helpers toggle individual flags
+[info] - CastlingRights toFen covers each individual combination style
+[info] - GameRules computeStatus covers check
+[info] - GameRules applyMove handles castling and en-passant capture state updates
+[info] - GameRules applyMove updates black-side castling rights and corner captures
+[info] - CommandParser accepts remaining aliases and promotion pieces
+[info] - GameController exposes draw-offer and resign messaging for black to move
+[info] - GameController handleMove emits a check message
+[info] - MoveGenerator covers direct attacks and pinned-piece filtering
+[info] - MoveGenerator covers blocked sliders, black promotion and black castling
+[info] - MoveGenerator rejects castling when transit squares are occupied or attacked
+[info] - MoveGenerator rejects castling while in check and tolerates positions without own king
+[info] AiCoverageTest:
+[info] Evaluator
+[info] - should evaluate initial position as neutral
+[info] - should evaluate White advantage after e2e4
+[info] - should save and load weights
+[info] - should handle various opening heuristics
+[info] - should handle updateWeights for all piece types
+[info] - should handle malformed weights file gracefully
+[info] AiEngine
+[info] - should find a move in initial position
+[info] - should handle positions with no legal moves
+[info] PassiveTrainer
+[info] - should update weights after a game
+[info] - should handle draw status by doing nothing
+[info] Run completed in 2 seconds, 407 milliseconds.
+[info] Total number of tests run: 169
+[info] Suites: completed 13, aborted 0
+[info] Tests: succeeded 169, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 4 s, completed 07.04.2026, 17:32:23
+Finished with status 0

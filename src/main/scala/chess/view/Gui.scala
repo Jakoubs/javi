@@ -11,6 +11,9 @@ import scalafx.geometry.{Pos, Insets}
 import scalafx.Includes.*
 import scalafx.application.Platform
 import scalafx.animation.AnimationTimer
+import scalafx.scene.shape.{Rectangle, Circle, Line}
+import scalafx.scene.effect.DropShadow
+import scalafx.stage.{Stage, StageStyle, Modality}
 
 import chess.controller.{AppState, Command, GameController}
 import chess.model.{Color => ChessColor, Pos => ChessPos, PieceType, capturedPieces, GameState, GameRules}
@@ -441,30 +444,174 @@ object Gui extends JFXApp3 with Observer[AppState]:
         ft.cycleCount = 1
         ft.play()
 
-      if ody.currentChallenge.isEmpty && state.message.exists(_.contains("Entering Odyssey")) then
+      if ody.currentChallenge.isEmpty && state.message.exists(_.contains("Opening Odyssey Map")) then
         showOdysseyMapDialog(ody)
     }
 
   private def showOdysseyMapDialog(state: chess.model.OdysseyState): Unit =
-    val items = state.challenges.sortBy(_.id).map { c =>
-      val statusText = 
-        if state.completedIds.contains(c.id) then "[Done]"
-        else if state.isUnlocked(c.id) then "[Next]"
-        else "[Locked]"
-      s"Level ${c.id}: ${c.name} $statusText"
+    val mapStage = new Stage()
+    mapStage.title = "Odyssey Map"
+    mapStage.initModality(Modality.ApplicationModal)
+    mapStage.resizable = false
+
+    val mapContainer = new StackPane {
+      style = "-fx-background-color: #1e272e;"
+      padding = Insets(40)
     }
 
-    val dialog = new ChoiceDialog(defaultChoice = items.headOption.getOrElse(""), choices = items) {
-      title = "Odyssey Map"
-      headerText = "Select a challenge to start:"
+    val contentBox = new VBox {
+      alignment = Pos.TopCenter
+      spacing = 0
+    }
+
+    val title = new Text("ODYSSEY MAP") {
+      font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 36)
+      fill = Color.web("#f1c40f")
+      margin = Insets(0, 0, 40, 0)
+    }
+    contentBox.children.add(title)
+
+    val pathPane = new scalafx.scene.layout.Pane {
+      prefWidth = 300
     }
     
-    dialog.showAndWait() match
-      case Some(choice) =>
-        val idStr = choice.split(":").headOption.map(_.replace("Level ", "")).getOrElse("")
-        idStr.toIntOption.foreach(id => GameController.eval(Command.StartChallenge(id)))
-      case None =>
+    val sortedChallenges = state.challenges.sortBy(_.id)
+    val nodeRadius = 30.0
+    val verticalSpacing = 100.0
+    val amplitude = 80.0 // How wide the winding path goes
+    
+    var prefHeightCounter = 0.0
+
+    // Draw lines first so they are behind nodes
+    for i <- 0 until sortedChallenges.size - 1 do
+      val c1 = sortedChallenges(i)
+      val c2 = sortedChallenges(i+1)
+      
+      val y1 = i * verticalSpacing + nodeRadius
+      val x1 = 150.0 + math.sin(i * math.Pi / 2.0) * amplitude
+      
+      val y2 = (i+1) * verticalSpacing + nodeRadius
+      val x2 = 150.0 + math.sin((i+1) * math.Pi / 2.0) * amplitude
+
+      val pathLine = new Line {
+        startX = x1
+        startY = y1
+        endX = x2
+        endY = y2
+        strokeWidth = 6.0
+        stroke = Color.web("#7f8fa6")
+        opacity = if state.isUnlocked(c2.id) then 1.0 else 0.3
+      }
+      pathPane.children.add(pathLine)
+
+    // Draw Nodes
+    for i <- sortedChallenges.indices do
+      val c = sortedChallenges(i)
+      val centerY = i * verticalSpacing + nodeRadius
+      val centerX = 150.0 + math.sin(i * math.Pi / 2.0) * amplitude
+      prefHeightCounter = centerY + nodeRadius
+
+      val isCompleted = state.completedIds.contains(c.id)
+      val isUnlocked = state.isUnlocked(c.id)
+
+      val nodeColor = 
+        if isCompleted then Color.web("#2ecc71") // Green
+        else if isUnlocked then Color.web("#f39c12") // Orange/Gold
+        else Color.web("#7f8fa6") // Gray
+
+      val dropShadow = new DropShadow {
+        color = nodeColor
+        radius = if isUnlocked && !isCompleted then 20.0 else 5.0
+        spread = if isUnlocked && !isCompleted then 0.5 else 0.0
+      }
+
+      val circle = new Circle {
+        radius = nodeRadius
+        fill = nodeColor
+        stroke = Color.White
+        strokeWidth = 3.0
+        effect = dropShadow
+      }
+
+      val iconText = new Text {
+        text = if isCompleted then "✓" else if isUnlocked then s"${c.id}" else "🔒"
+        font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 24)
+        fill = Color.White
+      }
+
+      val nodeStack = new StackPane {
+        layoutX = centerX - nodeRadius
+        layoutY = centerY - nodeRadius
+        children = Seq(circle, iconText)
+      }
+
+      // Add name label below node
+      val nameLabel = new Text {
+        text = c.name
+        font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 14)
+        fill = Color.White
+        layoutX = centerX - 60
+        layoutY = centerY + nodeRadius + 20
+        wrappingWidth = 120
+        textAlignment = scalafx.scene.text.TextAlignment.Center
+      }
+
+      if isUnlocked then
+        nodeStack.cursor = scalafx.scene.Cursor.Hand
+        nodeStack.onMouseClicked = _ => {
+          mapStage.close()
+          GameController.eval(Command.StartChallenge(c.id))
+        }
+        
+        // Hover effects
+        nodeStack.onMouseEntered = _ => circle.radius = nodeRadius + 5
+        nodeStack.onMouseExited = _ => circle.radius = nodeRadius
+
+      pathPane.children.addAll(nodeStack, nameLabel)
+    
+    pathPane.prefHeight = prefHeightCounter + 50
+    contentBox.children.add(pathPane)
+
+    val scrollPane = new ScrollPane {
+      content = contentBox
+      fitToWidth = true
+      style = "-fx-background: #1e272e; -fx-border-color: #1e272e;"
+      prefHeight = 600
+      prefWidth = 400
+    }
+    
+    val closeBtn = new Button("Exit Odyssey") {
+      style = "-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"
+      prefWidth = 200
+      margin = Insets(20, 0, 0, 0)
+      onAction = _ => {
+        mapStage.close()
         GameController.eval(Command.ExitOdyssey)
+      }
+    }
+    
+    val rootLayout = new VBox {
+      alignment = Pos.Center
+      style = "-fx-background-color: #1e272e;"
+      padding = Insets(20)
+      children = Seq(scrollPane, closeBtn)
+    }
+
+    mapStage.scene = new Scene(rootLayout)
+    
+    // Auto-scroll to current unlocked challenge
+    Platform.runLater {
+      val firstUnlockedNotDone = sortedChallenges.find(c => state.isUnlocked(c.id) && !state.completedIds.contains(c.id))
+      firstUnlockedNotDone.foreach { c =>
+        val index = sortedChallenges.indexOf(c)
+        val yOffset = index * verticalSpacing
+        val maxScroll = math.max(1.0, pathPane.prefHeight.value - scrollPane.viewportBounds.value.getHeight)
+        // Set scroll position, clamped between 0 and 1
+        scrollPane.vvalue = math.min(1.0, math.max(0.0, yOffset / maxScroll))
+      }
+    }
+
+    mapStage.showAndWait()
 
   private def handleSquareClick(pos: ChessPos): Unit =
     val state = GameController.appState
