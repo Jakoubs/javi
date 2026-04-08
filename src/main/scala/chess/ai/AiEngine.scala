@@ -25,16 +25,16 @@ object AiEngine:
       var bestValue = if isMaximizing then Double.NegativeInfinity else Double.PositiveInfinity
       var bestMove: Option[Move] = None
 
-      for move <- legalMoves do
+      for (move, idx) <- legalMoves.zipWithIndex do
         val nextState = GameRules.applyMove(state, move)
         val value = minimax(nextState, depth - 1, Double.NegativeInfinity, Double.PositiveInfinity, !isMaximizing)
         
         if isMaximizing then
-          if value > bestValue then
+          if idx == 0 || value > bestValue then
             bestValue = value
             bestMove = Some(move)
         else
-          if value < bestValue then
+          if idx == 0 || value < bestValue then
             bestValue = value
             bestMove = Some(move)
 

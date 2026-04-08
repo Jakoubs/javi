@@ -3,6 +3,8 @@ package chess.controller
 import chess.model.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import scala.concurrent.{Promise, Await}
+import scala.concurrent.duration.*
 
 class GameControllerSpec extends AnyFunSpec with Matchers {
   describe("GameController.handleCommand") {
@@ -395,6 +397,8 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
           .put(Pos(5, 1), Piece(Color.White, PieceType.Pawn))
           // Black king to avoid immediate draw if possible, or just focus on the board
           .put(Pos(0, 7), Piece(Color.Black, PieceType.King))
+          // Black piece that could threaten King if not blocked
+          .put(Pos(4, 7), Piece(Color.Black, PieceType.Rook))
 
         val state = WhiteToMove(board, CastlingRights(), None, 0, 1)
         val app = AppState(state, GameRules.computeStatus(state))
@@ -403,6 +407,35 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
         next.selectedPos shouldBe Some(Pos(4, 0))
         next.highlights shouldBe empty
         next.message.get should include ("No legal moves")
+      }
+
+      it("should trigger AI move when active player is in check") {
+        // FEN: White in check from Black Queen on e4
+        val fen = "r1b1kbnr/ppp2ppp/2p5/8/4q3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 7"
+        val state = GameState.fromFen(fen).getOrElse(fail("Invalid FEN"))
+        
+        val aiPromise = Promise[AppState]()
+        val observer = new chess.util.Observer[AppState] {
+          def update(state: AppState): Unit = {
+            if (state.game.activeColor == Color.Black && state.lastMove.isDefined) {
+              if (!aiPromise.isCompleted) aiPromise.success(state)
+            }
+          }
+        }
+
+        GameController.addObserver(observer)
+        try {
+          GameController.appState = AppState(state, GameRules.computeStatus(state), aiWhite = true)
+          // Trigger the auto-move check
+          GameController.eval(Command.SelectSquare(None)) 
+          val result = Await.result(aiPromise.future, 10.seconds)
+          result.status should not be GameStatus.Check(Color.White)
+          result.game.activeColor shouldBe Color.Black
+          result.lastMove shouldBe defined
+        } finally {
+          GameController.removeObserver(observer)
+          GameController.appState = AppState.initial
+        }
       }
     }
 

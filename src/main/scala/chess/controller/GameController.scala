@@ -101,7 +101,7 @@ object GameController extends Observable[AppState]:
     notifyObservers(appState)
     
     // Auto AI move logic
-    if appState.status == GameStatus.Playing then
+    if appState.status == GameStatus.Playing || appState.status.isInstanceOf[GameStatus.Check] then
       val activeCol = appState.game.activeColor
       val isAiTurn = (activeCol == Color.White && appState.aiWhite) || 
                      (activeCol == Color.Black && appState.aiBlack)
@@ -358,7 +358,7 @@ object GameController extends Observable[AppState]:
     )
 
   private def handleAiMove(app: AppState): AppState =
-    if app.status != GameStatus.Playing then
+    if app.status != GameStatus.Playing && !app.status.isInstanceOf[GameStatus.Check] then
        app.copy(message = Some(TerminalView.error("Game is already over.")))
     else
       chess.ai.AiEngine.bestMove(app.game, 3) match

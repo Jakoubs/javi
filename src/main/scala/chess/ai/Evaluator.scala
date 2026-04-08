@@ -66,18 +66,22 @@ object Evaluator:
     val board = state.board
     var score = 0.0
 
+    // Spielphase bestimmen
+    val nonKingMaterial = board.pieces.values.filter(_.pieceType != PieceType.King).map(p => weightOf(p.pieceType)).sum
+    val endgame = nonKingMaterial < 3500.0
+    val openingWeight = math.max(0.0, math.min(1.0, (nonKingMaterial - 4500) / 2000.0))
+
     for (pos, piece) <- board.pieces do
       val material = weightOf(piece.pieceType)
-      val pstBonus = pstScore(piece, pos)
+      val pstBonus = pstScore(piece, pos, endgame)
       
       if piece.color == Color.White then
         score += material + pstBonus
       else
         score -= material + pstBonus
 
-    // Bestimme Spielphase (Opening Weight)
-    val totalMaterial = board.pieces.values.filter(_.pieceType != PieceType.King).map(p => weightOf(p.pieceType)).sum
-    val openingWeight = math.max(0.0, math.min(1.0, (totalMaterial - 4500) / 2000.0))
+    // Bauernstrukturen
+    score += evaluatePawnStructure(state, Color.White) - evaluatePawnStructure(state, Color.Black)
     
     if openingWeight > 0 then
       val wOpening = evaluateOpening(state, Color.White)
@@ -148,6 +152,36 @@ object Evaluator:
 
     score
 
+  private def evaluatePawnStructure(state: GameState, color: Color): Double =
+    var score = 0.0
+    val board = state.board
+    val pawns = board.pieces.filter { case (_, p) => p.color == color && p.pieceType == PieceType.Pawn }
+    val cols = pawns.keys.map(_.col).toList
+    val pawnPositions = pawns.keys.toSet
+    
+    // 1. Verdoppelte Bauern
+    val doubledCount = cols.size - cols.distinct.size
+    score -= doubledCount * 20.0
+    
+    // 2. Isolierte Bauern
+    for pos <- pawnPositions do
+      val neighbors = Seq(pos.col - 1, pos.col + 1).filter(c => c >= 0 && c <= 7)
+      if !neighbors.exists(c => cols.contains(c)) then
+        score -= 15.0
+        
+    // 3. Freibauern (Grobprüfung)
+    val opposingColor = color.opposite
+    val opposingPawns = board.pieces.filter { case (_, p) => p.color == opposingColor && p.pieceType == PieceType.Pawn }.keys.toSet
+    for pos <- pawnPositions do
+      val ahead = if color == Color.White then (pos.row + 1 to 7) else (0 until pos.row)
+      val neighborCols = Seq(pos.col - 1, pos.col, pos.col + 1).filter(c => c >= 0 && c <= 7)
+      val blocked = ahead.exists(r => neighborCols.exists(c => opposingPawns.contains(Pos(c, r))))
+      if !blocked then
+        val dist = if color == Color.White then pos.row else 7 - pos.row
+        score += dist * 10.0 // Bonus für Fortschritt
+        
+    score
+
   private def weightOf(pt: PieceType): Double = pt match
     case PieceType.Pawn   => pawnWeight.get()
     case PieceType.Knight => knightWeight.get()
@@ -157,81 +191,94 @@ object Evaluator:
     case PieceType.King   => 20000.0
   
   /** Piece-Square Tables — reads from trainable pstWeights */
-  private def pstScore(piece: Piece, pos: Pos): Double =
+  private def pstScore(piece: Piece, pos: Pos, endgame: Boolean): Double =
     val (c, r) = (pos.col, pos.row)
     val (relC, relR) = if piece.color == Color.White then (c, r) else (c, 7 - r)
     val index = relR * 8 + relC
-    pstWeights(piece.pieceType)(index).get()
+    if piece.pieceType == PieceType.King && endgame then
+      kingEndgamePst(relR)(relC).toDouble
+    else
+      pstWeights(piece.pieceType)(index).get()
 
-  // --- PST Tables (Simplified) ---
+  // --- PST Tables (Corrected: Row 0 is Rank 1, Row 7 is Rank 8) ---
   private val pawnPst = Array(
-    Array(0,  0,  0,  0,  0,  0,  0,  0),
-    Array(50, 50, 50, 50, 50, 50, 50, 50),
-    Array(10, 10, 20, 30, 30, 20, 10, 10),
-    Array(5,  5, 10, 25, 25, 10,  5,  5),
-    Array(0,  0,  0, 20, 20,  0,  0,  0),
-    Array(5, -5,-10,  0,  0,-10, -5,  5),
-    Array(5, 10, 10,-20,-20, 10, 10,  5),
-    Array(0,  0,  0,  0,  0,  0,  0,  0)
+    Array(0,  0,  0,  0,  0,  0,  0,  0),     // Rank 1
+    Array(5, 10, 10,-20,-20, 10, 10,  5),     // Rank 2
+    Array(5, -5,-10,  0,  0,-10, -5,  5),     // Rank 3
+    Array(0,  0,  0, 20, 20,  0,  0,  0),     // Rank 4
+    Array(5,  5, 10, 25, 25, 10,  5,  5),     // Rank 5
+    Array(10, 10, 20, 30, 30, 20, 10, 10),   // Rank 6
+    Array(50, 50, 50, 50, 50, 50, 50, 50),   // Rank 7
+    Array(0,  0,  0,  0,  0,  0,  0,  0)      // Rank 8
   )
 
   private val knightPst = Array(
     Array(-50,-40,-30,-30,-30,-30,-40,-50),
-    Array(-40,-20,  0,  0,  0,  0,-20,-40),
-    Array(-30,  0, 10, 15, 15, 10,  0,-30),
-    Array(-30,  5, 15, 20, 20, 15,  5,-30),
-    Array(-30,  0, 15, 20, 20, 15,  0,-30),
-    Array(-30,  5, 10, 15, 15, 10,  5,-30),
     Array(-40,-20,  0,  5,  5,  0,-20,-40),
+    Array(-30,  5, 10, 15, 15, 10,  5,-30),
+    Array(-30,  0, 15, 20, 20, 15,  0,-30),
+    Array(-30,  5, 15, 20, 20, 15,  5,-30),
+    Array(-30,  0, 10, 15, 15, 10,  0,-30),
+    Array(-40,-20,  0,  0,  0,  0,-20,-40),
     Array(-50,-40,-30,-30,-30,-30,-40,-50)
   )
 
   private val bishopPst = Array(
     Array(-20,-10,-10,-10,-10,-10,-10,-20),
-    Array(-10,  0,  0,  0,  0,  0,  0,-10),
-    Array(-10,  0,  5, 10, 10,  5,  0,-10),
-    Array(-10,  5,  5, 10, 10,  5,  5,-10),
-    Array(-10,  0, 10, 10, 10, 10,  0,-10),
-    Array(-10, 10, 10, 10, 10, 10, 10,-10),
     Array(-10,  5,  0,  0,  0,  0,  5,-10),
+    Array(-10, 10, 10, 10, 10, 10, 10,-10),
+    Array(-10,  0, 10, 10, 10, 10,  0,-10),
+    Array(-10,  5,  5, 10, 10,  5,  5,-10),
+    Array(-10,  0,  5, 10, 10,  5,  0,-10),
+    Array(-10,  0,  0,  0,  0,  0,  0,-10),
     Array(-20,-10,-10,-10,-10,-10,-10,-20)
   )
 
   private val rookPst = Array(
-    Array( 0,  0,  0,  0,  0,  0,  0,  0),
+    Array( 0,  0,  0,  5,  5,  0,  0,  0),
+    Array(-5,  0,  0,  0,  0,  0,  0, -5),
+    Array(-5,  0,  0,  0,  0,  0,  0, -5),
+    Array(-5,  0,  0,  0,  0,  0,  0, -5),
+    Array(-5,  0,  0,  0,  0,  0,  0, -5),
+    Array(-5,  0,  0,  0,  0,  0,  0, -5),
     Array( 5, 10, 10, 10, 10, 10, 10,  5),
-    Array(-5,  0,  0,  0,  0,  0,  0, -5),
-    Array(-5,  0,  0,  0,  0,  0,  0, -5),
-    Array(-5,  0,  0,  0,  0,  0,  0, -5),
-    Array(-5,  0,  0,  0,  0,  0,  0, -5),
-    Array(-5,  0,  0,  0,  0,  0,  0, -5),
-    Array( 0,  0,  0,  5,  5,  0,  0,  0)
+    Array( 0,  0,  0,  0,  0,  0,  0,  0)
   )
 
   private val queenPst = Array(
     Array(-20,-10,-10, -5, -5,-10,-10,-20),
-    Array(-10,  0,  0,  0,  0,  0,  0,-10),
-    Array(-10,  0,  5,  5,  5,  5,  0,-10),
-    Array( -5,  0,  5,  5,  5,  5,  0, -5),
-    Array(  0,  0,  5,  5,  5,  5,  0, -5),
-    Array(-10,  5,  5,  5,  5,  5,  0,-10),
     Array(-10,  0,  5,  0,  0,  0,  0,-10),
+    Array(-10,  5,  5,  5,  5,  5,  0,-10),
+    Array(  0,  0,  5,  5,  5,  5,  0, -5),
+    Array( -5,  0,  5,  5,  5,  5,  0, -5),
+    Array(-10,  0,  5,  5,  5,  5,  0,-10),
+    Array(-10,  0,  0,  0,  0,  0,  0,-10),
     Array(-20,-10,-10, -5, -5,-10,-10,-20)
   )
 
   private val kingPst = Array(
-    Array(-30,-40,-40,-50,-50,-40,-40,-30),
-    Array(-30,-40,-40,-50,-50,-40,-40,-30),
-    Array(-30,-40,-40,-50,-50,-40,-40,-30),
-    Array(-30,-40,-40,-50,-50,-40,-40,-30),
-    Array(-20,-30,-30,-40,-40,-30,-30,-20),
-    Array(-10,-20,-20,-20,-20,-20,-20,-10),
+    Array( 20, 30, 10,  0,  0, 10, 30, 20),
     Array( 20, 20,  0,  0,  0,  0, 20, 20),
-    Array( 20, 30, 10,  0,  0, 10, 30, 20)
+    Array(-10,-20,-20,-20,-20,-20,-20,-10),
+    Array(-20,-30,-30,-40,-40,-30,-30,-20),
+    Array(-30,-40,-40,-50,-50,-40,-40,-30),
+    Array(-30,-40,-40,-50,-50,-40,-40,-30),
+    Array(-30,-40,-40,-50,-50,-40,-40,-30),
+    Array(-30,-40,-40,-50,-50,-40,-40,-30)
   )
 
-  // --- Trainable PST weights (initialized from hardcoded tables above) ---
-  // IMPORTANT: This MUST be defined AFTER the PST arrays above!
+  private val kingEndgamePst = Array(
+    Array(-50,-30,-30,-30,-30,-30,-30,-50),
+    Array(-30,-30,  0,  0,  0,  0,-30,-30),
+    Array(-30,-10, 20, 30, 30, 20,-10,-30),
+    Array(-30,-10, 30, 40, 40, 30,-10,-30),
+    Array(-30,-10, 30, 40, 40, 30,-10,-30),
+    Array(-30,-10, 20, 30, 30, 20,-10,-30),
+    Array(-30,-20,-10,  0,  0,-10,-20,-30),
+    Array(-50,-40,-30,-20,-20,-30,-40,-50)
+  )
+
+  // --- Trainable PST weights ---
   private val pstWeights: Map[PieceType, Array[AtomicDouble]] = {
     val tables: Array[(PieceType, Array[Array[Int]])] = Array(
       (PieceType.Pawn,   pawnPst),

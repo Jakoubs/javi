@@ -130,4 +130,84 @@ class EvaluatorSpec extends AnyFunSpec with Matchers {
       ref.get() shouldBe (initial + 5.0)
     }
   }
+
+  describe("Evaluator Pawn Structure") {
+    it("should penalize doubled pawns") {
+      Evaluator.resetWeights()
+      // Healthy: two pawns on separate files (a2, b2)
+      val fenHealthy = "4k3/8/8/8/8/8/PP6/4K3 w - - 0 1"
+      val stateHealthy = GameState.fromFen(fenHealthy).getOrElse(fail())
+      
+      // Doubled: two pawns on the same file (a2, a3)
+      val fenDoubled = "4k3/8/8/8/8/P7/P7/4K3 w - - 0 1"
+      val stateDoubled = GameState.fromFen(fenDoubled).getOrElse(fail())
+      
+      val scoreHealthy = Evaluator.evaluate(stateHealthy)
+      val scoreDoubled = Evaluator.evaluate(stateDoubled)
+      
+      scoreDoubled should be < scoreHealthy
+    }
+
+    it("should penalize isolated pawns") {
+      Evaluator.resetWeights()
+      // Connected: pawns on b2, c2
+      val fenConnected = "4k3/8/8/8/8/8/1PP5/4K3 w - - 0 1"
+      val stateConnected = GameState.fromFen(fenConnected).getOrElse(fail())
+      
+      // Isolated: pawns on a2, h2
+      val fenIsolated = "4k3/8/8/8/8/8/P6P/4K3 w - - 0 1"
+      val stateIsolated = GameState.fromFen(fenIsolated).getOrElse(fail())
+      
+      val scoreConnected = Evaluator.evaluate(stateConnected)
+      val scoreIsolated = Evaluator.evaluate(stateIsolated)
+      
+      scoreIsolated should be < scoreConnected
+    }
+
+    it("should reward passed pawns based on advancement") {
+      Evaluator.resetWeights()
+      val fenA2 = "4k3/8/8/8/8/8/P7/4K3 w - - 0 1"
+      val stateA2 = GameState.fromFen(fenA2).getOrElse(fail())
+      
+      val fenA6 = "4k3/8/P7/8/8/8/8/4K3 w - - 0 1"
+      val stateA6 = GameState.fromFen(fenA6).getOrElse(fail())
+      
+      val scoreA2 = Evaluator.evaluate(stateA2)
+      val scoreA6 = Evaluator.evaluate(stateA6)
+      
+      scoreA6 should be > scoreA2
+    }
+  }
+
+  describe("Evaluator Endgame Logic") {
+    it("should encourage King to move towards center in endgame") {
+      Evaluator.resetWeights()
+      // White King on g1 (corner/edge), Black King on e8
+      val fenCorner = "4k3/p7/8/8/8/8/P7/6K1 w - - 0 1"
+      val stateCorner = GameState.fromFen(fenCorner).getOrElse(fail())
+      
+      // White King on d4 (center)
+      val fenCenter = "4k3/p7/8/8/3K4/8/P7/8 w - - 0 1"
+      val stateCenter = GameState.fromFen(fenCenter).getOrElse(fail())
+      
+      val scoreCorner = Evaluator.evaluate(stateCorner)
+      val scoreCenter = Evaluator.evaluate(stateCenter)
+      
+      scoreCenter should be > scoreCorner
+    }
+
+    it("should encourage King to stay back in opening/middlegame") {
+      Evaluator.resetWeights()
+      val fenSafe = "r1bqk2r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPPBPPP/R1BQK2R w KQkq - 0 1"
+      val stateSafe = GameState.fromFen(fenSafe).getOrElse(fail())
+      
+      val fenExposed = "r1bqk2r/pppp1ppp/2n2n2/4K3/4P3/2N2N2/PPPPBPPP/R1BQ3R w kq - 0 1"
+      val stateExposed = GameState.fromFen(fenExposed).getOrElse(fail())
+      
+      val scoreSafe = Evaluator.evaluate(stateSafe)
+      val scoreExposed = Evaluator.evaluate(stateExposed)
+      
+      scoreSafe should be > scoreExposed
+    }
+  }
 }
