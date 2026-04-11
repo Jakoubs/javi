@@ -1,73 +1,19 @@
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:288:26 
-[error] 288 |          val top = state.topPlayer
-[error]     |                    ^^^^^^^^^^^^^^^
-[error]     |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
-[error]     |
-[error]     |The following import might fix the problem:
-[error]     |
-[error]     |  import chess.controller.topPlayer
-[error]     |
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:289:26 
-[error] 289 |          val bot = state.bottomPlayer
-[error]     |                    ^^^^^^^^^^^^^^^^^^
-[error]     |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
-[error]     |
-[error]     |The following import might fix the problem:
-[error]     |
-[error]     |  import chess.controller.bottomPlayer
-[error]     |
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:305:26 
-[error] 305 |          val top = state.topPlayer
-[error]     |                    ^^^^^^^^^^^^^^^
-[error]     |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
-[error]     |
-[error]     |The following import might fix the problem:
-[error]     |
-[error]     |  import chess.controller.topPlayer
-[error]     |
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:306:26 
-[error] 306 |          val bot = state.bottomPlayer
-[error]     |                    ^^^^^^^^^^^^^^^^^^
-[error]     |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
-[error]     |
-[error]     |The following import might fix the problem:
-[error]     |
-[error]     |  import chess.controller.bottomPlayer
-[error]     |
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:320:20 
-[error] 320 |    val top = state.topPlayer
-[error]     |              ^^^^^^^^^^^^^^^
-[error]     |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
-[error]     |
-[error]     |The following import might fix the problem:
-[error]     |
-[error]     |  import chess.controller.topPlayer
-[error]     |
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:321:20 
-[error] 321 |    val bot = state.bottomPlayer
-[error]     |              ^^^^^^^^^^^^^^^^^^
-[error]     |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
-[error]     |
-[error]     |The following import might fix the problem:
-[error]     |
-[error]     |  import chess.controller.bottomPlayer
-[error]     |
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:65:34 
-[error] 65 |                topPlayer = state.topPlayer,
-[error]    |                            ^^^^^^^^^^^^^^^
-[error]    |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:71:45 
+[error] 71 |                  p.copy(clockMillis = state.liveMillis(if p.color == "White" then Color.White else Color.Black))
+[error]    |                                       ^^^^^^^^^^^^^^^^
+[error]    |value liveMillis is not a member of chess.controller.AppState, but could be made available as an extension method.
 [error]    |
 [error]    |The following import might fix the problem:
 [error]    |
-[error]    |  import chess.controller.topPlayer
+[error]    |  import chess.controller.liveMillis
 [error]    |
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:66:37 
-[error] 66 |                bottomPlayer = state.bottomPlayer
-[error]    |                               ^^^^^^^^^^^^^^^^^^
-[error]    |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:75:45 
+[error] 75 |                  p.copy(clockMillis = state.liveMillis(if p.color == "White" then Color.White else Color.Black))
+[error]    |                                       ^^^^^^^^^^^^^^^^
+[error]    |value liveMillis is not a member of chess.controller.AppState, but could be made available as an extension method.
 [error]    |
 [error]    |The following import might fix the problem:
 [error]    |
-[error]    |  import chess.controller.bottomPlayer
+[error]    |  import chess.controller.liveMillis
 [error]    |
-[error] 8 errors found
+[error] two errors found

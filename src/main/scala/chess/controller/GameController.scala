@@ -73,6 +73,14 @@ case class AppState(
 )
 
 extension (s: AppState)
+  def liveMillis(color: Color): Long =
+    s.clock match
+      case Some(c) if c.isActive && s.game.activeColor == color && c.lastTickSysTime.isDefined =>
+        val elapsed = System.currentTimeMillis() - c.lastTickSysTime.get
+        Math.max(0L, c.activeMillis(color) - elapsed)
+      case Some(c) => c.activeMillis(color)
+      case None => 0L
+
   def bottomPlayer: PlayerInfo =
     val info = s.game.materialInfo
     val c = s.clock.getOrElse(ClockState(0, 0, 0, None, false))

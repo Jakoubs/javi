@@ -12,8 +12,8 @@ import io.circe.parser.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
-import chess.controller.{GameController, AppState, Command, topPlayer, bottomPlayer}
-import chess.model.{MaterialInfo, materialInfo, PlayerInfo, Pos, MoveGenerator}
+import chess.controller.{GameController, AppState, Command, topPlayer, bottomPlayer, liveMillis}
+import chess.model.{MaterialInfo, materialInfo, PlayerInfo, Pos, MoveGenerator, Color}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 
@@ -28,7 +28,8 @@ case class GameStateResponse(
   bottomPlayer: PlayerInfo,
   aiWhite: Boolean,
   aiBlack: Boolean,
-  flipped: Boolean
+  flipped: Boolean,
+  isClockActive: Boolean
 ) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
@@ -65,11 +66,19 @@ class RestApi extends Observer[AppState]:
                 activeColor = state.game.activeColor.toString,
                 highlights = state.highlights.map(_.toAlgebraic).toList,
                 lastMove = state.lastMove.map(_.toInputString),
-                topPlayer = state.topPlayer,
-                bottomPlayer = state.bottomPlayer,
+                topPlayer = {
+                  val p = state.topPlayer
+                  p.copy(clockMillis = state.liveMillis(if p.color == "White" then Color.White else Color.Black))
+                },
+                bottomPlayer = {
+                  val p = state.bottomPlayer
+                  p.copy(clockMillis = state.liveMillis(if p.color == "White" then Color.White else Color.Black))
+                },
                 aiWhite = state.aiWhite,
                 aiBlack = state.aiBlack,
-                flipped = state.flipped
+                flipped = state.flipped,
+                isClockActive = state.clock.exists(c => c.isActive && c.lastTickSysTime.isDefined) && 
+                               (state.status.toString == "Playing" || state.status.toString.toLowerCase.contains("check"))
               )
               complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
             }

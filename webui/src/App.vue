@@ -23,11 +23,27 @@ const formatTime = (ms) => {
   return `${mn.toString().padStart(2, '0')}:${sc.toString().padStart(2, '0')}`
 }
 
+const lastFetchTime = ref(Date.now())
+const now = ref(Date.now())
+
+const liveClock = (player) => {
+  if (!player || !gameState.value.isClockActive) return player?.clockMillis || 0
+  
+  const isActive = gameState.value.activeColor === player.color
+  if (!isActive) return player.clockMillis
+  
+  const elapsed = now.value - lastFetchTime.value
+  return Math.max(0, player.clockMillis - elapsed)
+}
+
 const fetchState = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/state')
     if (response.ok) {
-      gameState.value = await response.json()
+      const data = await response.json()
+      gameState.value = data
+      lastFetchTime.value = Date.now()
+      now.value = Date.now()
     }
   } catch (error) {
     console.error('Failed to fetch game state:', error)
@@ -49,13 +65,18 @@ const sendCommand = async (command) => {
 }
 
 let pollInterval
+let tickInterval
 onMounted(() => {
   fetchState()
   pollInterval = setInterval(fetchState, 1000)
+  tickInterval = setInterval(() => {
+    now.value = Date.now()
+  }, 100)
 })
 
 onUnmounted(() => {
   clearInterval(pollInterval)
+  clearInterval(tickInterval)
 })
 </script>
 
@@ -75,7 +96,7 @@ onUnmounted(() => {
               <span v-for="(s, i) in gameState.topPlayer.capturedSymbols" :key="i" class="piece">{{ s }}</span>
               <span v-if="gameState.topPlayer.advantage > 0" class="adv-badge">+{{ gameState.topPlayer.advantage }}</span>
             </div>
-            <span class="clock">{{ formatTime(gameState.topPlayer.clockMillis) }}</span>
+            <span class="clock">{{ formatTime(liveClock(gameState.topPlayer)) }}</span>
           </div>
         </div>
 
@@ -94,7 +115,7 @@ onUnmounted(() => {
               <span v-for="(s, i) in gameState.bottomPlayer.capturedSymbols" :key="i" class="piece">{{ s }}</span>
               <span v-if="gameState.bottomPlayer.advantage > 0" class="adv-badge">+{{ gameState.bottomPlayer.advantage }}</span>
             </div>
-            <span class="clock">{{ formatTime(gameState.bottomPlayer.clockMillis) }}</span>
+            <span class="clock">{{ formatTime(liveClock(gameState.bottomPlayer)) }}</span>
           </div>
         </div>
       </div>
