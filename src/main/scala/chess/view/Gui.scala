@@ -139,12 +139,15 @@ object Gui extends JFXApp3 with Observer[AppState]:
     val menuBar = new MenuBar {
       menus = Seq(
         new Menu("Zeit") {
-          items = Seq(
-            new MenuItem("Unlimited") { onAction = _ => GameController.eval(Command.StartGame(None)) },
-            new MenuItem("1|0 Bullet") { onAction = _ => GameController.eval(Command.StartGame(Some(1 * 60 * 1000L, 0L))) },
-            new MenuItem("3|2 Blitz")  { onAction = _ => GameController.eval(Command.StartGame(Some(3 * 60 * 1000L, 2 * 1000L))) },
-            new MenuItem("10|0 Rapid") { onAction = _ => GameController.eval(Command.StartGame(Some(10 * 60 * 1000L, 0L))) }
-          )
+          items = chess.model.TimeControl.presets.map { preset =>
+            new MenuItem(preset.name) { 
+              onAction = _ => GameController.eval(
+                preset.initialMillis match
+                  case Some(init) => Command.StartGame(Some(init, preset.incrementMillis))
+                  case None       => Command.StartGame(None)
+              )
+            }
+          }
         },
         new Menu("Import/Export") {
           items = Seq(

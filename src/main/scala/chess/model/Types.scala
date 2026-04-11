@@ -160,3 +160,16 @@ case class PlayerInfo(
   advantage: Int,
   clockMillis: Long
 ) derives Decoder, Encoder
+
+case class TimeControl(name: String, initialMillis: Option[Long], incrementMillis: Long = 0):
+  def toCommand: String = initialMillis match
+    case Some(init) => s"start $init $incrementMillis"
+    case None       => "start none"
+
+object TimeControl:
+  val presets: List[TimeControl] = List(
+    TimeControl("Unlimited", None),
+    TimeControl("1|0 Bullet", Some(1 * 60 * 1000L), 0L),
+    TimeControl("3|2 Blitz",  Some(3 * 60 * 1000L), 2 * 1000L),
+    TimeControl("10|0 Rapid", Some(10 * 60 * 1000L), 0L)
+  )

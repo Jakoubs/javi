@@ -60,6 +60,18 @@ object CommandParser:
       case "ai"                 => Command.AiMove
       case "ai w" | "ai white"  => Command.ToggleAi(Color.White)
       case "ai b" | "ai black"  => Command.ToggleAi(Color.Black)
+      case s if s.startsWith("start ") || s.startsWith("time ") =>
+        val args = s.split("\\s+").drop(1)
+        args match
+          case Array("none") | Array("unlimited") => Command.StartGame(None)
+          case Array("bullet") => Command.StartGame(Some(1 * 60 * 1000L, 0L))
+          case Array("blitz")  => Command.StartGame(Some(3 * 60 * 1000L, 2 * 1000L))
+          case Array("rapid")  => Command.StartGame(Some(10 * 60 * 1000L, 0L))
+          case Array(init, inc) => 
+            (init.toLongOption, inc.toLongOption) match
+              case (Some(ti), Some(tn)) => Command.StartGame(Some(ti, tn))
+              case _ => Command.Unknown(s"Invalid time arguments: $s")
+          case _ => Command.Unknown(s"Invalid command format: $s")
       case s if s.startsWith("moves ") =>
         val posStr = s.drop(6).trim
         Pos.fromAlgebraic(posStr) match
