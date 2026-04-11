@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 
-const props = defineProps(['fen'])
+const props = defineProps(['fen', 'flipped'])
 const emit = defineEmits(['move'])
 
 const selectedSquare = ref(null)
@@ -46,7 +46,7 @@ const board = computed(() => {
       }
     }
   })
-  return result
+  return props.flipped ? result.reverse() : result
 })
 
 const activeColorLetter = computed(() => props.fen.split(' ')[1])

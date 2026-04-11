@@ -27,7 +27,8 @@ case class GameStateResponse(
   topPlayer: PlayerInfo,
   bottomPlayer: PlayerInfo,
   aiWhite: Boolean,
-  aiBlack: Boolean
+  aiBlack: Boolean,
+  flipped: Boolean
 ) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
@@ -67,7 +68,8 @@ class RestApi extends Observer[AppState]:
                 topPlayer = state.topPlayer,
                 bottomPlayer = state.bottomPlayer,
                 aiWhite = state.aiWhite,
-                aiBlack = state.aiBlack
+                aiBlack = state.aiBlack,
+                flipped = state.flipped
               )
               complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
             }

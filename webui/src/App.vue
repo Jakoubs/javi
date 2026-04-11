@@ -11,7 +11,8 @@ const gameState = ref({
   topPlayer: null,
   bottomPlayer: null,
   aiWhite: false,
-  aiBlack: false
+  aiBlack: false,
+  flipped: false
 })
 
 const formatTime = (ms) => {
@@ -79,7 +80,11 @@ onUnmounted(() => {
         </div>
 
         <div class="board-section glass-panel">
-          <ChessBoard :fen="gameState.fen" @move="(m) => sendCommand(m)" />
+          <ChessBoard 
+            :fen="gameState.fen" 
+            :flipped="gameState.flipped"
+            @move="(m) => sendCommand(m)" 
+          />
         </div>
 
         <div v-if="gameState.bottomPlayer" class="player-info bottom">
