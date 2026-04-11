@@ -12,8 +12,8 @@ import scalafx.Includes.*
 import scalafx.application.Platform
 import scalafx.animation.AnimationTimer
 
-import chess.controller.{AppState, Command, GameController}
-import chess.model.{Color => ChessColor, Pos => ChessPos, PieceType, capturedPieces, GameState, GameRules}
+import chess.controller.{AppState, Command, GameController, topPlayer, bottomPlayer}
+import chess.model.{Color => ChessColor, Pos => ChessPos, PieceType, capturedPieces, GameState, GameRules, materialInfo}
 import chess.util.Observer
 
 object Gui extends JFXApp3 with Observer[AppState]:
@@ -285,21 +285,27 @@ object Gui extends JFXApp3 with Observer[AppState]:
           val now = System.currentTimeMillis()
           val elapsed = clock.lastTickSysTime.map(now - _).getOrElse(0L)
           
-          val wTime = if state.game.activeColor == ChessColor.White then
-            Math.max(0L, clock.whiteMillis - elapsed) else clock.whiteMillis
-          val bTime = if state.game.activeColor == ChessColor.Black then
-            Math.max(0L, clock.blackMillis - elapsed) else clock.blackMillis
-            
-          botClockText.text = formatTime(wTime)
-          topClockText.text = formatTime(bTime)
+          val top = state.topPlayer
+          val bot = state.bottomPlayer
           
-          if (wTime == 0 || bTime == 0) && state.status == chess.model.GameStatus.Playing then
-            val loser = if wTime == 0 then ChessColor.White else ChessColor.Black
+          val topTime = if state.game.activeColor.toString == top.color then
+            Math.max(0L, top.clockMillis - elapsed) else top.clockMillis
+          val botTime = if state.game.activeColor.toString == bot.color then
+            Math.max(0L, bot.clockMillis - elapsed) else bot.clockMillis
+            
+          botClockText.text = formatTime(botTime)
+          topClockText.text = formatTime(topTime)
+          
+          if (botTime == 0 || topTime == 0) && state.status == chess.model.GameStatus.Playing then
+            val loser = if botTime == 0 then (if state.flipped then ChessColor.Black else ChessColor.White)
+                        else (if state.flipped then ChessColor.White else ChessColor.Black)
             GameController.eval(Command.TimeExpired(loser))
             
         case Some(clock) =>
-          botClockText.text = formatTime(clock.whiteMillis)
-          topClockText.text = formatTime(clock.blackMillis)
+          val top = state.topPlayer
+          val bot = state.bottomPlayer
+          botClockText.text = formatTime(bot.clockMillis)
+          topClockText.text = formatTime(top.clockMillis)
         case None =>
           botClockText.text = ""
           topClockText.text = ""
@@ -310,17 +316,12 @@ object Gui extends JFXApp3 with Observer[AppState]:
     updateBoard(GameController.appState)
     updateCapturedPieces(GameController.appState)
 
-  private def pieceValue(pt: PieceType): Int = GuiHelper.pieceValue(pt)
-
   private def updateCapturedPieces(state: AppState): Unit =
-    val capW = state.game.capturedPieces(ChessColor.White)
-    val capB = state.game.capturedPieces(ChessColor.Black)
+    val top = state.topPlayer
+    val bot = state.bottomPlayer
     
-    val adv = GuiHelper.calculateAdvantages(capW, capB)
-    
-    // Captured White pieces are held by Black (top). Black's advantage = capW value - capB value
-    topCapturedText.text = adv.whiteCapturedSymbols + (if (adv.blackAdvantage > 0) s"   +${adv.blackAdvantage}" else "")
-    botCapturedText.text = adv.blackCapturedSymbols + (if (adv.whiteAdvantage > 0) s"   +${adv.whiteAdvantage}" else "")
+    topCapturedText.text = top.capturedSymbols.mkString(" ") + (if (top.advantage > 0) s"   +${top.advantage}" else "")
+    botCapturedText.text = bot.capturedSymbols.mkString(" ") + (if (bot.advantage > 0) s"   +${bot.advantage}" else "")
     
     if state.aiBlack then
       topAiBtn.text = "💻 AI (On)"

@@ -1,19 +1,73 @@
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/RestApi.scala:39:8 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m39 |[0m        `Access-Control-Allow-Origin`.*,[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        Not found: Access-Control-Allow-Origin[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/RestApi.scala:40:8 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m40 |[0m        `Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST, HttpMethods.OPTIONS),[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        Not found: Access-Control-Allow-Methods[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/RestApi.scala:41:8 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m41 |[0m        `Access-Control-Allow-Headers`([31m"Content-Type"[0m)[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        Not found: Access-Control-Allow-Headers[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0mthree errors found[0m
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:288:26 
+[error] 288 |          val top = state.topPlayer
+[error]     |                    ^^^^^^^^^^^^^^^
+[error]     |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |The following import might fix the problem:
+[error]     |
+[error]     |  import chess.controller.topPlayer
+[error]     |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:289:26 
+[error] 289 |          val bot = state.bottomPlayer
+[error]     |                    ^^^^^^^^^^^^^^^^^^
+[error]     |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |The following import might fix the problem:
+[error]     |
+[error]     |  import chess.controller.bottomPlayer
+[error]     |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:305:26 
+[error] 305 |          val top = state.topPlayer
+[error]     |                    ^^^^^^^^^^^^^^^
+[error]     |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |The following import might fix the problem:
+[error]     |
+[error]     |  import chess.controller.topPlayer
+[error]     |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:306:26 
+[error] 306 |          val bot = state.bottomPlayer
+[error]     |                    ^^^^^^^^^^^^^^^^^^
+[error]     |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |The following import might fix the problem:
+[error]     |
+[error]     |  import chess.controller.bottomPlayer
+[error]     |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:320:20 
+[error] 320 |    val top = state.topPlayer
+[error]     |              ^^^^^^^^^^^^^^^
+[error]     |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |The following import might fix the problem:
+[error]     |
+[error]     |  import chess.controller.topPlayer
+[error]     |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:321:20 
+[error] 321 |    val bot = state.bottomPlayer
+[error]     |              ^^^^^^^^^^^^^^^^^^
+[error]     |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |The following import might fix the problem:
+[error]     |
+[error]     |  import chess.controller.bottomPlayer
+[error]     |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:65:34 
+[error] 65 |                topPlayer = state.topPlayer,
+[error]    |                            ^^^^^^^^^^^^^^^
+[error]    |value topPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]    |
+[error]    |The following import might fix the problem:
+[error]    |
+[error]    |  import chess.controller.topPlayer
+[error]    |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:66:37 
+[error] 66 |                bottomPlayer = state.bottomPlayer
+[error]    |                               ^^^^^^^^^^^^^^^^^^
+[error]    |value bottomPlayer is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]    |
+[error]    |The following import might fix the problem:
+[error]    |
+[error]    |  import chess.controller.bottomPlayer
+[error]    |
+[error] 8 errors found

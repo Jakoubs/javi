@@ -174,6 +174,24 @@ extension (s: GameState)
       List.fill(Math.max(0, initialCount - currentCount))(pt)
     }.toList
 
+  def materialInfo: MaterialInfo =
+    val capW = capturedPieces(Color.White)
+    val capB = capturedPieces(Color.Black)
+    
+    val valW = capW.map(PieceType.pieceValue).sum
+    val valB = capB.map(PieceType.pieceValue).sum
+    
+    val pieceOrder = Map(PieceType.Queen -> 0, PieceType.Rook -> 1, PieceType.Bishop -> 2, PieceType.Knight -> 3, PieceType.Pawn -> 4)
+    val sortedW = capW.sortBy(pieceOrder.getOrElse(_, 5))
+    val sortedB = capB.sortBy(pieceOrder.getOrElse(_, 5))
+
+    MaterialInfo(
+      whiteCapturedSymbols = sortedW.map(pt => Piece(Color.White, pt).symbol),
+      blackCapturedSymbols = sortedB.map(pt => Piece(Color.Black, pt).symbol),
+      whiteAdvantage = Math.max(0, valB - valW),
+      blackAdvantage = Math.max(0, valW - valB)
+    )
+
 case class WhiteToMove(
   board:           Board,
   castlingRights:  CastlingRights,

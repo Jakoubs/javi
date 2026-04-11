@@ -1,5 +1,7 @@
 package chess.model
 
+import io.circe.{Decoder, Encoder}
+
 enum Color:
   case White, Black
 
@@ -9,6 +11,15 @@ enum Color:
 
 enum PieceType:
   case King, Queen, Rook, Bishop, Knight, Pawn
+
+object PieceType:
+  def pieceValue(pt: PieceType): Int = pt match
+    case PieceType.Pawn   => 1
+    case PieceType.Knight => 3
+    case PieceType.Bishop => 3
+    case PieceType.Rook   => 5
+    case PieceType.Queen  => 9
+    case PieceType.King   => 0
 
 case class Piece(color: Color, pieceType: PieceType):
   def symbol: String = pieceType match
@@ -135,3 +146,17 @@ case class ClockState(
   def activeMillis(color: Color): Long = color match
     case Color.White => whiteMillis
     case Color.Black => blackMillis
+
+case class MaterialInfo(
+  whiteCapturedSymbols: List[String],
+  blackCapturedSymbols: List[String],
+  whiteAdvantage: Int,
+  blackAdvantage: Int
+) derives Decoder, Encoder
+
+case class PlayerInfo(
+  color: String,
+  capturedSymbols: List[String],
+  advantage: Int,
+  clockMillis: Long
+) derives Decoder, Encoder

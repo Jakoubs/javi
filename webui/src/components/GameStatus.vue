@@ -19,16 +19,18 @@ const copyToClipboard = async () => {
 
 <template>
   <div class="status-panel glass-panel">
-    <div class="status-item">
-      <span class="label">PLAYER TO MOVE</span>
-      <span class="value" :class="state.activeColor.toLowerCase()">
-        {{ state.activeColor }}
-      </span>
-    </div>
-    
-    <div class="status-item">
-      <span class="label">GAME STATUS</span>
-      <span class="value accent">{{ state.status }}</span>
+    <div class="status-header">
+      <div class="status-item">
+        <span class="label">PLAYER TO MOVE</span>
+        <span class="value" :class="state.activeColor.toLowerCase()">
+          {{ state.activeColor }}
+        </span>
+      </div>
+      
+      <div class="status-item align-right">
+        <span class="label">GAME STATUS</span>
+        <span class="value accent">{{ state.status }}</span>
+      </div>
     </div>
 
     <div class="fen-container">
@@ -48,9 +50,14 @@ const copyToClipboard = async () => {
 .status-panel {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   padding: 1.5rem;
   text-align: left;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
 }
 
 .status-item {
@@ -59,21 +66,26 @@ const copyToClipboard = async () => {
   gap: 0.25rem;
 }
 
+.align-right {
+  text-align: right;
+}
+
 .label {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
   letter-spacing: 0.15rem;
   color: #718096;
+  text-transform: uppercase;
 }
 
 .value {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
 .value.white {
   color: #fff;
-  text-shadow: 0 0 10px rgba(255,255,255,0.3);
+  text-shadow: 0 0 10px rgba(255,255,255,0.2);
 }
 
 .value.black {
@@ -120,13 +132,13 @@ const copyToClipboard = async () => {
 }
 
 .fen-box {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   padding: 0.75rem;
   border-radius: 8px;
-  font-family: monospace;
-  font-size: 0.75rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.7rem;
   word-break: break-all;
-  color: #a0aec0;
+  color: #718096;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 </style>

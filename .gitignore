@@ -19,5 +19,11 @@ project/target/
 *.iml
 *.iws
 
-# OS
-.DS_Store
+# Node / Frontend
+node_modules/
+webui/node_modules/
+webui/dist/
+webui/.vite/
+
+# Agent data
+.gemini/

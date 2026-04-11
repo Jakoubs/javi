@@ -12,8 +12,8 @@ import io.circe.parser.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
-import chess.controller.{GameController, AppState, Command}
-import chess.model.{Pos, MoveGenerator}
+import chess.controller.{GameController, AppState, Command, topPlayer, bottomPlayer}
+import chess.model.{MaterialInfo, materialInfo, PlayerInfo, Pos, MoveGenerator}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 
@@ -24,6 +24,8 @@ case class GameStateResponse(
   activeColor: String,
   highlights: List[String],
   lastMove: Option[String],
+  topPlayer: PlayerInfo,
+  bottomPlayer: PlayerInfo,
   aiWhite: Boolean,
   aiBlack: Boolean
 ) derives Decoder, Encoder
@@ -62,6 +64,8 @@ class RestApi extends Observer[AppState]:
                 activeColor = state.game.activeColor.toString,
                 highlights = state.highlights.map(_.toAlgebraic).toList,
                 lastMove = state.lastMove.map(_.toInputString),
+                topPlayer = state.topPlayer,
+                bottomPlayer = state.bottomPlayer,
                 aiWhite = state.aiWhite,
                 aiBlack = state.aiBlack
               )

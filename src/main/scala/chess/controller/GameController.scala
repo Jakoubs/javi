@@ -72,6 +72,23 @@ case class AppState(
   activeMoveParser: String   = "coordinate"
 )
 
+extension (s: AppState)
+  def bottomPlayer: PlayerInfo =
+    val info = s.game.materialInfo
+    val c = s.clock.getOrElse(ClockState(0, 0, 0, None, false))
+    if !s.flipped then
+      PlayerInfo("White", info.blackCapturedSymbols, info.whiteAdvantage, c.whiteMillis)
+    else
+      PlayerInfo("Black", info.whiteCapturedSymbols, info.blackAdvantage, c.blackMillis)
+
+  def topPlayer: PlayerInfo =
+    val info = s.game.materialInfo
+    val c = s.clock.getOrElse(ClockState(0, 0, 0, None, false))
+    if !s.flipped then
+      PlayerInfo("Black", info.whiteCapturedSymbols, info.blackAdvantage, c.blackMillis)
+    else
+      PlayerInfo("White", info.blackCapturedSymbols, info.whiteAdvantage, c.whiteMillis)
+
 object AppState:
   def initial: AppState =
     val game   = GameState.initial
