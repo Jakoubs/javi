@@ -82,6 +82,71 @@ class MoveParserSpec extends AnyFunSpec with Matchers {
     it("should fail on impossible move in position") {
       SanMoveParser.parse("e5", GameState.initial).isFailure shouldBe true
     }
+
+    it("should handle disambiguation by file (Nbd2)") {
+      // Setup: Knights on b1 and f1, d2 is reachable by both? 
+      // No, b1 can reach d2, f1 cannot. 
+      // Let's use Knights on b1 and f3, both reaching d2.
+      val board = Board.empty
+        .put(Pos(1, 0), Piece(Color.White, PieceType.Knight)) // b1
+        .put(Pos(5, 2), Piece(Color.White, PieceType.Knight)) // f3
+        .put(Pos(4, 0), Piece(Color.White, PieceType.King))
+        .put(Pos(4, 7), Piece(Color.Black, PieceType.King))
+      val state = WhiteToMove(board, CastlingRights(), None, 0, 1)
+      
+      SanMoveParser.parse("Nbd2", state) shouldBe
+        Success(Move(Pos(1, 0), Pos(3, 1), None))
+      
+      SanMoveParser.parse("Nfd2", state) shouldBe
+        Success(Move(Pos(5, 2), Pos(3, 1), None))
+    }
+
+    it("should handle disambiguation by rank (N1d2)") {
+      // Knights on b1 and b3, both reaching d2
+      val board = Board.empty
+        .put(Pos(1, 0), Piece(Color.White, PieceType.Knight)) // b1
+        .put(Pos(1, 2), Piece(Color.White, PieceType.Knight)) // b3
+        .put(Pos(4, 0), Piece(Color.White, PieceType.King))
+        .put(Pos(4, 7), Piece(Color.Black, PieceType.King))
+      val state = WhiteToMove(board, CastlingRights(), None, 0, 1)
+
+      SanMoveParser.parse("N1d2", state) shouldBe
+        Success(Move(Pos(1, 0), Pos(3, 1), None))
+      
+      SanMoveParser.parse("N3d2", state) shouldBe
+        Success(Move(Pos(1, 2), Pos(3, 1), None))
+    }
+
+    it("should handle promotion with capture and symbols (gxf8=Q+)") {
+      val board = Board.empty
+        .put(Pos(6, 6), Piece(Color.White, PieceType.Pawn)) // g7
+        .put(Pos(5, 7), Piece(Color.Black, PieceType.Rook)) // f8
+        .put(Pos(4, 0), Piece(Color.White, PieceType.King))
+        // Black king in position to be checked after promotion
+        .put(Pos(0, 7), Piece(Color.Black, PieceType.King))
+      val state = WhiteToMove(board, CastlingRights(), None, 0, 1)
+
+      SanMoveParser.parse("gxf8=Q+", state).isSuccess shouldBe true
+      val move = SanMoveParser.parse("gxf8=Q+", state).get
+      move.from shouldBe Pos(6, 6)
+      move.to shouldBe Pos(5, 7)
+      move.promotion shouldBe Some(PieceType.Queen)
+    }
+
+    it("should handle castling (O-O, O-O-O)") {
+      val board = Board.empty
+        .put(Pos(4, 0), Piece(Color.White, PieceType.King))
+        .put(Pos(7, 0), Piece(Color.White, PieceType.Rook))
+        .put(Pos(0, 0), Piece(Color.White, PieceType.Rook))
+        .put(Pos(4, 7), Piece(Color.Black, PieceType.King))
+      val state = WhiteToMove(board, CastlingRights(), None, 0, 1)
+
+      SanMoveParser.parse("O-O", state) shouldBe
+        Success(Move(Pos(4, 0), Pos(6, 0), None))
+      
+      SanMoveParser.parse("O-O-O", state) shouldBe
+        Success(Move(Pos(4, 0), Pos(2, 0), None))
+    }
   }
 
   describe("ParserRegistry move parsers") {

@@ -234,5 +234,38 @@ class PgnParserSpec extends AnyFunSpec with Matchers {
       // This should trigger the exception in the matchingMove loop
       FastPgnParser.parse("1. e5").isFailure shouldBe true
     }
+
+    it("should handle multiple tags correctly") {
+      val pgn =
+        """[Event "Multi-Tag Test"]
+          |[Site "Local"]
+          |[White "W"]
+          |[Black "B"]
+          |
+          |1. e4 e5
+          |""".stripMargin
+      FastPgnParser.parse(pgn).isSuccess shouldBe true
+    }
+
+    it("should handle mixed whitespace and newlines") {
+      val pgn = "1.   e4\n\t  e5 \r\n  2. \n Nf3 \t Nc6"
+      val result = FastPgnParser.parse(pgn)
+      result.isSuccess shouldBe true
+      result.get.history.size shouldBe 4
+    }
+
+    it("should handle complex tag values with spaces and symbols") {
+      val pgn = """[White "Smith, John (Master)"]
+                  |[Black "O'Neil, Brian"]
+                  |
+                  |1. d4 d5""".stripMargin
+      FastPgnParser.parse(pgn).isSuccess shouldBe true
+    }
+
+    it("should ignore NAGs in PGN if they appear ($1, $123)") {
+      val pgn = "1. e4 $1 e5 $2 2. Nf3 $3"
+      val result = FastPgnParser.parse(pgn)
+      result.isSuccess shouldBe true 
+    }
   }
 }
