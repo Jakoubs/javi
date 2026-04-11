@@ -1,259 +1,267 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import ChessBoard from './components/ChessBoard.vue'
 import GameControls from './components/GameControls.vue'
 import GameStatus from './components/GameStatus.vue'
+import ImportExport from './components/ImportExport.vue'
+import TimeSettings from './components/TimeSettings.vue'
 
-const gameState = ref({
+const state = ref({
   fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-  status: 'Waiting...',
+  pgn: '',
+  status: 'Playing',
   activeColor: 'White',
-  topPlayer: null,
-  bottomPlayer: null,
+  highlights: [],
+  selectedPos: null,
+  lastMove: null,
   aiWhite: false,
   aiBlack: false,
-  flipped: false
+  flipped: false,
+  viewIndex: 0,
+  historyFen: [],
+  clock: null,
+  capturedWhite: [],
+  capturedBlack: [],
+  message: '',
+  training: false,
+  trainingProgress: null
 })
-
-const formatTime = (ms) => {
-  if (!ms) return "00:00"
-  const totalSec = Math.max(0, ms) / 1000
-  const mn = Math.floor(totalSec / 60)
-  const sc = Math.floor(totalSec % 60)
-  return `${mn.toString().padStart(2, '0')}:${sc.toString().padStart(2, '0')}`
-}
-
-const lastFetchTime = ref(Date.now())
-const now = ref(Date.now())
-
-const liveClock = (player) => {
-  if (!player || !gameState.value.isClockActive) return player?.clockMillis || 0
-  
-  const isActive = gameState.value.activeColor === player.color
-  if (!isActive) return player.clockMillis
-  
-  const elapsed = now.value - lastFetchTime.value
-  return Math.max(0, player.clockMillis - elapsed)
-}
 
 const fetchState = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/state')
     if (response.ok) {
-      const data = await response.json()
-      gameState.value = data
-      lastFetchTime.value = Date.now()
-      now.value = Date.now()
+      state.value = await response.json()
     }
-  } catch (error) {
-    console.error('Failed to fetch game state:', error)
+  } catch (e) {
+    console.error('Failed to fetch state', e)
   }
 }
 
-const sendCommand = async (command) => {
+const sendCommand = async (cmd) => {
   try {
-    const response = await fetch('http://localhost:8080/api/command', {
+    await fetch('http://localhost:8080/api/command', {
       method: 'POST',
-      body: JSON.stringify({ command })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: cmd })
     })
-    if (response.ok) {
-      await fetchState()
-    }
-  } catch (error) {
-    console.error('Failed to send command:', error)
+    fetchState()
+  } catch (e) {
+    console.error('Failed to send command', e)
   }
+}
+
+const handleLoadFen = (fen) => sendCommand(`load fen ${fen}`)
+const handleLoadPgn = (pgn) => sendCommand(`load pgn ${pgn}`)
+const handleStartWithTime = (time, inc) => {
+  if (time === null) sendCommand('start none')
+  else sendCommand(`start ${time} ${inc}`)
 }
 
 let pollInterval
-let tickInterval
 onMounted(() => {
   fetchState()
-  pollInterval = setInterval(fetchState, 1000)
-  tickInterval = setInterval(() => {
-    now.value = Date.now()
-  }, 100)
+  pollInterval = setInterval(fetchState, 500)
 })
 
-onUnmounted(() => {
-  clearInterval(pollInterval)
-  clearInterval(tickInterval)
-})
+onUnmounted(() => clearInterval(pollInterval))
+
+const topPlayer = computed(() => ({
+  name: state.value.flipped ? 'White Player' : 'Black Player',
+  color: state.value.flipped ? 'White' : 'Black',
+  captured: state.value.flipped ? state.value.capturedBlack : state.value.capturedWhite,
+  clock: state.value.clock ? (state.value.flipped ? state.value.clock.whiteMillis : state.value.clock.blackMillis) : null
+}))
+
+const bottomPlayer = computed(() => ({
+  name: state.value.flipped ? 'Black Player' : 'White Player',
+  color: state.value.flipped ? 'Black' : 'White',
+  captured: state.value.flipped ? state.value.capturedWhite : state.value.capturedBlack,
+  clock: state.value.clock ? (state.value.flipped ? state.value.clock.blackMillis : state.value.clock.whiteMillis) : null
+}))
+
+const formatTime = (ms) => {
+  if (ms === null || ms === undefined) return ''
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
 </script>
 
 <template>
   <div class="app-container">
-    <header class="app-header">
+    <header class="glass">
       <h1>JAVI CHESS</h1>
-      <p class="subtitle">PREMIUM STRATEGY EXPERIENCE</p>
+      <div v-if="state.message" class="status-msg">{{ state.message }}</div>
     </header>
 
-    <main class="game-layout">
-      <div class="board-column">
-        <div v-if="gameState.topPlayer" class="player-info top">
-          <div class="info-row">
-            <span class="player-color">{{ gameState.topPlayer.color }}</span>
-            <div class="captured-symbols">
-              <span v-for="(s, i) in gameState.topPlayer.capturedSymbols" :key="i" class="piece">{{ s }}</span>
-              <span v-if="gameState.topPlayer.advantage > 0" class="adv-badge">+{{ gameState.topPlayer.advantage }}</span>
+    <main>
+      <div class="left-panel">
+        <GameStatus :state="state" @jump="(i) => sendCommand(`jump ${i}`)" />
+      </div>
+
+      <div class="board-container">
+        <!-- Top Player Info -->
+        <div class="player-info top">
+          <div class="player-meta">
+            <span class="p-name">{{ topPlayer.name }}</span>
+            <div class="captured-list">
+              <span v-for="(s, i) in topPlayer.captured" :key="i" class="piece-icon">{{ s }}</span>
             </div>
-            <span class="clock">{{ formatTime(liveClock(gameState.topPlayer)) }}</span>
+          </div>
+          <div :class="['clock glass', { active: state.activeColor === topPlayer.color }]">
+            {{ formatTime(topPlayer.clock) }}
           </div>
         </div>
 
-        <div class="board-section glass-panel">
-          <ChessBoard 
-            :fen="gameState.fen" 
-            :flipped="gameState.flipped"
-            @move="(m) => sendCommand(m)" 
-          />
-        </div>
+        <ChessBoard 
+          :fen="state.fen" 
+          :flipped="state.flipped"
+          :highlights="state.highlights"
+          :selectedPos="state.selectedPos"
+          @square-click="(pos) => sendCommand(pos)"
+        />
 
-        <div v-if="gameState.bottomPlayer" class="player-info bottom">
-          <div class="info-row">
-            <span class="player-color">{{ gameState.bottomPlayer.color }}</span>
-            <div class="captured-symbols">
-              <span v-for="(s, i) in gameState.bottomPlayer.capturedSymbols" :key="i" class="piece">{{ s }}</span>
-              <span v-if="gameState.bottomPlayer.advantage > 0" class="adv-badge">+{{ gameState.bottomPlayer.advantage }}</span>
+        <!-- Bottom Player Info -->
+        <div class="player-info bot">
+          <div class="player-meta">
+            <span class="p-name">{{ bottomPlayer.name }}</span>
+            <div class="captured-list">
+              <span v-for="(s, i) in bottomPlayer.captured" :key="i" class="piece-icon">{{ s }}</span>
             </div>
-            <span class="clock">{{ formatTime(liveClock(gameState.bottomPlayer)) }}</span>
+          </div>
+          <div :class="['clock glass', { active: state.activeColor === bottomPlayer.color }]">
+            {{ formatTime(bottomPlayer.clock) }}
           </div>
         </div>
       </div>
 
-      <aside class="info-section">
-        <GameStatus :state="gameState" />
-        <GameControls :state="gameState" @command="sendCommand" />
-      </aside>
+      <div class="right-panel">
+        <TimeSettings @startWithTime="handleStartWithTime" />
+        <ImportExport 
+          :fen="state.fen" 
+          :pgn="state.pgn" 
+          @loadFen="handleLoadFen" 
+          @loadPgn="handleLoadPgn"
+        />
+        <GameControls :state="state" @command="sendCommand" />
+      </div>
     </main>
   </div>
 </template>
 
-<style scoped>
+<style>
+:root {
+  --bg-color: #1a1a2e;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --primary: #4ecca3;
+  --accent: #f0a500;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-color);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
 .app-container {
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  align-items: center;
-  padding: 2rem;
-  min-height: 100vh;
-  background: radial-gradient(circle at center, #1a202c 0%, #0f172a 100%);
 }
 
-.app-header {
-  text-align: center;
-  margin-bottom: 1rem;
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
 }
 
-.game-layout {
-  display: grid;
-  grid-template-columns: min-content 350px;
-  gap: 3rem;
-  max-width: 1400px;
-  width: 100%;
+header {
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
-.board-column {
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  color: var(--primary);
+}
+
+.status-msg {
+  background: rgba(240, 165, 0, 0.2);
+  color: #f0a500;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  padding: 1.5rem;
+  gap: 1.5rem;
+  overflow: hidden;
+}
+
+.left-panel, .right-panel {
+  width: 320px;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+.board-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1rem;
 }
 
 .player-info {
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0.75rem 1.25rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-}
-
-.info-row {
+  width: 500px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 2rem;
-}
-
-.player-color {
-  font-weight: 800;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.15rem;
-  color: #718096;
-  min-width: 60px;
-}
-
-.captured-symbols {
-  flex: 1;
-  display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: 32px;
 }
 
-.piece {
-  font-size: 1.5rem;
-  line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+.player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.top .piece {
-  color: #fff;
-  -webkit-text-stroke: 0.5px #000;
+.p-name {
+  font-weight: 700;
+  font-size: 1rem;
 }
 
-.bottom .piece {
-  color: #fff;
-  -webkit-text-stroke: 0.5px #000;
+.captured-list {
+  display: flex;
+  gap: 4px;
+  opacity: 0.7;
 }
 
 .clock {
-  font-family: 'Fira Code', monospace;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
   font-weight: 700;
-  font-size: 1.3rem;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.adv-badge {
-  font-size: 0.8rem;
-  font-weight: 900;
-  background: rgba(72, 187, 120, 0.15);
-  color: #48bb78;
-  padding: 3px 8px;
-  border-radius: 6px;
-  margin-left: 0.5rem;
-  border: 1px solid rgba(72, 187, 120, 0.2);
-}
-
-.board-section {
-  padding: 1rem;
-  border-radius: 12px;
-}
-
-.info-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-height: 100%;
-}
-
-@media (max-width: 1200px) {
-  .game-layout {
-    grid-template-columns: 1fr;
-    justify-content: center;
-  }
-  
-  .board-column {
-    align-items: center;
-  }
-
-  .player-info {
-    width: 640px;
-  }
+.clock.active {
+  background: rgba(78, 204, 163, 0.2);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 </style>

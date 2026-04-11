@@ -409,17 +409,27 @@ object GameController extends Observable[AppState]:
       case None =>
         app.copy(selectedPos = None, highlights = Set.empty, message = None)
       case Some(pos) =>
-        app.game.board.get(pos) match
-          case None =>
-            app.copy(message = Some(TerminalView.error(s"No piece on ${pos.toAlgebraic}.")), highlights = Set.empty, selectedPos = None)
-          case Some(piece) if piece.color != app.game.activeColor =>
-            app.copy(message = Some(TerminalView.error("That is not your piece.")), highlights = Set.empty, selectedPos = None)
-          case Some(_) =>
-            val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
-            if targets.isEmpty then
-              app.copy(message = Some(TerminalView.info("No legal moves for that piece.")), highlights = Set.empty, selectedPos = Some(pos))
-            else
-              app.copy(highlights = targets, selectedPos = Some(pos), message = None)
+        // 1. CLICK-TO-MOVE: If square is a current highlight, move there!
+        if app.highlights.contains(pos) && app.selectedPos.isDefined then
+          val move = chess.model.Move(app.selectedPos.get, pos)
+          // Look for matching legal move (handles promotion detection)
+          val legal = chess.model.MoveGenerator.legalMoves(app.game)
+          legal.find(m => m.from == move.from && m.to == move.to) match
+            case Some(m) => handleMove(app, m)
+            case None    => app.copy(message = Some(TerminalView.error("Illegal move!")))
+        else
+          // 2. REGULAR SELECTION
+          app.game.board.get(pos) match
+            case None =>
+              app.copy(selectedPos = None, highlights = Set.empty, message = None)
+            case Some(piece) if piece.color != app.game.activeColor =>
+              app.copy(message = Some(TerminalView.error("That is not your piece.")), highlights = Set.empty, selectedPos = None)
+            case Some(_) =>
+              val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
+              if targets.isEmpty then
+                app.copy(message = Some(TerminalView.info("No legal moves for that piece.")), highlights = Set.empty, selectedPos = Some(pos))
+              else
+                app.copy(highlights = targets, selectedPos = Some(pos), message = None)
 
   // ── Undo ───────────────────────────────────────────────────────────────────
 

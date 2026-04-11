@@ -2,14 +2,14 @@ package chess.model
 
 import io.circe.{Decoder, Encoder}
 
-enum Color:
+enum Color derives Decoder, Encoder:
   case White, Black
 
   def opposite: Color = this match
     case White => Black
     case Black => White
 
-enum PieceType:
+enum PieceType derives Decoder, Encoder:
   case King, Queen, Rook, Bishop, Knight, Pawn
 
 object PieceType:
@@ -142,7 +142,7 @@ case class ClockState(
   incrementMillis: Long,
   lastTickSysTime: Option[Long] = None,
   isActive: Boolean = true
-):
+) derives Decoder, Encoder:
   def activeMillis(color: Color): Long = color match
     case Color.White => whiteMillis
     case Color.Black => blackMillis

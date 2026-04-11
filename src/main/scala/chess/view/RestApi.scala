@@ -12,24 +12,31 @@ import io.circe.parser.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
-import chess.controller.{GameController, AppState, Command, topPlayer, bottomPlayer, liveMillis}
-import chess.model.{MaterialInfo, materialInfo, PlayerInfo, Pos, MoveGenerator, Color}
+import chess.controller.{GameController, AppState, Command}
+import chess.model.{Pos, MoveGenerator, ClockState, capturedPieces}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 
 case class CommandRequest(command: String) derives Decoder, Encoder
 case class GameStateResponse(
   fen: String, 
+  pgn: String,
   status: String, 
   activeColor: String,
   highlights: List[String],
+  selectedPos: Option[String],
   lastMove: Option[String],
-  topPlayer: PlayerInfo,
-  bottomPlayer: PlayerInfo,
   aiWhite: Boolean,
   aiBlack: Boolean,
   flipped: Boolean,
-  isClockActive: Boolean
+  viewIndex: Int,
+  historyFen: List[String],
+  clock: Option[ClockState],
+  capturedWhite: List[String],
+  capturedBlack: List[String],
+  message: Option[String],
+  training: Boolean,
+  trainingProgress: Option[String]
 ) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
@@ -46,91 +53,92 @@ class RestApi extends Observer[AppState]:
       List(
         `Access-Control-Allow-Origin`.*,
         `Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST, HttpMethods.OPTIONS),
-        `Access-Control-Allow-Headers`("Content-Type")
+        `Access-Control-Allow-Headers`("Content-Type", "Authorization")
       )
     )
 
   val route =
     corsHeader {
-      pathPrefix("api") {
-        concat(
-          options {
-            complete(StatusCodes.OK)
-          },
-          path("state") {
-            get {
-              val state = currentState.get()
-              val response = GameStateResponse(
-                fen = state.game.toFen,
-                status = state.status.toString,
-                activeColor = state.game.activeColor.toString,
-                highlights = state.highlights.map(_.toAlgebraic).toList,
-                lastMove = state.lastMove.map(_.toInputString),
-                topPlayer = {
-                  val p = state.topPlayer
-                  p.copy(clockMillis = state.liveMillis(if p.color == "White" then Color.White else Color.Black))
-                },
-                bottomPlayer = {
-                  val p = state.bottomPlayer
-                  p.copy(clockMillis = state.liveMillis(if p.color == "White" then Color.White else Color.Black))
-                },
-                aiWhite = state.aiWhite,
-                aiBlack = state.aiBlack,
-                flipped = state.flipped,
-                isClockActive = state.clock.exists(c => c.isActive && c.lastTickSysTime.isDefined) && 
-                               (state.status.toString == "Playing" || state.status.toString.toLowerCase.contains("check"))
-              )
-              complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
-            }
-          },
-          path("legal-moves") {
-            get {
-              parameter("square") { squareStr =>
+      concat(
+        options {
+          complete(StatusCodes.OK)
+        },
+        pathPrefix("api") {
+          concat(
+            path("state") {
+              get {
                 val state = currentState.get()
-                Pos.fromAlgebraic(squareStr) match {
-                  case Some(pos) =>
-                    val legalTargets = MoveGenerator.legalMovesFrom(state.game, pos).map(_.to.toAlgebraic)
-                    complete(HttpEntity(ContentTypes.`application/json`, legalTargets.asJson.noSpaces))
-                  case None =>
-                    complete(StatusCodes.BadRequest -> "Invalid square format")
-                }
+                val response = GameStateResponse(
+                  fen = state.game.toFen,
+                  pgn = chess.util.Pgn.exportPgn(state.game),
+                  status = state.status.toString,
+                  activeColor = state.game.activeColor.toString,
+                  highlights = state.highlights.map(_.toAlgebraic).toList,
+                  selectedPos = state.selectedPos.map(_.toAlgebraic),
+                  lastMove = state.lastMove.map(_.toInputString),
+                  aiWhite = state.aiWhite,
+                  aiBlack = state.aiBlack,
+                  flipped = state.flipped,
+                  viewIndex = state.viewIndex,
+                  historyFen = (state.game.history :+ state.game).map(_.toFen),
+                  clock = state.clock,
+                  capturedWhite = state.game.capturedPieces(chess.model.Color.White).map(_.toString),
+                  capturedBlack = state.game.capturedPieces(chess.model.Color.Black).map(_.toString),
+                  message = state.message,
+                  training = state.training,
+                  trainingProgress = state.trainingProgress
+                )
+                complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
               }
-            }
-          },
-          path("command") {
-            post {
-              entity(as[String]) { jsonString =>
-                val cleanedJson = if (jsonString.startsWith("\"") && jsonString.endsWith("\"")) {
-                  jsonString.substring(1, jsonString.length - 1).replace("\\\"", "\"")
-                } else {
-                  jsonString
-                }
-                
-                // If it's a raw string like "e2e4", wrap it in CommandRequest json
-                val finalJson = if (!cleanedJson.trim.startsWith("{")) {
-                   s"""{"command": "$cleanedJson"}"""
-                } else {
-                   cleanedJson
-                }
+            },
+            path("command") {
+              post {
+                entity(as[String]) { jsonString =>
+                  val cleanedJson = if (jsonString.startsWith("\"") && jsonString.endsWith("\"")) {
+                    jsonString.substring(1, jsonString.length - 1).replace("\\\"", "\"")
+                  } else {
+                    jsonString
+                  }
+                  
+                  val finalJson = if (!cleanedJson.trim.startsWith("{")) {
+                     s"""{"command": "$cleanedJson"}"""
+                  } else {
+                     cleanedJson
+                  }
 
-                decode[CommandRequest](finalJson) match {
-                  case Right(req) =>
-                    val app = currentState.get()
-                    val cmd = CommandParser.parse(req.command, app)
-                    GameController.eval(cmd)
-                    complete(StatusCodes.OK -> "Command dispatched")
-                  case Left(error) =>
-                    // Try parsing as raw command string if JSON decode fails
-                    val app = currentState.get()
-                    val cmd = CommandParser.parse(cleanedJson, app)
-                    GameController.eval(cmd)
-                    complete(StatusCodes.OK -> "Command dispatched via raw string")
+                  decode[CommandRequest](finalJson) match {
+                    case Right(req) =>
+                      val app = currentState.get()
+                      val cmd = CommandParser.parse(req.command, app)
+                      GameController.eval(cmd)
+                      complete(StatusCodes.OK -> "Command dispatched")
+                    case Left(error) =>
+                      val app = currentState.get()
+                      val cmd = CommandParser.parse(cleanedJson, app)
+                      GameController.eval(cmd)
+                      complete(StatusCodes.OK -> "Command dispatched via raw string")
+                  }
+                }
+              }
+            },
+            path("legal-moves") {
+              get {
+                parameter("square") { squareStr =>
+                  val state = currentState.get()
+                  Pos.fromAlgebraic(squareStr) match {
+                    case Some(pos) =>
+                      val moves = MoveGenerator.legalMovesFrom(state.game, pos).map(_.to.toAlgebraic).toList
+                      complete(HttpEntity(ContentTypes.`application/json`, moves.asJson.noSpaces))
+                    case None =>
+                      complete(StatusCodes.BadRequest -> s"Invalid square: $squareStr")
+                  }
                 }
               }
             }
-          }
-        )
-      }
+          )
+        },
+        complete(StatusCodes.NotFound -> "Resource not found")
+      )
     }
 
   def start(port: Int = 8080): Unit =

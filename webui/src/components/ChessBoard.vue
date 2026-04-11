@@ -1,23 +1,15 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 
-const props = defineProps(['fen', 'flipped'])
-const emit = defineEmits(['move'])
-
-const selectedSquare = ref(null)
-const legalMoves = ref([])
+const props = defineProps(['fen', 'flipped', 'highlights', 'selectedPos'])
+const emit = defineEmits(['square-click'])
 
 const showPromotion = ref(false)
 const promotionFrom = ref(null)
 const promotionTo = ref(null)
 const promotionColor = ref(null)
 
-// Clear selection if FEN changes (move made)
-watch(() => props.fen, () => {
-  selectedSquare.value = null
-  legalMoves.value = []
-})
-
+// The board layout logic remains robust
 const board = computed(() => {
   const [position] = props.fen.split(' ')
   const rows = position.split('/')
@@ -49,84 +41,41 @@ const board = computed(() => {
   return props.flipped ? result.reverse() : result
 })
 
-const activeColorLetter = computed(() => props.fen.split(' ')[1])
+const handleSquareClick = (square) => {
+  if (showPromotion.value) return 
 
-const fetchLegalMoves = async (square) => {
-  try {
-    const response = await fetch(`http://localhost:8080/api/legal-moves?square=${square}`)
-    if (response.ok) {
-      legalMoves.value = await response.json()
-    }
-  } catch (error) {
-    console.error('Failed to fetch legal moves:', error)
-  }
-}
+  // Detect potential promotion BEFORE emitting (visual overlay logic is still local for UX)
+  const fromSquare = board.value.find(s => s.pos === props.selectedPos)
+  const isPawn = fromSquare?.type === 'p'
+  const isPromotionTarget = props.highlights?.includes(square.pos) && isPawn && (
+    (fromSquare.color === 'white' && square.pos[1] === '8') ||
+    (fromSquare.color === 'black' && square.pos[1] === '1')
+  )
 
-const handleSquareClick = async (square) => {
-  if (showPromotion.value) return // Block interaction during promotion
-
-  if (selectedSquare.value) {
-    // Clicked same square: deselect
-    if (selectedSquare.value === square.pos) {
-      selectedSquare.value = null
-      legalMoves.value = []
-    } 
-    // Clicked a legal target: move
-    else if (legalMoves.value.includes(square.pos)) {
-      const fromSquare = board.value.find(s => s.pos === selectedSquare.value)
-      const isPawn = fromSquare?.type === 'p'
-      const isPromotion = isPawn && (
-        (fromSquare.color === 'white' && square.pos[1] === '8') ||
-        (fromSquare.color === 'black' && square.pos[1] === '1')
-      )
-
-      if (isPromotion) {
-        promotionFrom.value = selectedSquare.value
-        promotionTo.value = square.pos
-        promotionColor.value = fromSquare.color
-        showPromotion.value = true
-      } else {
-        emit('move', `${selectedSquare.value}${square.pos}`)
-        selectedSquare.value = null
-        legalMoves.value = []
-      }
-    }
-    // Clicked another friendly piece: change selection
-    else if (square.piece && square.color.startsWith(activeColorLetter.value === 'w' ? 'white' : 'black')) {
-      selectedSquare.value = square.pos
-      await fetchLegalMoves(square.pos)
-    }
-    // Clicked elsewhere: deselect
-    else {
-      selectedSquare.value = null
-      legalMoves.value = []
-    }
-  } 
-  // No current selection: select piece if it is the active color
-  else if (square.piece && square.color.startsWith(activeColorLetter.value === 'w' ? 'white' : 'black')) {
-    selectedSquare.value = square.pos
-    await fetchLegalMoves(square.pos)
+  if (isPromotionTarget) {
+    promotionFrom.value = props.selectedPos
+    promotionTo.value = square.pos
+    promotionColor.value = fromSquare.color
+    showPromotion.value = true
+  } else {
+    // Standard click emission to backend
+    emit('square-click', square.pos)
   }
 }
 
 const handlePromoSelection = (type) => {
-  emit('move', `${promotionFrom.value}${promotionTo.value}${type}`)
+  emit('square-click', `${promotionFrom.value}${promotionTo.value}${type}`)
   showPromotion.value = false
   promotionFrom.value = null
   promotionTo.value = null
   promotionColor.value = null
-  selectedSquare.value = null
-  legalMoves.value = []
 }
 
 const cancelPromotion = () => {
   showPromotion.value = false
-  promotionFrom.value = null
-  promotionTo.value = null
-  promotionColor.value = null
 }
 
-// SVG Piece mappings (Standard High Quality - Wikipedia Style)
+// SVG Piece mappings
 const getPieceSvg = (type, color) => {
   const unicodeMap = {
     p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚'
@@ -149,8 +98,8 @@ const squareColor = (pos) => {
         :key="square.pos" 
         class="square" 
         :class="[squareColor(square.pos), { 
-          selected: selectedSquare === square.pos,
-          'has-legal-move': legalMoves.includes(square.pos)
+          selected: props.selectedPos === square.pos,
+          'is-highlight': props.highlights?.includes(square.pos)
         }]"
         @click="handleSquareClick(square)"
       >
@@ -158,8 +107,8 @@ const squareColor = (pos) => {
           {{ getPieceSvg(square.type, square.color) }}
         </div>
         
-        <!-- Legal move indicator shadow/dot -->
-        <div v-if="legalMoves.includes(square.pos)" class="move-indicator">
+        <!-- Target indicator (dot or ring) from backend highlights -->
+        <div v-if="props.highlights?.includes(square.pos)" class="move-indicator">
           <div :class="square.piece ? 'capture-ring' : 'move-dot'"></div>
         </div>
 
@@ -197,7 +146,6 @@ const squareColor = (pos) => {
 
 .chessboard {
   display: grid;
-  /* Use vmin to ensure it fits both width and height-constrained screens */
   --square-size: min(80px, 10vmin);
   grid-template-columns: repeat(8, var(--square-size));
   grid-template-rows: repeat(8, var(--square-size));
@@ -233,8 +181,7 @@ const squareColor = (pos) => {
   background-color: #f6f669 !important;
 }
 
-/* Subtle highlight for squares that are targets of legal moves */
-.square.has-legal-move:hover {
+.square.is-highlight:hover {
   filter: brightness(1.1);
 }
 
@@ -301,7 +248,6 @@ const squareColor = (pos) => {
   color: rgba(255, 255, 255, 0.3);
 }
 
-/* Promotion Styles */
 .promotion-overlay {
   position: absolute;
   top: 0;
@@ -394,20 +340,5 @@ const squareColor = (pos) => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(10px);
-}
-
-@media (max-width: 1200px) {
-  .chessboard {
-    --square-size: min(11vw, 8vh);
-  }
-}
-
-@media (max-width: 640px) {
-  .promotion-card {
-    padding: 1.5rem;
-  }
-  .promo-piece {
-    font-size: 40px;
-  }
 }
 </style>

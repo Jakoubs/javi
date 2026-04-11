@@ -2,7 +2,7 @@ package chess.view
 
 import scalafx.application.JFXApp3
 import scalafx.scene.Scene
-import scalafx.scene.control.{Button, ChoiceDialog, Separator, TextArea, ScrollPane, TextInputDialog, Alert, MenuBar, Menu, MenuItem, RadioMenuItem, ToggleGroup, SeparatorMenuItem}
+import scalafx.scene.control.{Button, TextArea, ScrollPane, TextInputDialog, Alert, MenuBar, Menu, MenuItem, SeparatorMenuItem}
 import scalafx.scene.layout.{GridPane, StackPane, HBox, VBox, Priority}
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.Rectangle
@@ -12,46 +12,39 @@ import scalafx.Includes.*
 import scalafx.application.Platform
 import scalafx.animation.AnimationTimer
 
-import chess.controller.{AppState, Command, GameController, topPlayer, bottomPlayer}
-import chess.model.{Color => ChessColor, Pos => ChessPos, PieceType, capturedPieces, GameState, GameRules, materialInfo}
-import chess.util.Observer
+import chess.controller.{AppState}
+import chess.model.{PieceType}
 
-object Gui extends JFXApp3 with Observer[AppState]:
-  
+object Gui extends JFXApp3:
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent.Await
+  import scala.concurrent.duration.*
+
+  private lazy val client = JaviClient()
+  private var lastState: Option[GameStateResponse] = None
+
   private val tileSize = 80.0
   private val lightColor = Color.web("#f0d9b5")
   private val darkColor  = Color.web("#b58863")
-  private val highlightColor = Color.web("#829769") // Greenish for selection/moves
-  private val selectedColor  = Color.web("#3498db") // Blue for selection
-  private val lastMoveColor  = Color.web("#f1c40f") // Yellow for last move
+  private val highlightColor = Color.web("#829769")
+  private val selectedColor  = Color.web("#3498db")
+  private val lastMoveColor  = Color.web("#f1c40f")
 
-  // Store references to panes to update them later
   private val squares = Array.ofDim[StackPane](8, 8)
-  
-  // UI Elements for Clock and Captured Pieces
   private lazy val topClockText = new Text { font = Font.font("Monospaced", 24); fill = Color.Black }
   private lazy val botClockText = new Text { font = Font.font("Monospaced", 24); fill = Color.Black }
   private lazy val topCapturedText = new Text { font = Font.font("Arial", 20); fill = Color.Black }
   private lazy val botCapturedText = new Text { font = Font.font("Arial", 20); fill = Color.Black }
   
   private lazy val topAiBtn = new Button("💻 AI (Off)") { 
-    onAction = _ => GameController.eval(Command.ToggleAi(ChessColor.Black)); style = "-fx-background-color: #ecf0f1;"
+    onAction = _ => client.sendCommand("ai black"); style = "-fx-background-color: #ecf0f1;"
   }
   private lazy val botAiBtn = new Button("💻 AI (Off)") { 
-    onAction = _ => GameController.eval(Command.ToggleAi(ChessColor.White)); style = "-fx-background-color: #ecf0f1;"
+    onAction = _ => client.sendCommand("ai white"); style = "-fx-background-color: #ecf0f1;"
   }
 
   private lazy val statusLabel = new Text { 
     font = Font.font("Arial", 16); fill = Color.web("#e67e22") 
-  }
-
-  private lazy val pgnArea = new TextArea {
-    promptText = "PGN moves will appear here automatically..."
-    wrapText = true
-    prefRowCount = 10
-    prefColumnCount = 25
-    style = "-fx-font-family: 'Consolas', monospace;"
-    editable = false
   }
 
   private lazy val moveHistoryList = new VBox {
@@ -67,445 +60,202 @@ object Gui extends JFXApp3 with Observer[AppState]:
     style = "-fx-background-color: #2c3e50; -fx-background: #2c3e50;"
   }
   
-  // State for user interaction
   private var gameOverPopupShown: Boolean = false
 
   def formatTime(ms: Long): String = GuiHelper.formatTime(ms)
 
-  override def update(state: AppState): Unit =
-    // Update the UI on the JavaFX application thread
-    Platform.runLater {
-       if !state.running then
-         Platform.exit()
-         System.exit(0)
-        else
-          updateBoard(state)
-          updateCapturedPieces(state)
-          updateMoveHistory(state)
-          
-          // Auto-scroll to bottom
-          Platform.runLater {
-            historyScrollPane.vvalue = 1.0
-          }
-          
-          botAiBtn.text = if state.aiWhite then "💻 AI (White)" else "💻 AI (Off)"
-          topAiBtn.text = if state.aiBlack then "💻 AI (Black)" else "💻 AI (Off)"
-    }
+  private def updateUi(res: GameStateResponse): Unit =
+    lastState = Some(res)
 
-  private def updateMoveHistory(state: AppState): Unit =
-    val history = state.game.history :+ state.game
+    val game = chess.model.GameState.fromFen(res.fen).getOrElse(chess.model.GameState.initial)
+    val history = res.historyFen.flatMap(f => chess.model.GameState.fromFen(f).toOption)
+    
+    val renderedState = if res.viewIndex >= 0 && res.viewIndex < history.size then history(res.viewIndex) else game
+    
+    updateBoard(res, renderedState)
+    updateCapturedPieces(res)
+    updateMoveHistory(res, history)
+    
+    statusLabel.text = res.message.getOrElse("")
+    botAiBtn.text = if res.aiWhite then "💻 AI (White)" else "💻 AI (Off)"
+    topAiBtn.text = if res.aiBlack then "💻 AI (Black)" else "💻 AI (Off)"
+    
+    botAiBtn.style = if res.aiWhite then "-fx-background-color: #27ae60; -fx-text-fill: white;" else "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
+    topAiBtn.style = if res.aiBlack then "-fx-background-color: #27ae60; -fx-text-fill: white;" else "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
+
+    res.clock match
+      case Some(c) =>
+        val now = System.currentTimeMillis()
+        val elapsed = if c.isActive then c.lastTickSysTime.map(now - _).getOrElse(0L) else 0L
+        val wTime = if res.activeColor == "White" && c.isActive then Math.max(0L, c.whiteMillis - elapsed) else c.whiteMillis
+        val bTime = if res.activeColor == "Black" && c.isActive then Math.max(0L, c.blackMillis - elapsed) else c.blackMillis
+        botClockText.text = formatTime(wTime)
+        topClockText.text = formatTime(bTime)
+      case None =>
+        botClockText.text = ""; topClockText.text = ""
+
+  private def updateMoveHistory(res: GameStateResponse, history: List[chess.model.GameState]): Unit =
     moveHistoryList.children = history.indices.flatMap { i =>
-      if i == 0 then None // Initial state skip
+      if i == 0 then None
       else if i % 2 != 0 then
-        // Move pair starts
         val moveNum = (i + 1) / 2
-        val whiteState = history(i)
-        val blackState = if i + 1 < history.size then Some(history(i+1)) else None
-        
         val row = new HBox {
-          spacing = 10
-          padding = Insets(2, 5, 2, 5)
+          spacing = 10; padding = Insets(2, 5, 2, 5)
           children = Seq(
             new Text(s"$moveNum.") { fill = Color.Gray; font = Font.font("Monospaced", 14) },
-            createMoveLink(state, i, whiteState),
-            blackState.map(s => createMoveLink(state, i + 1, s)).getOrElse(new Text("") { prefWidth = 50 })
+            createMoveLink(res, i),
+            if i + 1 < history.size then createMoveLink(res, i + 1) else new Text("") { prefWidth = 50 }
           )
         }
         Some(row)
       else None
     }
 
-  private def createMoveLink(state: AppState, index: Int, targetState: GameState): Button =
-    val pgnMove = chess.util.Pgn.deduceMove(state.game.history.lift(index-1).getOrElse(GameState.initial), targetState)
-      .map(m => chess.util.Pgn.toSan(state.game.history.lift(index-1).getOrElse(GameState.initial), m, targetState))
-      .getOrElse("??")
-      
-    new Button(pgnMove) {
-      style = if state.viewIndex == index then 
-        "-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 2 5 2 5;"
-      else
-        "-fx-background-color: transparent; -fx-text-fill: #ecf0f1; -fx-padding: 2 5 2 5;"
-      onAction = _ => GameController.eval(Command.JumpToHistory(index))
+  private def createMoveLink(res: GameStateResponse, index: Int): Button =
+    new Button(s"Move $index") {
+      style = if res.viewIndex == index then "-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 2 5 2 5;"
+              else "-fx-background-color: transparent; -fx-text-fill: #ecf0f1; -fx-padding: 2 5 2 5;"
+      onAction = _ => client.sendCommand(s"jump $index")
     }
 
   override def start(): Unit =
-    // Start game with default (Unlimited) first
-    GameController.eval(Command.StartGame(None))
-
-    // Subscribe to state changes
-    GameController.addObserver(this)
-
-    // Build the MenuBar for Time Control
     val menuBar = new MenuBar {
       menus = Seq(
         new Menu("Zeit") {
-          items = chess.model.TimeControl.presets.map { preset =>
-            new MenuItem(preset.name) { 
-              onAction = _ => GameController.eval(
-                preset.initialMillis match
-                  case Some(init) => Command.StartGame(Some(init, preset.incrementMillis))
-                  case None       => Command.StartGame(None)
-              )
-            }
-          }
+          items = Seq(
+            new MenuItem("Unlimited") { onAction = _ => client.sendCommand("start") },
+            new MenuItem("1|0 Bullet") { onAction = _ => client.sendCommand("start 60000 0") },
+            new MenuItem("3|2 Blitz")  { onAction = _ => client.sendCommand("start 180000 2000") },
+            new MenuItem("10|0 Rapid") { onAction = _ => client.sendCommand("start 600000 0") }
+          )
         },
         new Menu("Import/Export") {
           items = Seq(
-            new MenuItem("Import PGN") { onAction = _ => showPgnImportDialog() },
-            new MenuItem("Import FEN") { onAction = _ => showFenImportDialog() },
+            new MenuItem("Import PGN") { onAction = _ => showPgnOfImportDialog() },
+            new MenuItem("Import FEN") { onAction = _ => showFenOfImportDialog() },
             new SeparatorMenuItem(),
-            new MenuItem("Export PGN") { onAction = _ => showPgnExportDialog(GameController.appState.game) },
-            new MenuItem("Export FEN") { onAction = _ => showFenExportDialog(GameController.appState.game) }
-          )
-        },
-        new Menu("Parsers") {
-          val pgnGroup = new ToggleGroup()
-          val moveGroup = new ToggleGroup()
-          
-          items = Seq(
-            new MenuItem("PGN Strategies") { disable = true },
-            new RadioMenuItem("Regex (Default)") { toggleGroup = pgnGroup; selected = true; onAction = _ => GameController.eval(Command.SwitchParser("pgn", "regex")) },
-            new RadioMenuItem("Combinators") { toggleGroup = pgnGroup; onAction = _ => GameController.eval(Command.SwitchParser("pgn", "combinator")) },
-            new RadioMenuItem("FastParse") { toggleGroup = pgnGroup; onAction = _ => GameController.eval(Command.SwitchParser("pgn", "fast")) },
-            new SeparatorMenuItem(),
-            new MenuItem("Move Input Modes") { disable = true },
-            new RadioMenuItem("Coordinate (e2e4)") { toggleGroup = moveGroup; selected = true; onAction = _ => GameController.eval(Command.SwitchParser("move", "coordinate")) },
-            new RadioMenuItem("Algebraic (SAN)") { toggleGroup = moveGroup; onAction = _ => GameController.eval(Command.SwitchParser("move", "san")) }
+            new MenuItem("Export PGN") { onAction = _ => lastState.foreach(s => showPgnOfExportDialog(s.pgn)) },
+            new MenuItem("Export FEN") { onAction = _ => lastState.foreach(s => showFenOfExportDialog(s.fen)) }
           )
         }
       )
     }
 
     val grid = new GridPane()
-    
     for row <- 0 until 8 do
       for col <- 0 until 8 do
-        val pos = ChessPos(col, 7 - row) // Top of screen is row 7 (Black back rank)
-        val isLight = (col + (7 - row)) % 2 == 1
-        val bgColor = if isLight then lightColor else darkColor
-        
-        val bgRect = new Rectangle {
-          width  = tileSize
-          height = tileSize
-          fill   = bgColor
-        }
-        
-        val textNode = new Text {
-          font = Font.font("Arial", 48)
-          mouseTransparent = true // Ensure StackPane gets all clicks
-        }
-        
         val stack = new StackPane {
           alignment = Pos.Center
-          children = Seq(bgRect, textNode)
-          
+          children = Seq(
+            new Rectangle { width = tileSize; height = tileSize },
+            new Text { font = Font.font("Arial", 48); mouseTransparent = true }
+          )
           onMouseClicked = _ => {
-            val state = GameController.appState
-            val actualPos = if state.flipped then 
-              ChessPos(7 - col, row) 
-            else 
-              ChessPos(col, 7 - row)
-            handleSquareClick(actualPos)
+            lastState.foreach { state =>
+              val pos = if state.flipped then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
+              client.sendCommand(pos.toAlgebraic)
+            }
           }
         }
-        
         squares(row)(col) = stack
         grid.add(stack, col, row)
 
     val navBar = new HBox {
-      spacing = 5
-      alignment = Pos.CenterLeft
-      padding = Insets(5)
-      style = "-fx-background-color: #2c3e50;"
+      spacing = 5; alignment = Pos.CenterLeft; padding = Insets(5); style = "-fx-background-color: #2c3e50;"
       children = Seq(
-        new Button("<<") { style = "-fx-min-width: 40px;"; onAction = _ => GameController.eval(Command.FirstHistory) },
-        new Button("<")  { style = "-fx-min-width: 40px;"; onAction = _ => GameController.eval(Command.StepBack) },
-        new Button(">")  { style = "-fx-min-width: 40px;"; onAction = _ => GameController.eval(Command.StepForward) },
-        new Button(">>") { style = "-fx-min-width: 40px;"; onAction = _ => GameController.eval(Command.LastHistory) }
+        new Button("<<") { onAction = _ => client.sendCommand("first") },
+        new Button("<")  { onAction = _ => client.sendCommand("back") },
+        new Button(">")  { onAction = _ => client.sendCommand("forward") },
+        new Button(">>") { onAction = _ => client.sendCommand("last") }
       )
     }
 
     val sideMenu = new VBox {
-      padding = Insets(20)
-      spacing = 15
-      alignment = Pos.TopCenter
-      style = "-fx-background-color: #2c3e50;"
+      padding = Insets(20); spacing = 15; alignment = Pos.TopCenter; style = "-fx-background-color: #2c3e50;"
       minWidth = 200
-      
-      val btnStyle = "-fx-font-size: 14pt; -fx-base: #ecf0f1; -fx-min-width: 160px;"
-      
       children = Seq(
-        new Text { text = "CHESS MENU"; fill = Color.White; font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 20); margin = Insets(0, 0, 10, 0) },
-        new Button("Flip Board") { style = btnStyle; onAction = _ => GameController.eval(Command.Flip) },
-        new Button("Undo Move") { style = btnStyle; onAction = _ => GameController.eval(Command.Undo) },
-        new Button("Resign") { style = btnStyle; onAction = _ => GameController.eval(Command.Resign) },
-        new Button("Offer Draw") { style = btnStyle; onAction = _ => GameController.eval(Command.OfferDraw) },
-        new Button("New Game") { style = btnStyle; onAction = _ => GameController.eval(Command.NewGame) },
-        new Button("AI Suggestion") { style = btnStyle; onAction = _ => GameController.eval(Command.AiSuggest) },
-        new Button("Train AI (100)") { style = btnStyle; onAction = _ => GameController.eval(Command.AiTrain(100)) },
-        new Separator(),
-        new Button("Quit") { style = "-fx-font-size: 14pt; -fx-base: #e74c3c; -fx-text-fill: white; -fx-min-width: 160px;"; onAction = _ => GameController.eval(Command.Quit) }
+        new Text { text = "CHESS MENU"; fill = Color.White; font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 20) },
+        new Button("Flip Board") { onAction = _ => client.sendCommand("flip") },
+        new Button("Undo Move") { onAction = _ => client.sendCommand("undo") },
+        new Button("Resign") { onAction = _ => client.sendCommand("resign") },
+        new Button("New Game") { onAction = _ => client.sendCommand("new") },
+        new Button("Quit") { onAction = _ => client.sendCommand("quit") }
       )
     }
 
-    val topBar = new HBox {
-      spacing = 20
-      alignment = Pos.CenterLeft
-      children = Seq(topAiBtn, topClockText, topCapturedText)
-    }
-    val botBar = new HBox {
-      spacing = 20
-      alignment = Pos.CenterLeft
-      children = Seq(botAiBtn, botClockText, botCapturedText)
-    }
-    
     val boardArea = new VBox {
-      spacing = 15
-      padding = Insets(15)
-      alignment = Pos.Center
-      style = "-fx-background-color: #ecf0f1;"
-      children = Seq(topBar, grid, botBar, statusLabel)
+      spacing = 15; padding = Insets(15); alignment = Pos.Center; style = "-fx-background-color: #ecf0f1;"
+      children = Seq(
+        new HBox { spacing = 20; alignment = Pos.CenterLeft; children = Seq(topAiBtn, topClockText, topCapturedText) },
+        grid, 
+        new HBox { spacing = 20; alignment = Pos.CenterLeft; children = Seq(botAiBtn, botClockText, botCapturedText) },
+        statusLabel
+      )
     }
 
-    val leftColumn = new VBox {
-      children = Seq(historyScrollPane, navBar)
-      VBox.setVgrow(historyScrollPane, Priority.Always)
-    }
-    val gameArea = new HBox(leftColumn, boardArea, sideMenu)
-    val root = new VBox(menuBar, gameArea)
+    val root = new VBox(menuBar, new HBox(new VBox(historyScrollPane, navBar) { VBox.setVgrow(historyScrollPane, Priority.Always) }, boardArea, sideMenu))
 
-    stage = new JFXApp3.PrimaryStage {
-      title = "Chess"
-      scene = new Scene(root)
-      resizable = false
-    }
+    stage = new JFXApp3.PrimaryStage { title = "Chess Client"; scene = new Scene(root); resizable = false }
 
-    // Timer for active countdown
-    val timer = AnimationTimer { time =>
-      val state = GameController.appState
-      state.clock match
-        case Some(clock) if clock.isActive =>
-          val now = System.currentTimeMillis()
-          val elapsed = clock.lastTickSysTime.map(now - _).getOrElse(0L)
-          
-          val top = state.topPlayer
-          val bot = state.bottomPlayer
-          
-          val topTime = if state.game.activeColor.toString == top.color then
-            Math.max(0L, top.clockMillis - elapsed) else top.clockMillis
-          val botTime = if state.game.activeColor.toString == bot.color then
-            Math.max(0L, bot.clockMillis - elapsed) else bot.clockMillis
-            
-          botClockText.text = formatTime(botTime)
-          topClockText.text = formatTime(topTime)
-          
-          if (botTime == 0 || topTime == 0) && state.status == chess.model.GameStatus.Playing then
-            val loser = if botTime == 0 then (if state.flipped then ChessColor.Black else ChessColor.White)
-                        else (if state.flipped then ChessColor.White else ChessColor.Black)
-            GameController.eval(Command.TimeExpired(loser))
-            
-        case Some(clock) =>
-          val top = state.topPlayer
-          val bot = state.bottomPlayer
-          botClockText.text = formatTime(bot.clockMillis)
-          topClockText.text = formatTime(top.clockMillis)
-        case None =>
-          botClockText.text = ""
-          topClockText.text = ""
+    val timer = AnimationTimer { _ =>
+      client.fetchState().foreach {
+        case Right(res) => Platform.runLater { updateUi(res) }
+        case Left(_) => 
+      }
     }
     timer.start()
 
-    // Initial render
-    updateBoard(GameController.appState)
-    updateCapturedPieces(GameController.appState)
+  private def updateCapturedPieces(res: GameStateResponse): Unit =
+    val pValues = chess.model.PieceType.values
+    val capW = res.capturedWhite.flatMap(s => pValues.find(_.toString == s)).toList
+    val capB = res.capturedBlack.flatMap(s => pValues.find(_.toString == s)).toList
+    val adv = GuiHelper.calculateAdvantages(capW, capB)
+    topCapturedText.text = adv.whiteCapturedSymbols + (if (adv.blackAdvantage > 0) s"   +${adv.blackAdvantage}" else "")
+    botCapturedText.text = adv.blackCapturedSymbols + (if (adv.whiteAdvantage > 0) s"   +${adv.whiteAdvantage}" else "")
 
-  private def updateCapturedPieces(state: AppState): Unit =
-    val top = state.topPlayer
-    val bot = state.bottomPlayer
-    
-    topCapturedText.text = top.capturedSymbols.mkString(" ") + (if (top.advantage > 0) s"   +${top.advantage}" else "")
-    botCapturedText.text = bot.capturedSymbols.mkString(" ") + (if (bot.advantage > 0) s"   +${bot.advantage}" else "")
-    
-    if state.aiBlack then
-      topAiBtn.text = "💻 AI (On)"
-      topAiBtn.style = "-fx-background-color: #27ae60; -fx-text-fill: white;"
-    else
-      topAiBtn.text = "💻 AI (Off)"
-      topAiBtn.style = "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
-      
-    if state.aiWhite then
-      botAiBtn.text = "💻 AI (On)"
-      botAiBtn.style = "-fx-background-color: #27ae60; -fx-text-fill: white;"
-    else
-      botAiBtn.text = "💻 AI (Off)"
-      botAiBtn.style = "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
-
-  private def updateBoard(state: AppState): Unit =
-    // Determine which state to render (history vs latest)
-    val renderedState = if state.viewIndex == state.game.history.size then state.game 
-                        else state.game.history(state.viewIndex)
-    
-    statusLabel.text = state.message.map(_.trim).getOrElse("")
-    
+  private def updateBoard(res: GameStateResponse, renderedState: chess.model.GameState): Unit =
     val board = renderedState.board
-    val lastMovePosSet: Set[ChessPos] = if state.viewIndex == state.game.history.size then
-      state.lastMove.map(m => Set(m.from, m.to)).getOrElse(Set.empty)
-    else
-      // For history states, we can highlight the move that led TO this state 
-      // if it's not the initial state (index 0).
-      if state.viewIndex > 0 then
-        state.game.history.lift(state.viewIndex - 1).flatMap { prev =>
-          chess.util.Pgn.deduceMove(prev, renderedState).map(m => Set(m.from, m.to))
-        }.getOrElse(Set.empty)
-      else Set.empty
-
     for row <- 0 until 8 do
       for col <- 0 until 8 do
         val stack = squares(row)(col)
         val bgRect = stack.children(0).asInstanceOf[javafx.scene.shape.Rectangle]
         val textNode = stack.children(1).asInstanceOf[javafx.scene.text.Text]
-        
-        // Handle flipping: row 0 is top, row 7 is bottom
-        val pos = if state.flipped then 
-          ChessPos(7 - col, row) 
-        else 
-          ChessPos(col, 7 - row)
-        
+        val pos = if res.flipped then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
         val isLight = (pos.col + pos.row) % 2 == 1
-        val isInCheck = board.findKing(renderedState.activeColor).contains(pos) && 
-                        (GameRules.computeStatus(renderedState) match
-                          case chess.model.GameStatus.Check(_) | chess.model.GameStatus.Checkmate(_) => true
-                          case _ => false
-                        )
-        
-        val baseColor = if isLight then lightColor else darkColor
-        bgRect.setFill(
-          if isInCheck then Color.Red
-          else if state.selectedPos.contains(pos) then selectedColor
-          else if lastMovePosSet.contains(pos) then lastMoveColor
-          else if state.highlights.contains(pos) && state.viewIndex == state.game.history.size then highlightColor
-          else baseColor
-        )
+        bgRect.setFill(if isLight then lightColor else darkColor)
         
         board.get(pos) match
           case Some(piece) =>
             textNode.setText(piece.symbol)
-            textNode.setFill(if piece.color == ChessColor.White then Color.White else Color.Black)
+            textNode.setFill(if piece.color == chess.model.Color.White then Color.White else Color.Black)
+            textNode.setStroke(if piece.color == chess.model.Color.White then Color.Black else Color.White)
             textNode.setStrokeWidth(1.0)
-            textNode.setStroke(if piece.color == ChessColor.White then Color.Black else Color.White)
-          case None =>
-            if state.highlights.contains(pos) && state.viewIndex == state.game.history.size then
-              textNode.setText("•")
-              textNode.setFill(Color.Black.opacity(0.3))
-              textNode.setStrokeWidth(0.0)
-            else
+          case None => 
+            if res.highlights.contains(pos.toAlgebraic) then 
+              textNode.setText("•"); textNode.setFill(Color.Black.opacity(0.3))
+            else 
               textNode.setText("")
-              textNode.setStrokeWidth(0.0)
-              
-    // Game Over Popup logic (only for latest move)
-    if state.viewIndex == state.game.history.size then
-      state.status match
-        case chess.model.GameStatus.Playing | chess.model.GameStatus.Check(_) =>
-          gameOverPopupShown = false
-        case other =>
-          if !gameOverPopupShown then
-            gameOverPopupShown = true
-            val msg = other match
-              case chess.model.GameStatus.Checkmate(loser) =>
-                val winner = if loser == ChessColor.White then "Black" else "White"
-                s"Checkmate! $winner wins the game."
-              case chess.model.GameStatus.Timeout(loser) =>
-                val winner = if loser == ChessColor.White then "Black" else "White"
-                s"Timeout! $winner wins on time."
-              case chess.model.GameStatus.Stalemate =>
-                "Stalemate! The game is a draw."
-              case chess.model.GameStatus.Draw(reason) =>
-                s"Draw! Reason: $reason"
-              case _ => "The game is over."
-              
-            val alert = new scalafx.scene.control.Alert(scalafx.scene.control.Alert.AlertType.Information) {
-              title = "Game Over"
-              headerText = "We have a result!"
-              contentText = msg
-            }
-            alert.showAndWait()
 
-  private def handleSquareClick(pos: ChessPos): Unit =
-    val state = GameController.appState
-    
-    // Disable moves when browsing history
-    if state.viewIndex == state.game.history.size then
-      state.selectedPos match
-        case None =>
-          if state.game.board.isOccupiedBy(pos, state.game.activeColor) then
-            GameController.eval(Command.SelectSquare(Some(pos)))
-            
-        case Some(from) =>
-          if from == pos then
-            GameController.eval(Command.SelectSquare(None))
-          else if state.game.board.isOccupiedBy(pos, state.game.activeColor) then
-            GameController.eval(Command.SelectSquare(Some(pos)))
-          else
-            val isPawn = state.game.board.get(from).exists(_.pieceType == PieceType.Pawn)
-            val isPromotionRow = (pos.row == 0 || pos.row == 7)
-            val promo = if isPawn && isPromotionRow then
-              val choices = Seq("Queen ♛", "Rook ♜", "Bishop ♝", "Knight ♞")
-              val dialog = new ChoiceDialog(defaultChoice = "Queen ♛", choices = choices) {
-                title = "Pawn Promotion"
-                headerText = "Choose the piece your pawn promotes to:"
-              }
-              dialog.showAndWait() match
-                case Some("Rook ♜")   => Some(PieceType.Rook)
-                case Some("Bishop ♝") => Some(PieceType.Bishop)
-                case Some("Knight ♞") => Some(PieceType.Knight)
-                case _                => Some(PieceType.Queen)
-            else None
-            
-            GameController.eval(Command.ApplyMove(chess.model.Move(from, pos, promo)))
-    else
-      // Just jump to latest? Or do nothing?
-      val alert = new Alert(Alert.AlertType.Warning) {
-        title = "History View"
-        headerText = "You are currently viewing history."
-        contentText = "Go to the latest move (or click >>) to continue playing."
-      }
+  private def showPgnOfExportDialog(pgn: String): Unit = 
+    Platform.runLater {
+      val alert = new Alert(Alert.AlertType.Information) { title = "PGN Export"; headerText = "Copy the PGN below:"; resizable = true }
+      alert.getDialogPane.setContent(new TextArea(pgn) { editable = false; wrapText = true; prefHeight = 400 })
       alert.showAndWait()
+    }
 
-  private def showPgnExportDialog(game: GameState): Unit =
-    val pgn = chess.util.Pgn.exportPgn(game)
-    val alert = new Alert(Alert.AlertType.Information) {
-      title = "PGN Export"
-      headerText = "Copy the PGN below:"
-      resizable = true
+  private def showPgnOfImportDialog(): Unit = 
+    Platform.runLater {
+      val dialog = new TextInputDialog() { title = "PGN Import"; headerText = "Paste PGN:" }
+      dialog.showAndWait().foreach(pgn => client.sendCommand(s"load pgn $pgn"))
     }
-    val textArea = new TextArea(pgn) {
-      editable = false
-      wrapText = true
-      prefHeight = 400
-    }
-    alert.getDialogPane.setContent(textArea)
-    alert.showAndWait()
 
-  private def showPgnImportDialog(): Unit =
-    val dialog = new TextInputDialog() {
-      title = "PGN Import"
-      headerText = "Paste PGN to load game history:"
+  private def showFenOfExportDialog(fen: String): Unit = 
+    Platform.runLater {
+      new TextInputDialog(fen) { title = "FEN Export"; headerText = "Current FEN:" }.showAndWait()
     }
-    val result = dialog.showAndWait()
-    result.foreach(pgn => GameController.eval(Command.LoadPgn(pgn)))
 
-  private def showFenExportDialog(game: GameState): Unit =
-    val fen = game.toFen
-    val dialog = new TextInputDialog(fen) {
-      title = "FEN Export"
-      headerText = "Current board FEN:"
+  private def showFenOfImportDialog(): Unit = 
+    Platform.runLater {
+      val dialog = new TextInputDialog() { title = "FEN Import"; headerText = "Paste FEN:" }
+      dialog.showAndWait().foreach(fen => client.sendCommand(s"load fen $fen"))
     }
-    dialog.showAndWait()
-
-  private def showFenImportDialog(): Unit =
-    val dialog = new TextInputDialog() {
-      title = "FEN Import"
-      headerText = "Paste your FEN string (position only or full format):"
-    }
-    val result = dialog.showAndWait()
-    result.foreach(fen => GameController.eval(Command.LoadFen(fen)))
