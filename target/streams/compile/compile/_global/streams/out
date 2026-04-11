@@ -1,7 +1,19 @@
-[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/Main.scala:18:22 [0m[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m18 |[0m    [33mval[0m [36mrestApi[0m = [33mnew[0m [35mRestApi[0m()[0m
-[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m                      ^^^^^^^[0m[0m
-[0m[[0m[31merror[0m] [0m[0m[31m   |[0m                      Not found: type RestApi[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/RestApi.scala:39:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m39 |[0m        `Access-Control-Allow-Origin`.*,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        Not found: Access-Control-Allow-Origin[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
 [0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
-[0m[[0m[31merror[0m] [0m[0mone error found[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/RestApi.scala:40:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m40 |[0m        `Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST, HttpMethods.OPTIONS),[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        Not found: Access-Control-Allow-Methods[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E006] Not Found Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/RestApi.scala:41:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m41 |[0m        `Access-Control-Allow-Headers`([31m"Content-Type"[0m)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m        Not found: Access-Control-Allow-Headers[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[31merror[0m] [0m[0mthree errors found[0m

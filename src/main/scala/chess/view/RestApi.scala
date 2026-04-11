@@ -4,9 +4,9 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.*
+import akka.http.scaladsl.model.headers.*
 import akka.http.scaladsl.server.Directives.*
 import io.circe.*
-// Using Scala 3 Derivation instead of simple generic auto to be safer
 import io.circe.syntax.*
 import io.circe.parser.*
 import scala.concurrent.ExecutionContextExecutor
@@ -17,7 +17,13 @@ import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 
 case class CommandRequest(command: String) derives Decoder, Encoder
-case class GameStateResponse(fen: String, status: String, activeColor: String) derives Decoder, Encoder
+case class GameStateResponse(
+  fen: String, 
+  status: String, 
+  activeColor: String,
+  highlights: List[String],
+  lastMove: Option[String]
+) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "chess-rest-api")
@@ -28,36 +34,69 @@ class RestApi extends Observer[AppState]:
   override def update(state: AppState): Unit =
     currentState.set(state)
 
+  private def corsHeader = 
+    respondWithHeaders(
+      List(
+        `Access-Control-Allow-Origin`.*,
+        `Access-Control-Allow-Methods`(HttpMethods.GET, HttpMethods.POST, HttpMethods.OPTIONS),
+        `Access-Control-Allow-Headers`("Content-Type")
+      )
+    )
+
   val route =
-    pathPrefix("api") {
-      concat(
-        path("state") {
-          get {
-            val state = currentState.get()
-            val response = GameStateResponse(
-              fen = state.game.toFen,
-              status = state.status.toString,
-              activeColor = state.game.activeColor.toString
-            )
-            complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
-          }
-        },
-        path("command") {
-          post {
-            entity(as[String]) { jsonString =>
-              decode[CommandRequest](jsonString) match {
-                case Right(req) =>
-                  val app = currentState.get()
-                  val cmd = CommandParser.parse(req.command, app)
-                  GameController.eval(cmd)
-                  complete(StatusCodes.OK -> "Command dispatched")
-                case Left(error) =>
-                  complete(StatusCodes.BadRequest -> s"Invalid JSON: ${error.getMessage}")
+    corsHeader {
+      pathPrefix("api") {
+        concat(
+          options {
+            complete(StatusCodes.OK)
+          },
+          path("state") {
+            get {
+              val state = currentState.get()
+              val response = GameStateResponse(
+                fen = state.game.toFen,
+                status = state.status.toString,
+                activeColor = state.game.activeColor.toString,
+                highlights = state.highlights.map(_.toAlgebraic).toList,
+                lastMove = state.lastMove.map(_.toInputString)
+              )
+              complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
+            }
+          },
+          path("command") {
+            post {
+              entity(as[String]) { jsonString =>
+                val cleanedJson = if (jsonString.startsWith("\"") && jsonString.endsWith("\"")) {
+                  jsonString.substring(1, jsonString.length - 1).replace("\\\"", "\"")
+                } else {
+                  jsonString
+                }
+                
+                // If it's a raw string like "e2e4", wrap it in CommandRequest json
+                val finalJson = if (!cleanedJson.trim.startsWith("{")) {
+                   s"""{"command": "$cleanedJson"}"""
+                } else {
+                   cleanedJson
+                }
+
+                decode[CommandRequest](finalJson) match {
+                  case Right(req) =>
+                    val app = currentState.get()
+                    val cmd = CommandParser.parse(req.command, app)
+                    GameController.eval(cmd)
+                    complete(StatusCodes.OK -> "Command dispatched")
+                  case Left(error) =>
+                    // Try parsing as raw command string if JSON decode fails
+                    val app = currentState.get()
+                    val cmd = CommandParser.parse(cleanedJson, app)
+                    GameController.eval(cmd)
+                    complete(StatusCodes.OK -> "Command dispatched via raw string")
+                }
               }
             }
           }
-        }
-      )
+        )
+      }
     }
 
   def start(port: Int = 8080): Unit =
