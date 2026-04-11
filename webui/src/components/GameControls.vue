@@ -34,6 +34,7 @@ const commands = [
           class="cmd-btn ai-btn"
           :class="{ active: state?.aiWhite }"
         >
+          <span class="icon">🤖</span>
           White AI
         </button>
         <button 
@@ -41,6 +42,7 @@ const commands = [
           class="cmd-btn ai-btn"
           :class="{ active: state?.aiBlack }"
         >
+          <span class="icon">🤖</span>
           Black AI
         </button>
       </div>
@@ -80,34 +82,48 @@ h3, h4 {
   background: rgba(255, 255, 255, 0.03);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
 }
 
 .ai-btn.active {
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.5);
-  color: #fff;
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-  animation: pulse-glow 2s infinite;
+  background: rgba(16, 185, 129, 0.2) !important;
+  border: 1px solid rgba(52, 211, 153, 0.8) !important;
+  color: #fff !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5), 
+              0 0 30px rgba(16, 185, 129, 0.2),
+              inset 0 0 10px rgba(16, 185, 129, 0.3) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  animation: pulse-glow-green 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes pulse-glow {
+.ai-btn.active .icon {
+  filter: drop-shadow(0 0 5px #10b981);
+}
+
+@keyframes pulse-glow-green {
   0% {
-    box-shadow: 0 0 5px rgba(99, 102, 241, 0.2);
-    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4), 0 0 20px rgba(16, 185, 129, 0.1);
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
-    border-color: rgba(99, 102, 241, 0.8);
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.7), 0 0 50px rgba(16, 185, 129, 0.3);
+    transform: scale(1.02);
   }
   100% {
-    box-shadow: 0 0 5px rgba(99, 102, 241, 0.2);
-    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4), 0 0 20px rgba(16, 185, 129, 0.1);
+    transform: scale(1);
   }
 }
 
 .icon {
   font-size: 1rem;
   width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ai-controls {

@@ -7,7 +7,9 @@ import GameStatus from './components/GameStatus.vue'
 const gameState = ref({
   fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   status: 'Waiting...',
-  activeColor: 'White'
+  activeColor: 'White',
+  aiWhite: false,
+  aiBlack: false
 })
 
 const fetchState = async () => {
