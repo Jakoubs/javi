@@ -48,7 +48,7 @@ onUnmounted(() => {
 
 <template>
   <div class="app-container">
-    <header>
+    <header class="app-header">
       <h1>JAVI CHESS</h1>
       <p class="subtitle">PREMIUM STRATEGY EXPERIENCE</p>
     </header>
@@ -60,7 +60,7 @@ onUnmounted(() => {
 
       <aside class="info-section">
         <GameStatus :state="gameState" />
-        <GameControls @command="sendCommand" />
+        <GameControls :state="gameState" @command="sendCommand" />
       </aside>
     </main>
   </div>
@@ -70,33 +70,46 @@ onUnmounted(() => {
 .app-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.app-header {
+  flex-shrink: 0;
 }
 
 .game-layout {
   display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1rem;
   width: 100%;
+  flex: 1;
+  min-height: 0; /* Allow grid to shrink */
+  align-items: center;
 }
 
 .board-section {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
+  padding: 0.5rem;
+  max-height: 100%;
 }
 
 .info-section {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+  max-height: 100%;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 @media (max-width: 1000px) {
   .game-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    overflow-y: auto;
   }
   
   .info-section {

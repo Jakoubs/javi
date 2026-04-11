@@ -13,6 +13,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
 import chess.controller.{GameController, AppState, Command}
+import chess.model.{Pos, MoveGenerator}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 
@@ -22,7 +23,9 @@ case class GameStateResponse(
   status: String, 
   activeColor: String,
   highlights: List[String],
-  lastMove: Option[String]
+  lastMove: Option[String],
+  aiWhite: Boolean,
+  aiBlack: Boolean
 ) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
@@ -58,9 +61,25 @@ class RestApi extends Observer[AppState]:
                 status = state.status.toString,
                 activeColor = state.game.activeColor.toString,
                 highlights = state.highlights.map(_.toAlgebraic).toList,
-                lastMove = state.lastMove.map(_.toInputString)
+                lastMove = state.lastMove.map(_.toInputString),
+                aiWhite = state.aiWhite,
+                aiBlack = state.aiBlack
               )
               complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
+            }
+          },
+          path("legal-moves") {
+            get {
+              parameter("square") { squareStr =>
+                val state = currentState.get()
+                Pos.fromAlgebraic(squareStr) match {
+                  case Some(pos) =>
+                    val legalTargets = MoveGenerator.legalMovesFrom(state.game, pos).map(_.to.toAlgebraic)
+                    complete(HttpEntity(ContentTypes.`application/json`, legalTargets.asJson.noSpaces))
+                  case None =>
+                    complete(StatusCodes.BadRequest -> "Invalid square format")
+                }
+              }
             }
           },
           path("command") {
