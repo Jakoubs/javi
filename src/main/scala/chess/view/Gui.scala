@@ -62,7 +62,11 @@ object Gui extends JFXApp3:
   
   private var gameOverPopupShown: Boolean = false
 
-  def formatTime(ms: Long): String = GuiHelper.formatTime(ms)
+  def formatTime(ms: Long): String =
+    val totalSec = Math.max(0, ms) / 1000
+    val mn = totalSec / 60
+    val sc = totalSec % 60
+    f"$mn%02d:$sc%02d"
 
   private def updateUi(res: GameStateResponse): Unit =
     if !res.running then System.exit(0)
@@ -86,13 +90,9 @@ object Gui extends JFXApp3:
     topAiBtn.style = if res.aiBlack then "-fx-background-color: #27ae60; -fx-text-fill: white;" else "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
 
     res.clock match
-      case Some(c) =>
-        val now = System.currentTimeMillis()
-        val elapsed = if c.isActive then c.lastTickSysTime.map(now - _).getOrElse(0L) else 0L
-        val wTime = if res.activeColor == "White" && c.isActive then Math.max(0L, c.whiteMillis - elapsed) else c.whiteMillis
-        val bTime = if res.activeColor == "Black" && c.isActive then Math.max(0L, c.blackMillis - elapsed) else c.blackMillis
-        botClockText.text = formatTime(wTime)
-        topClockText.text = formatTime(bTime)
+      case Some(_) =>
+        botClockText.text = formatTime(res.whiteLiveMillis)
+        topClockText.text = formatTime(res.blackLiveMillis)
       case None =>
         botClockText.text = ""; topClockText.text = ""
 
@@ -208,12 +208,9 @@ object Gui extends JFXApp3:
     timer.start()
 
   private def updateCapturedPieces(res: GameStateResponse): Unit =
-    val pValues = chess.model.PieceType.values
-    val capW = res.capturedWhite.flatMap(s => pValues.find(_.toString == s)).toList
-    val capB = res.capturedBlack.flatMap(s => pValues.find(_.toString == s)).toList
-    val adv = GuiHelper.calculateAdvantages(capW, capB)
-    topCapturedText.text = adv.whiteCapturedSymbols + (if (adv.blackAdvantage > 0) s"   +${adv.blackAdvantage}" else "")
-    botCapturedText.text = adv.blackCapturedSymbols + (if (adv.whiteAdvantage > 0) s"   +${adv.whiteAdvantage}" else "")
+    val m = res.materialInfo
+    topCapturedText.text = m.whiteCapturedSymbols.mkString(" ") + (if (m.blackAdvantage > 0) s"   +${m.blackAdvantage}" else "")
+    botCapturedText.text = m.blackCapturedSymbols.mkString(" ") + (if (m.whiteAdvantage > 0) s"   +${m.whiteAdvantage}" else "")
 
   private def updateBoard(res: GameStateResponse, renderedState: chess.model.GameState): Unit =
     val board = renderedState.board

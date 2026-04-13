@@ -1,5 +1,10 @@
-[error] -- [E172] Type Error: /home/jakobsteiner/Dokumente/main/200_Htwg/50_Vertiefungsmodul/Software Engineering/01_SoftwareArchitektur/firstTryClaude/javi/src/main/scala/chess/view/Gui.scala:23:28 
-[error] 23 |  private lazy val client = new JaviClient()
-[error]    |                            ^^^^^^^^^^^^^^^^
-[error]    |No given instance of type akka.actor.typed.ActorSystem[Nothing] was found
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:97:44 
+[error] 97 |                  materialInfo = state.game.materialInfo,
+[error]    |                                 ^^^^^^^^^^^^^^^^^^^^^^^
+[error]    |value materialInfo is not a member of chess.model.GameState, but could be made available as an extension method.
+[error]    |
+[error]    |The following import might fix the problem:
+[error]    |
+[error]    |  import chess.model.materialInfo
+[error]    |
 [error] one error found

@@ -12,8 +12,8 @@ import io.circe.parser.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
-import chess.controller.{GameController, AppState, Command}
-import chess.model.{Pos, MoveGenerator, ClockState, capturedPieces}
+import chess.controller.{GameController, AppState, Command, liveMillis}
+import chess.model.{Pos, MoveGenerator, ClockState, capturedPieces, MaterialInfo, materialInfo}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 
@@ -38,7 +38,10 @@ case class GameStateResponse(
   training: Boolean,
   trainingProgress: Option[String],
   running: Boolean,
-  messageIsError: Boolean
+  messageIsError: Boolean,
+  materialInfo: MaterialInfo,
+  whiteLiveMillis: Long,
+  blackLiveMillis: Long
 ) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
@@ -90,7 +93,10 @@ class RestApi extends Observer[AppState]:
                   training = state.training,
                   trainingProgress = state.trainingProgress,
                   running = state.running,
-                  messageIsError = state.messageIsError
+                  messageIsError = state.messageIsError,
+                  materialInfo = state.game.materialInfo,
+                  whiteLiveMillis = state.liveMillis(chess.model.Color.White),
+                  blackLiveMillis = state.liveMillis(chess.model.Color.Black)
                 )
                 complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
               }
@@ -98,17 +104,7 @@ class RestApi extends Observer[AppState]:
             path("command") {
               post {
                 entity(as[String]) { jsonString =>
-                  val cleanedJson = if (jsonString.startsWith("\"") && jsonString.endsWith("\"")) {
-                    jsonString.substring(1, jsonString.length - 1).replace("\\\"", "\"")
-                  } else {
-                    jsonString
-                  }
-                  
-                  val finalJson = if (!cleanedJson.trim.startsWith("{")) {
-                     s"""{"command": "$cleanedJson"}"""
-                  } else {
-                     cleanedJson
-                  }
+                  val (cleaned, finalJson) = normalizeCommandJson(jsonString)
 
                   decode[CommandRequest](finalJson) match {
                     case Right(req) =>
@@ -127,7 +123,7 @@ class RestApi extends Observer[AppState]:
                       }
                     case Left(error) =>
                       val app = currentState.get()
-                      val cmd = CommandParser.parse(cleanedJson, app)
+                      val cmd = CommandParser.parse(cleaned, app)
                       val newState = GameController.eval(cmd)
                       
                       if (newState.messageIsError) {
@@ -158,6 +154,20 @@ class RestApi extends Observer[AppState]:
         complete(StatusCodes.NotFound -> "Resource not found")
       )
     }
+
+  private def normalizeCommandJson(jsonString: String): (String, String) =
+    val cleaned = if (jsonString.startsWith("\"") && jsonString.endsWith("\"")) {
+      jsonString.substring(1, jsonString.length - 1).replace("\\\"", "\"")
+    } else {
+      jsonString
+    }
+    
+    val finalJson = if (!cleaned.trim.startsWith("{")) {
+       s"""{"command": "$cleaned"}"""
+    } else {
+       cleaned
+    }
+    (cleaned, finalJson)
 
   def start(port: Int = 8080): Unit =
     Http().newServerAt("0.0.0.0", port).bind(route).onComplete {

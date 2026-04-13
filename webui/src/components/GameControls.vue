@@ -13,16 +13,6 @@ const commands = [
 
 <template>
   <div class="controls glass-panel">
-    <div class="time-controls">
-      <h4>TIME CONTROL</h4>
-      <div class="button-grid">
-        <button @click="emit('command', 'time unlimited')" class="cmd-btn">Unlimited</button>
-        <button @click="emit('command', 'time bullet')" class="cmd-btn">1|0 Bullet</button>
-        <button @click="emit('command', 'time blitz')" class="cmd-btn">3|2 Blitz</button>
-        <button @click="emit('command', 'time rapid')" class="cmd-btn">10|0 Rapid</button>
-      </div>
-    </div>
-    
     <h3>COMMANDS</h3>
     <div class="button-grid">
       <button 
