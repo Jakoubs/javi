@@ -31,6 +31,7 @@ case class GameStateResponse(
   flipped: Boolean,
   viewIndex: Int,
   historyFen: List[String],
+  historyMoves: List[String],
   clock: Option[ClockState],
   capturedWhite: List[String],
   capturedBlack: List[String],
@@ -86,6 +87,14 @@ class RestApi extends Observer[AppState]:
                   flipped = state.flipped,
                   viewIndex = state.viewIndex,
                   historyFen = (state.game.history :+ state.game).map(_.toFen),
+                  historyMoves = {
+                    val gameHistory = state.game.history :+ state.game
+                    (0 until gameHistory.size - 1).flatMap { i =>
+                      chess.util.Pgn.deduceMove(gameHistory(i), gameHistory(i+1)).map { m =>
+                        chess.util.Pgn.toSan(gameHistory(i), m, gameHistory(i+1))
+                      }
+                    }.toList
+                  },
                   clock = state.clock,
                   capturedWhite = state.game.capturedPieces(chess.model.Color.White).map(_.toString),
                   capturedBlack = state.game.capturedPieces(chess.model.Color.Black).map(_.toString),

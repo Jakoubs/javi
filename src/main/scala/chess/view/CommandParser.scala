@@ -26,6 +26,10 @@ object CommandParser:
       case "ai"                 => Command.AiMove
       case "ai w" | "ai white"  => Command.ToggleAi(Color.White)
       case "ai b" | "ai black"  => Command.ToggleAi(Color.Black)
+      case "back"               => Command.StepBack
+      case "forward"            => Command.StepForward
+      case "first"              => Command.FirstHistory
+      case "last"               => Command.LastHistory
       
       case s if s.startsWith("start ") || s.startsWith("time ") =>
         val args = s.split("\\s+").drop(1)
@@ -51,6 +55,12 @@ object CommandParser:
         nStr.toIntOption match
           case Some(n) if n > 0 => Command.AiTrain(n)
           case _                => Command.Unknown(s"Invalid training count: $nStr")
+
+      case s if s.startsWith("jump ") =>
+        val idxStr = s.drop(5).trim
+        idxStr.toIntOption match
+          case Some(i) => Command.JumpToHistory(i)
+          case _       => Command.Unknown(s"Invalid jump index: $idxStr")
 
       case s if s.startsWith("parser ") =>
         val parts = s.drop(7).trim.split("\\s+").filter(_.nonEmpty)

@@ -5,6 +5,7 @@ import GameControls from './components/GameControls.vue'
 import GameStatus from './components/GameStatus.vue'
 import ImportExport from './components/ImportExport.vue'
 import TimeSettings from './components/TimeSettings.vue'
+import MoveHistory from './components/MoveHistory.vue'
 
 const state = ref({
   fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -87,6 +88,21 @@ const formatTime = (ms) => {
   const s = totalSec % 60
   return `${m}:${s.toString().padStart(2, '0')}`
 }
+
+const displayFen = computed(() => {
+  const h = state.value.historyFen
+  const i = state.value.viewIndex
+  if (h && h.length > 0 && i >= 0 && i < h.length) {
+    return h[i]
+  }
+  return state.value.fen
+})
+
+const isViewingHistory = computed(() => {
+  const h = state.value.historyFen
+  const i = state.value.viewIndex
+  return h && h.length > 0 && i < h.length - 1
+})
 </script>
 
 <template>
@@ -98,7 +114,13 @@ const formatTime = (ms) => {
 
     <main>
       <div class="left-panel">
-        <GameStatus :state="state" @jump="(i) => sendCommand(`jump ${i}`)" />
+        <GameStatus :state="state" />
+        <MoveHistory 
+          :moves="state.historyMoves || []" 
+          :viewIndex="state.viewIndex" 
+          @jump="(i) => sendCommand(`jump ${i}`)" 
+          @command="sendCommand"
+        />
       </div>
 
       <div class="board-container">
@@ -116,10 +138,10 @@ const formatTime = (ms) => {
         </div>
 
         <ChessBoard 
-          :fen="state.fen" 
+          :fen="displayFen" 
           :flipped="state.flipped"
-          :highlights="state.highlights"
-          :selectedPos="state.selectedPos"
+          :highlights="isViewingHistory ? [] : state.highlights"
+          :selectedPos="isViewingHistory ? null : state.selectedPos"
           @square-click="(pos) => sendCommand(pos)"
         />
 
