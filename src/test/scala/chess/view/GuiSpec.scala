@@ -1,66 +1,76 @@
 package chess.view
 
-import chess.model.{PieceType, Color => ChessColor}
+import chess.model.{PieceType, GameState, Color => ChessColor, Pos}
+import chess.model.materialInfo
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class GuiSpec extends AnyFunSpec with Matchers {
 
-  describe("GuiHelper") {
+  describe("Gui Formatting") {
     
     describe("formatTime") {
       it("should format standard positive milliseconds") {
-        GuiHelper.formatTime(65000) shouldBe "01:05"
-        GuiHelper.formatTime(1000) shouldBe "00:01"
-        GuiHelper.formatTime(600000) shouldBe "10:00"
+        Gui.formatTime(65000) shouldBe "01:05"
+        Gui.formatTime(1000) shouldBe "00:01"
+        Gui.formatTime(600000) shouldBe "10:00"
       }
 
       it("should handle zero and negative values as 00:00") {
-        GuiHelper.formatTime(0) shouldBe "00:00"
-        GuiHelper.formatTime(-5000) shouldBe "00:00"
+        Gui.formatTime(0) shouldBe "00:00"
+        Gui.formatTime(-5000) shouldBe "00:00"
       }
     }
+  }
+
+  describe("Material Logic") {
 
     describe("pieceValue") {
       it("should return standard values for all pieces") {
-        GuiHelper.pieceValue(PieceType.Pawn) shouldBe 1
-        GuiHelper.pieceValue(PieceType.Knight) shouldBe 3
-        GuiHelper.pieceValue(PieceType.Bishop) shouldBe 3
-        GuiHelper.pieceValue(PieceType.Rook) shouldBe 5
-        GuiHelper.pieceValue(PieceType.Queen) shouldBe 9
-        GuiHelper.pieceValue(PieceType.King) shouldBe 0
+        PieceType.pieceValue(PieceType.Pawn) shouldBe 1
+        PieceType.pieceValue(PieceType.Knight) shouldBe 3
+        PieceType.pieceValue(PieceType.Bishop) shouldBe 3
+        PieceType.pieceValue(PieceType.Rook) shouldBe 5
+        PieceType.pieceValue(PieceType.Queen) shouldBe 9
+        PieceType.pieceValue(PieceType.King) shouldBe 0
       }
     }
 
-    describe("calculateAdvantages") {
+    describe("calculateAdvantages (via GameState.materialInfo)") {
       it("should calculate correct advantages and symbols") {
-        // White captured: 2 pawns. Black captured: nothing.
-        // Black has advantage +2
-        val capW = List(PieceType.Pawn, PieceType.Pawn)
-        val capB = Nil
-        val adv = GuiHelper.calculateAdvantages(capW, capB)
+        val state = GameState.initial
+        // Remove 2 white pawns directly from the board state
+        val modBoard = state.board.remove(Pos(0, 1)).remove(Pos(1, 1))
+        val modState = chess.model.WhiteToMove(modBoard, state.castlingRights, state.enPassantTarget, state.halfMoveClock, state.fullMoveNumber)
+
+        val adv = modState.materialInfo
         
         adv.blackAdvantage shouldBe 2
-        adv.whiteAdvantage shouldBe -2
-        adv.whiteCapturedSymbols should include ("♟")
-        adv.blackCapturedSymbols shouldBe ""
+        adv.whiteAdvantage shouldBe 0
+        adv.whiteCapturedSymbols should contain ("♟")
+        adv.blackCapturedSymbols.isEmpty shouldBe true
       }
 
       it("should handle net advantage when both sides have captures") {
-        // White captured: Queen (9). Black captured: Rook (5).
-        // Black has advantage +4
-        val capW = List(PieceType.Queen)
-        val capB = List(PieceType.Rook)
-        val adv = GuiHelper.calculateAdvantages(capW, capB)
+        val state = GameState.initial
+        // White loses a Queen (9), Black loses a Rook (5) => Black has advantage +4
+        val modBoard = state.board.remove(Pos(3, 0)).remove(Pos(0, 7))
+        val modState = chess.model.WhiteToMove(modBoard, state.castlingRights, state.enPassantTarget, state.halfMoveClock, state.fullMoveNumber)
+
+        val adv = modState.materialInfo
         
         adv.blackAdvantage shouldBe 4
-        adv.whiteAdvantage shouldBe -4
+        adv.whiteAdvantage shouldBe 0
       }
 
       it("should return 0 advantage for equal material") {
-        val capW = List(PieceType.Knight)
-        val capB = List(PieceType.Bishop)
-        val adv = GuiHelper.calculateAdvantages(capW, capB)
+        val state = GameState.initial
+        // White loses Knight (3), Black loses Bishop (3) => 0 advantage
+        val modBoard = state.board.remove(Pos(1, 0)).remove(Pos(2, 7))
+        val modState = chess.model.WhiteToMove(modBoard, state.castlingRights, state.enPassantTarget, state.halfMoveClock, state.fullMoveNumber)
+
+        val adv = modState.materialInfo
         
         adv.blackAdvantage shouldBe 0
         adv.whiteAdvantage shouldBe 0
