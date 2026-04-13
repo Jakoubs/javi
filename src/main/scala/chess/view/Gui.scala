@@ -65,6 +65,8 @@ object Gui extends JFXApp3:
   def formatTime(ms: Long): String = GuiHelper.formatTime(ms)
 
   private def updateUi(res: GameStateResponse): Unit =
+    if !res.running then System.exit(0)
+    
     lastState = Some(res)
 
     val game = chess.model.GameState.fromFen(res.fen).getOrElse(chess.model.GameState.initial)

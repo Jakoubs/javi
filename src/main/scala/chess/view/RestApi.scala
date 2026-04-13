@@ -36,7 +36,9 @@ case class GameStateResponse(
   capturedBlack: List[String],
   message: Option[String],
   training: Boolean,
-  trainingProgress: Option[String]
+  trainingProgress: Option[String],
+  running: Boolean,
+  messageIsError: Boolean
 ) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
@@ -86,7 +88,9 @@ class RestApi extends Observer[AppState]:
                   capturedBlack = state.game.capturedPieces(chess.model.Color.Black).map(_.toString),
                   message = state.message,
                   training = state.training,
-                  trainingProgress = state.trainingProgress
+                  trainingProgress = state.trainingProgress,
+                  running = state.running,
+                  messageIsError = state.messageIsError
                 )
                 complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
               }
@@ -110,13 +114,27 @@ class RestApi extends Observer[AppState]:
                     case Right(req) =>
                       val app = currentState.get()
                       val cmd = CommandParser.parse(req.command, app)
-                      GameController.eval(cmd)
-                      complete(StatusCodes.OK -> "Command dispatched")
+                      val newState = GameController.eval(cmd)
+                      
+                      if (newState.messageIsError) {
+                        complete(StatusCodes.BadRequest -> newState.message.getOrElse("Error"))
+                      } else {
+                        val status = cmd match {
+                          case Command.NewGame | Command.StartGame(_) => StatusCodes.Created
+                          case _ => StatusCodes.OK
+                        }
+                        complete(status -> "Command dispatched")
+                      }
                     case Left(error) =>
                       val app = currentState.get()
                       val cmd = CommandParser.parse(cleanedJson, app)
-                      GameController.eval(cmd)
-                      complete(StatusCodes.OK -> "Command dispatched via raw string")
+                      val newState = GameController.eval(cmd)
+                      
+                      if (newState.messageIsError) {
+                         complete(StatusCodes.BadRequest -> newState.message.getOrElse("Error"))
+                      } else {
+                         complete(StatusCodes.OK -> "Command dispatched via raw string")
+                      }
                   }
                 }
               }
