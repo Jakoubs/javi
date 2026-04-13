@@ -25,11 +25,12 @@ class JaviClient(baseUrl: String = "http://localhost:8080")(implicit system: Act
     } yield result
 
   def sendCommand(cmd: String): Future[Either[String, String]] =
+    val jsonBody = s"""{"command": "$cmd"}"""
     for {
       response <- Http().singleRequest(HttpRequest(
         method = HttpMethods.POST,
         uri = s"$baseUrl/api/command",
-        entity = HttpEntity(ContentTypes.`application/json`, cmd)
+        entity = HttpEntity(ContentTypes.`application/json`, jsonBody)
       ))
       result = if (response.status.isSuccess()) Right("OK") else Left(s"Error: ${response.status}")
     } yield result

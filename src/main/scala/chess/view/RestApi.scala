@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference
 case class CommandRequest(command: String) derives Decoder, Encoder
 case class GameStateResponse(
   fen: String, 
+  displayFen: String,
   pgn: String,
   status: String, 
   activeColor: String,
@@ -76,6 +77,10 @@ class RestApi extends Observer[AppState]:
                 val state = currentState.get()
                 val response = GameStateResponse(
                   fen = state.game.toFen,
+                  displayFen = {
+                    val h = state.game.history :+ state.game
+                    h.lift(state.viewIndex).getOrElse(state.game).toFen
+                  },
                   pgn = chess.util.Pgn.exportPgn(state.game),
                   status = state.status.toString,
                   activeColor = state.game.activeColor.toString,

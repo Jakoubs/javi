@@ -20,6 +20,8 @@ const state = ref({
   flipped: false,
   viewIndex: 0,
   historyFen: [],
+  historyMoves: [],
+  displayFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   clock: null,
   capturedWhite: [],
   capturedBlack: [],
@@ -89,14 +91,8 @@ const formatTime = (ms) => {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-const displayFen = computed(() => {
-  const h = state.value.historyFen
-  const i = state.value.viewIndex
-  if (h && h.length > 0 && i >= 0 && i < h.length) {
-    return h[i]
-  }
-  return state.value.fen
-})
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
 
 const isViewingHistory = computed(() => {
   const h = state.value.historyFen
@@ -138,7 +134,7 @@ const isViewingHistory = computed(() => {
         </div>
 
         <ChessBoard 
-          :fen="displayFen" 
+          :fen="state.displayFen" 
           :flipped="state.flipped"
           :highlights="isViewingHistory ? [] : state.highlights"
           :selectedPos="isViewingHistory ? null : state.selectedPos"

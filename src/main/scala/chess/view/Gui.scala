@@ -37,10 +37,12 @@ object Gui extends JFXApp3:
   private lazy val botCapturedText = new Text { font = Font.font("Arial", 20); fill = Color.Black }
   
   private lazy val topAiBtn = new Button("💻 AI (Off)") { 
-    onAction = _ => client.sendCommand("ai black"); style = "-fx-background-color: #ecf0f1;"
+    onAction = _ => { client.sendCommand("ai black").foreach(_ => refresh()) }
+    style = "-fx-background-color: #ecf0f1;"
   }
   private lazy val botAiBtn = new Button("💻 AI (Off)") { 
-    onAction = _ => client.sendCommand("ai white"); style = "-fx-background-color: #ecf0f1;"
+    onAction = _ => { client.sendCommand("ai white").foreach(_ => refresh()) }
+    style = "-fx-background-color: #ecf0f1;"
   }
 
   private lazy val statusLabel = new Text { 
@@ -68,26 +70,41 @@ object Gui extends JFXApp3:
     val sc = totalSec % 60
     f"$mn%02d:$sc%02d"
 
+  private def refresh(): Unit = 
+    client.fetchState().foreach {
+      case Right(res) => Platform.runLater { updateUi(res) }
+      case Left(_) => 
+    }
+
   private def updateUi(res: GameStateResponse): Unit =
     if !res.running then System.exit(0)
     
+    val stateChanged = lastState.isEmpty || 
+                       lastState.get.displayFen != res.displayFen || 
+                       lastState.get.viewIndex != res.viewIndex ||
+                       lastState.get.historyMoves.size != res.historyMoves.size ||
+                       lastState.get.status != res.status ||
+                       lastState.get.message != res.message ||
+                       lastState.get.aiWhite != res.aiWhite ||
+                       lastState.get.aiBlack != res.aiBlack ||
+                       lastState.get.selectedPos != res.selectedPos ||
+                       lastState.get.highlights != res.highlights ||
+                       lastState.get.lastMove != res.lastMove
+
     lastState = Some(res)
 
-    val game = chess.model.GameState.fromFen(res.fen).getOrElse(chess.model.GameState.initial)
-    val history = res.historyFen.flatMap(f => chess.model.GameState.fromFen(f).toOption)
-    
-    val renderedState = if res.viewIndex >= 0 && res.viewIndex < history.size then history(res.viewIndex) else game
-    
-    updateBoard(res, renderedState)
-    updateCapturedPieces(res)
-    updateMoveHistory(res, history)
-    
-    statusLabel.text = res.message.getOrElse("")
-    botAiBtn.text = if res.aiWhite then "💻 AI (White)" else "💻 AI (Off)"
-    topAiBtn.text = if res.aiBlack then "💻 AI (Black)" else "💻 AI (Off)"
-    
-    botAiBtn.style = if res.aiWhite then "-fx-background-color: #27ae60; -fx-text-fill: white;" else "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
-    topAiBtn.style = if res.aiBlack then "-fx-background-color: #27ae60; -fx-text-fill: white;" else "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
+    if (stateChanged) {
+      updateBoard(res, res.displayFen)
+      updateCapturedPieces(res)
+      updateMoveHistory(res)
+      
+      statusLabel.text = res.message.getOrElse("")
+      botAiBtn.text = if res.aiWhite then "💻 AI (White)" else "💻 AI (Off)"
+      topAiBtn.text = if res.aiBlack then "💻 AI (Black)" else "💻 AI (Off)"
+      
+      botAiBtn.style = if res.aiWhite then "-fx-background-color: #27ae60; -fx-text-fill: white;" else "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
+      topAiBtn.style = if res.aiBlack then "-fx-background-color: #27ae60; -fx-text-fill: white;" else "-fx-background-color: #ecf0f1; -fx-text-fill: black;"
+    }
 
     res.clock match
       case Some(_) =>
@@ -96,28 +113,33 @@ object Gui extends JFXApp3:
       case None =>
         botClockText.text = ""; topClockText.text = ""
 
-  private def updateMoveHistory(res: GameStateResponse, history: List[chess.model.GameState]): Unit =
-    moveHistoryList.children = history.indices.flatMap { i =>
-      if i == 0 then None
-      else if i % 2 != 0 then
-        val moveNum = (i + 1) / 2
-        val row = new HBox {
-          spacing = 10; padding = Insets(2, 5, 2, 5)
-          children = Seq(
-            new Text(s"$moveNum.") { fill = Color.Gray; font = Font.font("Monospaced", 14) },
-            createMoveLink(res, i),
-            if i + 1 < history.size then createMoveLink(res, i + 1) else new Text("") { prefWidth = 50 }
-          )
-        }
-        Some(row)
-      else None
-    }
+  private def updateMoveHistory(res: GameStateResponse): Unit =
+    val moves = res.historyMoves
+    moveHistoryList.children = moves.grouped(2).zipWithIndex.map { case (pair, groupIdx) =>
+      val moveNum = groupIdx + 1
+      new HBox {
+        spacing = 10; padding = Insets(2, 5, 2, 5); alignment = Pos.CenterLeft
+        children = Seq(
+          new Text(s"$moveNum.") { fill = Color.Gray; font = Font.font("Monospaced", 14) },
+          createMoveLink(res, pair(0), groupIdx * 2 + 1),
+          if pair.size > 1 then createMoveLink(res, pair(1), groupIdx * 2 + 2) else new Text("") { prefWidth = 60 }
+        )
+      }
+    }.toList
 
-  private def createMoveLink(res: GameStateResponse, index: Int): Button =
-    new Button(s"Move $index") {
-      style = if res.viewIndex == index then "-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 2 5 2 5;"
-              else "-fx-background-color: transparent; -fx-text-fill: #ecf0f1; -fx-padding: 2 5 2 5;"
-      onAction = _ => client.sendCommand(s"jump $index")
+    // Auto-scroll logic: scroll toward the end, but allow manual browsing
+    if res.viewIndex == res.historyFen.size - 1 then
+      Platform.runLater { historyScrollPane.setVvalue(1.0) }
+
+  private def createMoveLink(res: GameStateResponse, label: String, index: Int): Button =
+    new Button(label) {
+      prefWidth = 60
+      alignment = Pos.CenterLeft
+      style = if res.viewIndex == index then 
+                "-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 2 5 2 5; -fx-font-weight: bold; -fx-background-radius: 4;"
+              else 
+                "-fx-background-color: transparent; -fx-text-fill: #ecf0f1; -fx-padding: 2 5 2 5; -fx-background-radius: 4;"
+      onAction = _ => client.sendCommand(s"jump $index").foreach(_ => refresh())
     }
 
   override def start(): Unit =
@@ -125,10 +147,10 @@ object Gui extends JFXApp3:
       menus = Seq(
         new Menu("Zeit") {
           items = Seq(
-            new MenuItem("Unlimited") { onAction = _ => client.sendCommand("start") },
-            new MenuItem("1|0 Bullet") { onAction = _ => client.sendCommand("start 60000 0") },
-            new MenuItem("3|2 Blitz")  { onAction = _ => client.sendCommand("start 180000 2000") },
-            new MenuItem("10|0 Rapid") { onAction = _ => client.sendCommand("start 600000 0") }
+            new MenuItem("Unlimited") { onAction = _ => client.sendCommand("start").foreach(_ => refresh()) },
+            new MenuItem("1|0 Bullet") { onAction = _ => client.sendCommand("start 60000 0").foreach(_ => refresh()) },
+            new MenuItem("3|2 Blitz")  { onAction = _ => client.sendCommand("start 180000 2000").foreach(_ => refresh()) },
+            new MenuItem("10|0 Rapid") { onAction = _ => client.sendCommand("start 600000 0").foreach(_ => refresh()) }
           )
         },
         new Menu("Import/Export") {
@@ -155,7 +177,7 @@ object Gui extends JFXApp3:
           onMouseClicked = _ => {
             lastState.foreach { state =>
               val pos = if state.flipped then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
-              client.sendCommand(pos.toAlgebraic)
+              client.sendCommand(pos.toAlgebraic).foreach(_ => refresh())
             }
           }
         }
@@ -165,10 +187,10 @@ object Gui extends JFXApp3:
     val navBar = new HBox {
       spacing = 5; alignment = Pos.CenterLeft; padding = Insets(5); style = "-fx-background-color: #2c3e50;"
       children = Seq(
-        new Button("<<") { onAction = _ => client.sendCommand("first") },
-        new Button("<")  { onAction = _ => client.sendCommand("back") },
-        new Button(">")  { onAction = _ => client.sendCommand("forward") },
-        new Button(">>") { onAction = _ => client.sendCommand("last") }
+        new Button("<<") { onAction = _ => client.sendCommand("first").foreach(_ => refresh()) },
+        new Button("<")  { onAction = _ => client.sendCommand("back").foreach(_ => refresh()) },
+        new Button(">")  { onAction = _ => client.sendCommand("forward").foreach(_ => refresh()) },
+        new Button(">>") { onAction = _ => client.sendCommand("last").foreach(_ => refresh()) }
       )
     }
 
@@ -177,11 +199,11 @@ object Gui extends JFXApp3:
       minWidth = 200
       children = Seq(
         new Text { text = "CHESS MENU"; fill = Color.White; font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 20) },
-        new Button("Flip Board") { onAction = _ => client.sendCommand("flip") },
-        new Button("Undo Move") { onAction = _ => client.sendCommand("undo") },
-        new Button("Resign") { onAction = _ => client.sendCommand("resign") },
-        new Button("New Game") { onAction = _ => client.sendCommand("new") },
-        new Button("Quit") { onAction = _ => client.sendCommand("quit") }
+        new Button("Flip Board") { onAction = _ => client.sendCommand("flip").foreach(_ => refresh()) },
+        new Button("Undo Move") { onAction = _ => client.sendCommand("undo").foreach(_ => refresh()) },
+        new Button("Resign") { onAction = _ => client.sendCommand("resign").foreach(_ => refresh()) },
+        new Button("New Game") { onAction = _ => client.sendCommand("new").foreach(_ => refresh()) },
+        new Button("Quit") { onAction = _ => client.sendCommand("quit").foreach(_ => refresh()) }
       )
     }
 
@@ -199,29 +221,38 @@ object Gui extends JFXApp3:
 
     stage = new JFXApp3.PrimaryStage { title = "Chess Client"; scene = new Scene(root); resizable = false }
 
-    val timer = AnimationTimer { _ =>
-      client.fetchState().foreach {
-        case Right(res) => Platform.runLater { updateUi(res) }
-        case Left(_) => 
+    val pollThread = new Thread(() => {
+      while (true) {
+        refresh()
+        Thread.sleep(200)
       }
-    }
-    timer.start()
+    })
+    pollThread.setDaemon(true)
+    pollThread.start()
 
   private def updateCapturedPieces(res: GameStateResponse): Unit =
     val m = res.materialInfo
     topCapturedText.text = m.whiteCapturedSymbols.mkString(" ") + (if (m.blackAdvantage > 0) s"   +${m.blackAdvantage}" else "")
     botCapturedText.text = m.blackCapturedSymbols.mkString(" ") + (if (m.whiteAdvantage > 0) s"   +${m.whiteAdvantage}" else "")
 
-  private def updateBoard(res: GameStateResponse, renderedState: chess.model.GameState): Unit =
-    val board = renderedState.board
+  private def updateBoard(res: GameStateResponse, fen: String): Unit =
+    val board = chess.model.GameState.fromFen(fen).getOrElse(chess.model.GameState.initial).board
     for row <- 0 until 8 do
       for col <- 0 until 8 do
         val stack = squares(row)(col)
         val bgRect = stack.children(0).asInstanceOf[javafx.scene.shape.Rectangle]
         val textNode = stack.children(1).asInstanceOf[javafx.scene.text.Text]
         val pos = if res.flipped then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
+        val posStr = pos.toAlgebraic
         val isLight = (pos.col + pos.row) % 2 == 1
-        bgRect.setFill(if isLight then lightColor else darkColor)
+        
+        val baseColor = if isLight then lightColor else darkColor
+        val tileColor = if res.selectedPos.contains(posStr) then selectedColor
+                        else if res.lastMove.exists(m => m.contains(posStr)) then lastMoveColor
+                        else if res.highlights.contains(posStr) then highlightColor
+                        else baseColor
+        
+        bgRect.setFill(tileColor)
         
         board.get(pos) match
           case Some(piece) =>
@@ -245,7 +276,7 @@ object Gui extends JFXApp3:
   private def showPgnOfImportDialog(): Unit = 
     Platform.runLater {
       val dialog = new TextInputDialog() { title = "PGN Import"; headerText = "Paste PGN:" }
-      dialog.showAndWait().foreach(pgn => client.sendCommand(s"load pgn $pgn"))
+      dialog.showAndWait().foreach(pgn => client.sendCommand(s"load pgn $pgn").foreach(_ => refresh()))
     }
 
   private def showFenOfExportDialog(fen: String): Unit = 
@@ -256,5 +287,5 @@ object Gui extends JFXApp3:
   private def showFenOfImportDialog(): Unit = 
     Platform.runLater {
       val dialog = new TextInputDialog() { title = "FEN Import"; headerText = "Paste FEN:" }
-      dialog.showAndWait().foreach(fen => client.sendCommand(s"load fen $fen"))
+      dialog.showAndWait().foreach(fen => client.sendCommand(s"load fen $fen").foreach(_ => refresh()))
     }

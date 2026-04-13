@@ -1,10 +1,9 @@
-[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:97:44 
-[error] 97 |                  materialInfo = state.game.materialInfo,
-[error]    |                                 ^^^^^^^^^^^^^^^^^^^^^^^
-[error]    |value materialInfo is not a member of chess.model.GameState, but could be made available as an extension method.
-[error]    |
-[error]    |The following import might fix the problem:
-[error]    |
-[error]    |  import chess.model.materialInfo
-[error]    |
-[error] one error found
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:155:81 
+[error] 155 |            new MenuItem("Import PGN") { onAction = _ => showPgnOfImportDialog().foreach(_ => refresh()) },
+[error]     |                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[error]     |                                 value foreach is not a member of Unit
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\Gui.scala:156:81 
+[error] 156 |            new MenuItem("Import FEN") { onAction = _ => showFenOfImportDialog().foreach(_ => refresh()) },
+[error]     |                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[error]     |                                 value foreach is not a member of Unit
+[error] two errors found
