@@ -70,6 +70,14 @@ extension (s: AppState)
       case Some(c) => c.activeMillis(color)
       case None => 0L
 
+
+  def displayFen: String =
+    val h = s.game.history :+ s.game
+    h.lift(s.viewIndex).getOrElse(s.game).toFen
+
+  def historyFen: List[String] =
+    (s.game.history :+ s.game).map(_.toFen)
+
   def bottomPlayer: PlayerInfo =
     val info = s.game.materialInfo
     val c = s.clock.getOrElse(ClockState(0, 0, 0, None, false))

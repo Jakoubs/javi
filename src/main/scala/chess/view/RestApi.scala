@@ -12,7 +12,7 @@ import io.circe.parser.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
-import chess.controller.{GameController, AppState, Command, liveMillis, MessageType}
+import chess.controller.{GameController, AppState, Command, liveMillis, MessageType, displayFen, historyFen}
 import chess.model.{Pos, MoveGenerator, ClockState, capturedPieces, MaterialInfo, materialInfo}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
@@ -77,10 +77,7 @@ class RestApi extends Observer[AppState]:
                 val state = currentState.get()
                 val response = GameStateResponse(
                   fen = state.game.toFen,
-                  displayFen = {
-                    val h = state.game.history :+ state.game
-                    h.lift(state.viewIndex).getOrElse(state.game).toFen
-                  },
+                  displayFen = state.displayFen,
                   pgn = chess.util.Pgn.exportPgn(state.game),
                   status = state.status.toString,
                   activeColor = state.game.activeColor.toString,
@@ -91,15 +88,8 @@ class RestApi extends Observer[AppState]:
                   aiBlack = state.aiBlack,
                   flipped = state.flipped,
                   viewIndex = state.viewIndex,
-                  historyFen = (state.game.history :+ state.game).map(_.toFen),
-                  historyMoves = {
-                    val gameHistory = state.game.history :+ state.game
-                    (0 until gameHistory.size - 1).flatMap { i =>
-                      chess.util.Pgn.deduceMove(gameHistory(i), gameHistory(i+1)).map { m =>
-                        chess.util.Pgn.toSan(gameHistory(i), m, gameHistory(i+1))
-                      }
-                    }.toList
-                  },
+                  historyFen = state.historyFen,
+                  historyMoves = chess.util.Pgn.exportHistorySan(state.game),
                   clock = state.clock,
                   capturedWhite = state.game.capturedPieces(chess.model.Color.White).map(_.toString),
                   capturedBlack = state.game.capturedPieces(chess.model.Color.Black).map(_.toString),

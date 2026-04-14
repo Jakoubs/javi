@@ -68,6 +68,20 @@ object Pgn:
       }
     sb.toString()
 
+
+  /**
+   * Generates a clean list of SAN moves for the entire history.
+   */
+  def exportHistorySan(finalState: GameState): List[String] =
+    val states = finalState.history :+ finalState
+    (0 until states.size - 1).flatMap { i =>
+      val state = states(i)
+      val nextState = states(i+1)
+      deduceMove(state, nextState).map { m =>
+        toSan(state, m, nextState)
+      }
+    }.toList
+
   import chess.util.parser.PgnParser
 
   /**

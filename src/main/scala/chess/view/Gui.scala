@@ -79,17 +79,7 @@ object Gui extends JFXApp3:
   private def updateUi(res: GameStateResponse): Unit =
     if !res.running then System.exit(0)
     
-    val stateChanged = lastState.isEmpty || 
-                       lastState.get.displayFen != res.displayFen || 
-                       lastState.get.viewIndex != res.viewIndex ||
-                       lastState.get.historyMoves.size != res.historyMoves.size ||
-                       lastState.get.status != res.status ||
-                       lastState.get.message != res.message ||
-                       lastState.get.aiWhite != res.aiWhite ||
-                       lastState.get.aiBlack != res.aiBlack ||
-                       lastState.get.selectedPos != res.selectedPos ||
-                       lastState.get.highlights != res.highlights ||
-                       lastState.get.lastMove != res.lastMove
+    val stateChanged = lastState.isEmpty || lastState.get != res
 
     lastState = Some(res)
 
