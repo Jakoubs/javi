@@ -5,6 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.*
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import io.circe.syntax.*
 import io.circe.parser.decode
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.*
@@ -25,7 +26,7 @@ class JaviClient(baseUrl: String = "http://localhost:8080")(implicit system: Act
     } yield result
 
   def sendCommand(cmd: String): Future[Either[String, String]] =
-    val jsonBody = s"""{"command": "$cmd"}"""
+    val jsonBody = CommandRequest(cmd).asJson.noSpaces
     for {
       response <- Http().singleRequest(HttpRequest(
         method = HttpMethods.POST,

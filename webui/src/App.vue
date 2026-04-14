@@ -28,9 +28,10 @@ const state = ref({
   message: '',
   training: false,
   trainingProgress: null,
-  materialInfo: null,
   whiteLiveMillis: 0,
-  blackLiveMillis: 0})
+  blackLiveMillis: 0,
+  activePgnParser: 'regex'
+})
 
 const showGameOver = ref(false)
 const processedStatus = ref(null)
@@ -107,6 +108,11 @@ const handleStartWithTime = (time, inc) => {
   else sendCommand(`start ${time} ${inc}`)
 }
 
+const handleSwitchParser = (event) => {
+  const variant = event.target.value
+  sendCommand(`parser pgn ${variant}`)
+}
+
 
 let pollInterval
 let tickerInterval
@@ -174,7 +180,17 @@ const isViewingHistory = computed(() => {
 <template>
   <div class="app-container">
     <header class="glass">
-      <h1>JAVI CHESS</h1>
+      <div class="header-left">
+        <h1>JAVI CHESS</h1>
+        <div class="parser-switcher">
+          <label for="parser-select">PGN Parser:</label>
+          <select id="parser-select" :value="state.activePgnParser" @change="handleSwitchParser" class="glass-select">
+            <option value="regex">Regex</option>
+            <option value="fast">Fastparse</option>
+            <option value="combinator">Combinator</option>
+          </select>
+        </div>
+      </div>
       <div v-if="state.message" class="status-msg">{{ state.message }}</div>
     </header>
 
@@ -308,6 +324,48 @@ header h1 {
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.9rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.parser-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.parser-switcher label {
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.glass-select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.glass-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--primary);
+}
+
+.glass-select option {
+  background: #1a1a2e;
+  color: white;
 }
 
 main {

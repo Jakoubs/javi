@@ -159,6 +159,13 @@ object Gui extends JFXApp3:
             new MenuItem("Export PGN") { onAction = _ => lastState.foreach(s => showPgnOfExportDialog(s.pgn)) },
             new MenuItem("Export FEN") { onAction = _ => lastState.foreach(s => showFenOfExportDialog(s.fen)) }
           )
+        },
+        new Menu("Parser") {
+          items = Seq(
+            new MenuItem("Regex") { onAction = _ => client.sendCommand("parser pgn regex").foreach(_ => refresh()) },
+            new MenuItem("Fastparse") { onAction = _ => client.sendCommand("parser pgn fast").foreach(_ => refresh()) },
+            new MenuItem("Combinator") { onAction = _ => client.sendCommand("parser pgn combinator").foreach(_ => refresh()) }
+          )
         }
       )
     }

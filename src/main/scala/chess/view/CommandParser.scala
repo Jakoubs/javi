@@ -11,9 +11,10 @@ import scala.util.Try
 object CommandParser:
 
   def parse(input: String, app: AppState): Command =
-    val trimmed = input.trim.toLowerCase
+    val original = input.trim
+    val lower    = original.toLowerCase
 
-    trimmed match
+    lower match
       case "flip"               => Command.Flip
       case "undo"               => Command.Undo
       case "resign"             => Command.Resign
@@ -30,6 +31,11 @@ object CommandParser:
       case "forward"            => Command.StepForward
       case "first"              => Command.FirstHistory
       case "last"               => Command.LastHistory
+
+      case s if s.startsWith("load pgn ") => 
+        Command.LoadPgn(original.drop(9).trim)
+      case s if s.startsWith("load fen ") => 
+        Command.LoadFen(original.drop(9).trim)
       
       case s if s.startsWith("start ") || s.startsWith("time ") =>
         val args = s.split("\\s+").drop(1)

@@ -43,7 +43,9 @@ case class GameStateResponse(
   messageIsError: Boolean,
   materialInfo: MaterialInfo,
   whiteLiveMillis: Long,
-  blackLiveMillis: Long
+  blackLiveMillis: Long,
+  activePgnParser: String,
+  activeMoveParser: String
 ) derives Decoder, Encoder
 
 class RestApi extends Observer[AppState]:
@@ -100,7 +102,9 @@ class RestApi extends Observer[AppState]:
                   messageIsError = state.messageType == MessageType.Error,
                   materialInfo = state.game.materialInfo,
                   whiteLiveMillis = state.liveMillis(chess.model.Color.White),
-                  blackLiveMillis = state.liveMillis(chess.model.Color.Black)
+                  blackLiveMillis = state.liveMillis(chess.model.Color.Black),
+                  activePgnParser = state.activePgnParser,
+                  activeMoveParser = state.activeMoveParser
                 )
                 complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
               }
