@@ -387,8 +387,8 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
         // 1. e4 e5 2. Bb5
         var s = initial
         s = GameController.handleCommand(s, Command.ApplyMove(Move(Pos(4, 1), Pos(4, 3)))) // e4
-        s = GameController.handleCommand(s, Command.ApplyMove(Move(Pos(4, 6), Pos(4, 4)))) // e5
-        val check = GameController.handleCommand(s, Command.ApplyMove(Move(Pos(5, 0), Pos(1, 4)))) // Bb5+ (not check actually, check is Bb5)
+        s = GameController.handleCommand(s, Command.ApplyMove(Move(Pos(3, 6), Pos(3, 4)))) // d5
+        val check = GameController.handleCommand(s, Command.ApplyMove(Move(Pos(5, 0), Pos(1, 4)))) // Bb5+
         // Wait, Bb5 checks the King on e8.
         check.status shouldBe GameStatus.Check(Color.Black)
         check.message.get should include ("Check!")
