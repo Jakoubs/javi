@@ -28,7 +28,9 @@ const state = ref({
   message: '',
   training: false,
   trainingProgress: null
-})
+,
+  whiteLiveMillis: 0,
+  blackLiveMillis: 0})
 
 const fetchState = async () => {
   try {
@@ -61,13 +63,30 @@ const handleStartWithTime = (time, inc) => {
   else sendCommand(`start ${time} ${inc}`)
 }
 
+
 let pollInterval
+let tickerInterval
+
 onMounted(() => {
   fetchState()
   pollInterval = setInterval(fetchState, 500)
+  
+  tickerInterval = setInterval(() => {
+    if (state.value.status === 'Playing' && state.value.clock && state.value.clock.isActive && state.value.clock.lastTickSysTime) {
+      if (state.value.activeColor === 'White') {
+        state.value.whiteLiveMillis = Math.max(0, state.value.whiteLiveMillis - 100)
+      } else {
+        state.value.blackLiveMillis = Math.max(0, state.value.blackLiveMillis - 100)
+      }
+    }
+  }, 100)
 })
 
-onUnmounted(() => clearInterval(pollInterval))
+onUnmounted(() => {
+  clearInterval(pollInterval)
+  clearInterval(tickerInterval)
+})
+
 
 const topPlayer = computed(() => {
   const isFlipped = state.value.flipped
@@ -77,7 +96,7 @@ const topPlayer = computed(() => {
     color: isFlipped ? 'White' : 'Black',
     captured: mat ? (isFlipped ? mat.blackCapturedSymbols : mat.whiteCapturedSymbols) : [],
     advantage: mat ? (isFlipped ? mat.whiteAdvantage : mat.blackAdvantage) : 0,
-    clock: state.value.clock ? (isFlipped ? state.value.clock.whiteMillis : state.value.clock.blackMillis) : null
+    clock: state.value.clock ? (isFlipped ? state.value.whiteLiveMillis : state.value.blackLiveMillis) : null
   }
 })
 
@@ -89,7 +108,7 @@ const bottomPlayer = computed(() => {
     color: isFlipped ? 'Black' : 'White',
     captured: mat ? (isFlipped ? mat.whiteCapturedSymbols : mat.blackCapturedSymbols) : [],
     advantage: mat ? (isFlipped ? mat.blackAdvantage : mat.whiteAdvantage) : 0,
-    clock: state.value.clock ? (isFlipped ? state.value.clock.blackMillis : state.value.clock.whiteMillis) : null
+    clock: state.value.clock ? (isFlipped ? state.value.blackLiveMillis : state.value.whiteLiveMillis) : null
   }
 })
 
