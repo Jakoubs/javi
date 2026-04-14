@@ -53,6 +53,7 @@ class RestApi extends Observer[AppState]:
   implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
   private val currentState = new AtomicReference[AppState](GameController.appState)
+  private var binding: Option[Http.ServerBinding] = None
 
   override def update(state: AppState): Unit =
     currentState.set(state)
@@ -179,9 +180,18 @@ class RestApi extends Observer[AppState]:
 
   def start(port: Int = 8080): Unit =
     Http().newServerAt("0.0.0.0", port).bind(route).onComplete {
-      case Success(binding) =>
-        println(s"[REST API] Server online at http://localhost:${binding.localAddress.getPort}/")
+      case Success(b) =>
+        println(s"[REST API] Server online at http://localhost:${b.localAddress.getPort}/")
+        binding = Some(b)
       case Failure(exception) =>
         println(s"[REST API] Failed to bind HTTP server: ${exception.getMessage}")
         system.terminate()
     }
+
+  def stop(): scala.concurrent.Future[Unit] =
+    binding match
+      case Some(b) =>
+        b.unbind().map(_ => system.terminate()).flatMap(_ => system.whenTerminated.map(_ => ()))
+      case None =>
+        system.terminate()
+        system.whenTerminated.map(_ => ())

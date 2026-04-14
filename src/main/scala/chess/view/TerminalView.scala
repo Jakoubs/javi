@@ -126,6 +126,11 @@ object TerminalView:
           if loser == Color.White then s"${FG_CYAN}${BOLD}Black${RESET}"
           else s"${FG_WHITE}${BOLD}White${RESET}"
         s"\n  ${FG_RED}${BOLD}Checkmate!${RESET} $winner wins!"
+      case GameStatus.Resigned(loser) =>
+        val winner =
+          if loser == Color.White then s"${FG_CYAN}${BOLD}Black${RESET}"
+          else s"${FG_WHITE}${BOLD}White${RESET}"
+        s"\n  ${FG_RED}${BOLD}Resignation!${RESET} $winner wins!"
       case GameStatus.Stalemate =>
         s"\n  ${FG_YELLOW}${BOLD}Stalemate!${RESET} The game is a draw. 🤝"
       case GameStatus.Timeout(loser) =>

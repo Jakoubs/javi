@@ -33,7 +33,7 @@ class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
           // Handle EOF/quit
           GameController.eval(chess.controller.Command.Quit)
 
-    System.exit(0)
+    ()
 
   private def renderFull(app: AppState, console: ConsoleIO): Unit =
     console.clear()

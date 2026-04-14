@@ -6,6 +6,8 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main:
+  private var activeRestApi: Option[RestApi] = None
+
   def main(args: Array[String]): Unit =
     setup(args)
     // Start ScalaFX GUI (takes over the main thread)
@@ -16,8 +18,13 @@ object Main:
     GameController.addObserver(tui)
     
     val restApi = new RestApi()
+    activeRestApi = Some(restApi)
     GameController.addObserver(restApi)
     restApi.start(8080)
     
     // TUI blocks on readLine, so we push it to a background thread
     Future { tui.run() }
+
+  def shutdown(): Unit =
+    activeRestApi.foreach(_.stop())
+    activeRestApi = None

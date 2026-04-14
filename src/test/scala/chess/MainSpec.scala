@@ -10,8 +10,12 @@ class MainSpec extends AnyFunSpec with Matchers {
       // Set playing to false to ensure TUI loop (if it starts) doesn't run forever
       GameController.eval(chess.controller.Command.Quit)
       
-      noException should be thrownBy {
-        Main.setup(Array.empty)
+      try {
+        noException should be thrownBy {
+          Main.setup(Array.empty)
+        }
+      } finally {
+        Main.shutdown()
       }
     }
   }

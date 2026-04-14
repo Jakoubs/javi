@@ -47,12 +47,20 @@ const gameOverInfo = computed(() => {
     const winner = s.includes('White') ? 'Black' : 'White'
     return { title: 'Checkmate!', result: `${winner} Wins`, reason: s }
   }
+  if (s.startsWith('Resigned')) {
+    const winner = s.includes('White') ? 'Black' : 'White'
+    return { title: 'Resignation', result: `${winner} Wins`, reason: s }
+  }
   if (s.startsWith('Timeout')) {
     const winner = s.includes('White') ? 'Black' : 'White'
     return { title: 'Time Out!', result: `${winner} Wins`, reason: s }
   }
-  if (s === 'Stalemate') return { title: 'Draw', result: 'Stalemate', reason: 'No legal moves left' }
-  if (s.startsWith('Draw')) return { title: 'Draw', result: 'Game is Drawn', reason: s }
+  if (s === 'Stalemate') return { title: 'Stalemate', result: 'Draw', reason: 'No legal moves left' }
+  if (s.startsWith('Draw')) {
+    // Try to extract reason from Draw(reason)
+    const reason = s.match(/Draw\((.*)\)/)?.[1] || s
+    return { title: 'Draw', result: 'Game is Drawn', reason: reason }
+  }
   return { title: 'Game Over', result: '', reason: s }
 })
 

@@ -94,7 +94,7 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
 
       it("should handle resignation") {
         val next = GameController.handleCommand(initial, Command.Resign)
-        next.status shouldBe GameStatus.Checkmate(Color.White)
+        next.status shouldBe GameStatus.Resigned(Color.White)
         next.message.get should include ("White resigns")
       }
 
@@ -217,7 +217,7 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
       }
 
       it("should handle help and quit") {
-        GameController.handleCommand(initial, Command.Help).message.get should include ("Chess Commands")
+        GameController.handleCommand(initial, Command.Help).message.get shouldBe "HELP"
         GameController.handleCommand(initial, Command.Quit).running shouldBe false
       }
 

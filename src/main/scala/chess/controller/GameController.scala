@@ -280,6 +280,9 @@ object GameController extends Observable[AppState]:
             case GameStatus.Checkmate(loser)  =>
               val winner = if loser == Color.White then "Black" else "White"
               Some(s"Checkmate! $winner wins!")
+            case GameStatus.Resigned(loser)  =>
+              val winner = if loser == Color.White then "Black" else "White"
+              Some(s"$loser resigned. $winner wins!")
             case GameStatus.Stalemate        => Some("Stalemate — draw!")
             case GameStatus.Draw(reason)     => Some(s"Draw by $reason.")
             case GameStatus.Check(_)         => Some("Check!")
@@ -423,7 +426,7 @@ object GameController extends Observable[AppState]:
           // 2. REGULAR SELECTION
           app.game.board.get(pos) match
             case None =>
-              app.copy(selectedPos = None, highlights = Set.empty, message = None, messageType = MessageType.Info)
+              app.copy(selectedPos = None, highlights = Set.empty, message = Some(s"No piece on ${pos.toAlgebraic}"), messageType = MessageType.Info)
             case Some(piece) if piece.color != app.game.activeColor =>
               app.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None, messageType = MessageType.Error)
             case Some(_) =>
@@ -457,12 +460,12 @@ object GameController extends Observable[AppState]:
   private def handleResign(app: AppState): AppState =
     val loser  = app.game.activeColor
     val winner = if loser == Color.White then "Black" else "White"
-    val resigned = app.game
-    val newStatus = GameStatus.Checkmate(loser)  // reuse checkmate status for resign
+    val newStatus = GameStatus.Resigned(loser)
     app.copy(
       status  = newStatus,
       message = Some(s"${loser} resigns. $winner wins!"),
-      messageType = MessageType.Info
+      messageType = MessageType.Info,
+      clock = app.clock.map(_.copy(isActive = false))
     )
 
   // ── Draw offer ─────────────────────────────────────────────────────────────

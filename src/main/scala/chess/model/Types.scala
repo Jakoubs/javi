@@ -132,6 +132,7 @@ enum GameStatus:
   case Playing
   case Check(color: Color)
   case Checkmate(loser: Color)
+  case Resigned(loser: Color)
   case Timeout(loser: Color)
   case Stalemate
   case Draw(reason: String)

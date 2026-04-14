@@ -237,12 +237,15 @@ object Gui extends JFXApp3:
 
   private def showGameOverModal(res: GameStateResponse): Unit =
     val titleStr = if res.status.startsWith("Checkmate") then "Checkmate!"
+                   else if res.status.startsWith("Resigned") then "Resignation"
                    else if res.status.startsWith("Timeout") then "Time Out!"
-                   else if res.status == "Stalemate" then "Draw"
+                   else if res.status == "Stalemate" then "Stalemate"
+                   else if res.status.startsWith("Draw") then "Draw"
                    else "Game Over"
                    
     val resultStr = if res.status.contains("White") then "Black Wins"
                     else if res.status.contains("Black") then "White Wins"
+                    else if res.status.startsWith("Draw") then "Game is a Draw"
                     else res.status
                     
     Platform.runLater {
