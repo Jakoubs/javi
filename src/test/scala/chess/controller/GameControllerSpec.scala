@@ -1,6 +1,7 @@
 package chess.controller
 
 import chess.model.*
+import chess.view.{ConsoleIO, StdConsoleIO}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import scala.concurrent.{Promise, Await}

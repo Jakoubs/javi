@@ -1,0 +1,21 @@
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:129:35 
+[error] 129 |                      if (newState.messageIsError) {
+[error]     |                          ^^^^^^^^^^^^^^^^^^^^^^^
+[error]     |value messageIsError is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |One of the following imports might make progress towards fixing the problem:
+[error]     |
+[error]     |  import akka.http.impl.util.JavaMapping.Implicits.convertToScala
+[error]     |  import akka.http.javadsl.server.RoutingJavaMapping.Implicits.convertToScala
+[error]     |
+[error] -- [E008] Not Found Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\view\RestApi.scala:143:35 
+[error] 143 |                      if (newState.messageIsError) {
+[error]     |                          ^^^^^^^^^^^^^^^^^^^^^^^
+[error]     |value messageIsError is not a member of chess.controller.AppState, but could be made available as an extension method.
+[error]     |
+[error]     |One of the following imports might make progress towards fixing the problem:
+[error]     |
+[error]     |  import akka.http.impl.util.JavaMapping.Implicits.convertToScala
+[error]     |  import akka.http.javadsl.server.RoutingJavaMapping.Implicits.convertToScala
+[error]     |
+[error] two errors found

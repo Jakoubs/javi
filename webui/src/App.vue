@@ -69,28 +69,35 @@ onMounted(() => {
 
 onUnmounted(() => clearInterval(pollInterval))
 
-const topPlayer = computed(() => ({
-  name: state.value.flipped ? 'White Player' : 'Black Player',
-  color: state.value.flipped ? 'White' : 'Black',
-  captured: state.value.flipped ? state.value.capturedBlack : state.value.capturedWhite,
-  clock: state.value.clock ? (state.value.flipped ? state.value.clock.whiteMillis : state.value.clock.blackMillis) : null
-}))
+const topPlayer = computed(() => {
+  const isFlipped = state.value.flipped
+  const mat = state.value.materialInfo
+  return {
+    name: isFlipped ? 'White Player' : 'Black Player',
+    color: isFlipped ? 'White' : 'Black',
+    captured: mat ? (isFlipped ? mat.blackCapturedSymbols : mat.whiteCapturedSymbols) : [],
+    advantage: mat ? (isFlipped ? mat.whiteAdvantage : mat.blackAdvantage) : 0,
+    clock: state.value.clock ? (isFlipped ? state.value.clock.whiteMillis : state.value.clock.blackMillis) : null
+  }
+})
 
-const bottomPlayer = computed(() => ({
-  name: state.value.flipped ? 'Black Player' : 'White Player',
-  color: state.value.flipped ? 'Black' : 'White',
-  captured: state.value.flipped ? state.value.capturedWhite : state.value.capturedBlack,
-  clock: state.value.clock ? (state.value.flipped ? state.value.clock.blackMillis : state.value.clock.whiteMillis) : null
-}))
+const bottomPlayer = computed(() => {
+  const isFlipped = state.value.flipped
+  const mat = state.value.materialInfo
+  return {
+    name: isFlipped ? 'Black Player' : 'White Player',
+    color: isFlipped ? 'Black' : 'White',
+    captured: mat ? (isFlipped ? mat.whiteCapturedSymbols : mat.blackCapturedSymbols) : [],
+    advantage: mat ? (isFlipped ? mat.blackAdvantage : mat.whiteAdvantage) : 0,
+    clock: state.value.clock ? (isFlipped ? state.value.clock.blackMillis : state.value.clock.whiteMillis) : null
+  }
+})
 
 const formatTime = (ms) => {
   if (ms === null || ms === undefined) return ''
   const totalSec = Math.max(0, Math.floor(ms / 1000))
   const m = Math.floor(totalSec / 60)
   const s = totalSec % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
@@ -126,6 +133,7 @@ const isViewingHistory = computed(() => {
             <span class="p-name">{{ topPlayer.name }}</span>
             <div class="captured-list">
               <span v-for="(s, i) in topPlayer.captured" :key="i" class="piece-icon">{{ s }}</span>
+              <span v-if="topPlayer.advantage > 0" class="advantage">+{{ topPlayer.advantage }}</span>
             </div>
           </div>
           <div :class="['clock glass', { active: state.activeColor === topPlayer.color }]">
@@ -147,6 +155,7 @@ const isViewingHistory = computed(() => {
             <span class="p-name">{{ bottomPlayer.name }}</span>
             <div class="captured-list">
               <span v-for="(s, i) in bottomPlayer.captured" :key="i" class="piece-icon">{{ s }}</span>
+              <span v-if="bottomPlayer.advantage > 0" class="advantage">+{{ bottomPlayer.advantage }}</span>
             </div>
           </div>
           <div :class="['clock glass', { active: state.activeColor === bottomPlayer.color }]">
@@ -267,6 +276,12 @@ main {
   display: flex;
   gap: 4px;
   opacity: 0.7;
+}
+
+.advantage {
+  margin-left: 8px;
+  opacity: 0.9;
+  font-weight: normal;
 }
 
 .clock {

@@ -12,7 +12,7 @@ import io.circe.parser.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
-import chess.controller.{GameController, AppState, Command, liveMillis}
+import chess.controller.{GameController, AppState, Command, liveMillis, MessageType}
 import chess.model.{Pos, MoveGenerator, ClockState, capturedPieces, MaterialInfo, materialInfo}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
@@ -107,7 +107,7 @@ class RestApi extends Observer[AppState]:
                   training = state.training,
                   trainingProgress = state.trainingProgress,
                   running = state.running,
-                  messageIsError = state.messageIsError,
+                  messageIsError = state.messageType == MessageType.Error,
                   materialInfo = state.game.materialInfo,
                   whiteLiveMillis = state.liveMillis(chess.model.Color.White),
                   blackLiveMillis = state.liveMillis(chess.model.Color.Black)
@@ -126,7 +126,7 @@ class RestApi extends Observer[AppState]:
                       val cmd = CommandParser.parse(req.command, app)
                       val newState = GameController.eval(cmd)
                       
-                      if (newState.messageIsError) {
+                      if (newState.messageType == MessageType.Error) {
                         complete(StatusCodes.BadRequest -> newState.message.getOrElse("Error"))
                       } else {
                         val status = cmd match {
@@ -140,7 +140,7 @@ class RestApi extends Observer[AppState]:
                       val cmd = CommandParser.parse(cleaned, app)
                       val newState = GameController.eval(cmd)
                       
-                      if (newState.messageIsError) {
+                      if (newState.messageType == MessageType.Error) {
                          complete(StatusCodes.BadRequest -> newState.message.getOrElse("Error"))
                       } else {
                          complete(StatusCodes.OK -> "Command dispatched via raw string")

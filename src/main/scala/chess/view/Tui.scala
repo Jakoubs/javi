@@ -1,8 +1,18 @@
 package chess.view
 
-import chess.controller.{AppState, ConsoleIO, GameController, StdConsoleIO, Command}
+import chess.controller.{AppState, GameController, Command, MessageType}
 import chess.util.Observer
 import chess.model.{GameStatus, Color, Pos}
+
+trait ConsoleIO:
+  def readLine(): Option[String]
+  def print(text: String): Unit
+  def clear(): Unit
+
+object StdConsoleIO extends ConsoleIO:
+  def readLine(): Option[String] = Option(scala.io.StdIn.readLine())
+  def print(text: String): Unit    = scala.Predef.print(text)
+  def clear(): Unit                = TerminalView.clear()
 
 class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
 
@@ -41,5 +51,13 @@ class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
     if app.aiBlack then
       console.print(TerminalView.info("AI playing for Black | Type 'ai black' to disable"))
     app.trainingProgress.foreach(msg => console.print(TerminalView.info(msg)))
-    app.message.foreach(console.print)
-
+    
+    app.message.foreach { msg =>
+      if msg == "HELP" then
+        console.print(TerminalView.helpText)
+      else
+        app.messageType match
+          case MessageType.Error   => console.print(TerminalView.error(msg))
+          case MessageType.Success => console.print(TerminalView.success(msg))
+          case MessageType.Info    => console.print(TerminalView.info(msg))
+    }

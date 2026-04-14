@@ -1,6 +1,7 @@
 package chess.view
 
-import chess.controller.{AppState, ConsoleIO, GameController, Command}
+import chess.controller.{AppState, GameController, Command}
+import chess.view.{ConsoleIO, StdConsoleIO}
 import chess.model.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers

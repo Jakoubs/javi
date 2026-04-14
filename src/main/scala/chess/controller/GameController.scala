@@ -1,22 +1,10 @@
 package chess.controller
 
 import chess.model.*
-import chess.view.TerminalView
 
-trait ConsoleIO:
-  def readLine(): Option[String]
-  def print(text: String): Unit
-  def clear(): Unit
 
-object StdConsoleIO extends ConsoleIO:
-  def readLine(): Option[String] =
-    Option(scala.io.StdIn.readLine())
-
-  def print(text: String): Unit =
-    scala.Predef.print(text)
-
-  def clear(): Unit =
-    TerminalView.clear()
+enum MessageType:
+  case Info, Success, Error
 
 // ─── Command ADT ─────────────────────────────────────────────────────────────
 
@@ -60,7 +48,7 @@ case class AppState(
   selectedPos: Option[Pos]     = None,
   lastMove:    Option[Move]    = None,
   message:     Option[String]  = None,
-  messageIsError: Boolean      = false,
+  messageType: MessageType = MessageType.Info,
   drawOffer:   Boolean         = false,
   running:     Boolean         = true,
   training:    Boolean         = false,
@@ -155,47 +143,47 @@ object GameController extends Observable[AppState]:
     cmd match
       case ApplyMove(move) => handleMove(app, move)
       case SelectSquare(pos) => handleSelectSquare(app, pos)
-      case Flip           => app.copy(highlights = Set.empty, selectedPos = None, message = None, flipped = !app.flipped, messageIsError = false)
+      case Flip           => app.copy(highlights = Set.empty, selectedPos = None, message = None, flipped = !app.flipped, messageType = MessageType.Info)
       case Undo           => handleUndo(app)
       case Resign         => handleResign(app)
       case OfferDraw      => handleDraw(app)
       case NewGame        => 
         val init = AppState.initial
-        init.copy(aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some(TerminalView.info("New game started.")), viewIndex = 0, messageIsError = false)
+        init.copy(aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some("New game started."), viewIndex = 0, messageType = MessageType.Info)
       case StartGame(clock) => 
         val initClock = clock.map { case (init, inc) => ClockState(init, init, inc, None) }
         val init = AppState.initial
-        init.copy(clock = initClock, aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some(TerminalView.info("New game started.")), viewIndex = 0, messageIsError = false)
-      case StepBack       => app.copy(viewIndex = Math.max(0, app.viewIndex - 1), messageIsError = false)
-      case StepForward    => app.copy(viewIndex = Math.min(app.game.history.size, app.viewIndex + 1), messageIsError = false)
-      case FirstHistory   => app.copy(viewIndex = 0, messageIsError = false)
-      case LastHistory    => app.copy(viewIndex = app.game.history.size, messageIsError = false)
-      case JumpToHistory(i) => app.copy(viewIndex = Math.max(0, Math.min(app.game.history.size, i)), messageIsError = false)
+        init.copy(clock = initClock, aiWhite = app.aiWhite, aiBlack = app.aiBlack, message = Some("New game started."), viewIndex = 0, messageType = MessageType.Info)
+      case StepBack       => app.copy(viewIndex = Math.max(0, app.viewIndex - 1), messageType = MessageType.Info)
+      case StepForward    => app.copy(viewIndex = Math.min(app.game.history.size, app.viewIndex + 1), messageType = MessageType.Info)
+      case FirstHistory   => app.copy(viewIndex = 0, messageType = MessageType.Info)
+      case LastHistory    => app.copy(viewIndex = app.game.history.size, messageType = MessageType.Info)
+      case JumpToHistory(i) => app.copy(viewIndex = Math.max(0, Math.min(app.game.history.size, i)), messageType = MessageType.Info)
       case TimeExpired(l) => app.copy(
         status = GameStatus.Timeout(l), 
         clock = app.clock.map(_.copy(isActive = false)),
-        message = Some(TerminalView.info(s"Time expired! ${l.opposite} wins.")),
-        messageIsError = false
+        message = Some(s"Time expired! ${l.opposite} wins."),
+        messageType = MessageType.Info
       )
-      case Help           => app.copy(message = Some(TerminalView.helpText), messageIsError = false)
-      case Quit           => app.copy(running = false, message = None, messageIsError = false)
+      case Help           => app.copy(message = Some("HELP"), messageType = MessageType.Info)
+      case Quit           => app.copy(running = false, message = None, messageType = MessageType.Info)
       case AiMove         => handleAiMove(app)
       case AiSuggest      => handleAiSuggest(app)
       case AiTrain(n)     => handleAiTrain(app, n)
-      case AiProgress(p)  => app.copy(trainingProgress = Some(p), messageIsError = false)
+      case AiProgress(p)  => app.copy(trainingProgress = Some(p), messageType = MessageType.Info)
       case ToggleAi(c)    => handleToggleAi(app, c)
       case LoadPgn(pgn)   => 
         chess.util.Pgn.importPgn(pgn) match
           case scala.util.Success(state) => 
-            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("PGN loaded successfully.")), viewIndex = state.history.size, messageIsError = false)
+            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some("PGN loaded successfully."), viewIndex = state.history.size, messageType = MessageType.Success)
           case scala.util.Failure(exception) => 
-            app.copy(message = Some(TerminalView.error(s"PGN Error: ${exception.getMessage}")), highlights = Set.empty, messageIsError = true)
+            app.copy(message = Some(s"PGN Error: ${exception.getMessage}"), highlights = Set.empty, messageType = MessageType.Error)
       case LoadFen(fen)   =>
         chess.model.GameState.fromFen(fen) match
           case Right(state) => 
-            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some(TerminalView.success("FEN loaded successfully.")), viewIndex = state.history.size, messageIsError = false)
+            app.copy(game = state, highlights = Set.empty, selectedPos = None, message = Some("FEN loaded successfully."), viewIndex = state.history.size, messageType = MessageType.Success)
           case Left(errorMessage) => 
-            app.copy(message = Some(TerminalView.error(s"FEN Error: $errorMessage")), highlights = Set.empty, messageIsError = true)
+            app.copy(message = Some(s"FEN Error: $errorMessage"), highlights = Set.empty, messageType = MessageType.Error)
       case SwitchParser(pType, variant) =>
         import chess.util.parser.ParserRegistry
         pType.toLowerCase match
@@ -203,23 +191,23 @@ object GameController extends Observable[AppState]:
             ParserRegistry.pgnParsers.get(variant.toLowerCase) match
               case Some(parser) =>
                 chess.util.parser.PgnParser.default = parser
-                app.copy(activePgnParser = variant.toLowerCase, message = Some(TerminalView.success(s"PGN Parser switched to $variant")), messageIsError = false)
+                app.copy(activePgnParser = variant.toLowerCase, message = Some(s"PGN Parser switched to $variant"), messageType = MessageType.Success)
               case None =>
-                app.copy(message = Some(TerminalView.error(s"Unknown PGN parser variant: $variant")), messageIsError = true)
+                app.copy(message = Some(s"Unknown PGN parser variant: $variant"), messageType = MessageType.Error)
           case "move" =>
             if ParserRegistry.moveParsers.contains(variant.toLowerCase) then
-              app.copy(activeMoveParser = variant.toLowerCase, message = Some(TerminalView.success(s"Move Parser switched to $variant")), messageIsError = false)
+              app.copy(activeMoveParser = variant.toLowerCase, message = Some(s"Move Parser switched to $variant"), messageType = MessageType.Success)
             else
-              app.copy(message = Some(TerminalView.error(s"Unknown Move parser variant: $variant")), messageIsError = true)
+              app.copy(message = Some(s"Unknown Move parser variant: $variant"), messageType = MessageType.Error)
           case _ =>
-            app.copy(message = Some(TerminalView.error(s"Unknown parser type: $pType")), messageIsError = true)
+            app.copy(message = Some(s"Unknown parser type: $pType"), messageType = MessageType.Error)
       case ShowPgn        => 
         val pgn = chess.util.Pgn.exportPgn(app.game)
-        app.copy(message = Some(TerminalView.info(s"PGN:\n$pgn")), messageIsError = false)
+        app.copy(message = Some(s"PGN:\n$pgn"), messageType = MessageType.Info)
       case ShowFen        => 
         val fen = app.game.toFen
-        app.copy(message = Some(TerminalView.info(s"FEN: $fen")), messageIsError = false)
-      case Unknown(msg)   => app.copy(message = Some(TerminalView.error(msg)), highlights = Set.empty, messageIsError = true)
+        app.copy(message = Some(s"FEN: $fen"), messageType = MessageType.Info)
+      case Unknown(msg)   => app.copy(message = Some(msg), highlights = Set.empty, messageType = MessageType.Error)
 
   // ── Move handler ───────────────────────────────────────────────────────────
 
@@ -260,7 +248,7 @@ object GameController extends Observable[AppState]:
           Some(app.copy(
             status = GameStatus.Timeout(app.game.activeColor),
             clock = Some(c.copy(isActive = false)),
-            message = Some(TerminalView.success(s"Timeout! ${app.game.activeColor.opposite} wins!"))
+            message = Some(s"Timeout! ${app.game.activeColor.opposite} wins!")
           ))
         else None
       }
@@ -274,7 +262,7 @@ object GameController extends Observable[AppState]:
       case _ => false
 
     if isGameOver then
-      app.copy(message = Some(TerminalView.error("Game is over. Type 'new' to start again.")))
+      app.copy(message = Some("Game is over. Type 'new' to start again."))
     else
       // Run Monadic Railway
       validateMove(move, app.game) match {
@@ -283,12 +271,12 @@ object GameController extends Observable[AppState]:
           val msg = newStatus match
             case GameStatus.Checkmate(loser)  =>
               val winner = if loser == Color.White then "Black" else "White"
-              Some(TerminalView.success(s"Checkmate! $winner wins!"))
-            case GameStatus.Stalemate        => Some(TerminalView.info("Stalemate — draw!"))
-            case GameStatus.Draw(reason)     => Some(TerminalView.info(s"Draw by $reason."))
-            case GameStatus.Check(_)         => Some(TerminalView.info("Check!"))
+              Some(s"Checkmate! $winner wins!")
+            case GameStatus.Stalemate        => Some("Stalemate — draw!")
+            case GameStatus.Draw(reason)     => Some(s"Draw by $reason.")
+            case GameStatus.Check(_)         => Some("Check!")
             case GameStatus.Playing          => None
-            case GameStatus.Timeout(loser)   => Some(TerminalView.success(s"Timeout! ${loser.opposite} wins!"))
+            case GameStatus.Timeout(loser)   => Some(s"Timeout! ${loser.opposite} wins!")
 
           val nextClock = app.clock.map { c =>
             if newStatus != GameStatus.Playing then
@@ -320,7 +308,7 @@ object GameController extends Observable[AppState]:
             drawOffer  = false,
             clock      = nextClock,
             viewIndex  = newGame.history.size,
-            messageIsError = false
+            messageType = MessageType.Success
           )
           
           if nextApp.status != GameStatus.Playing then
@@ -329,7 +317,7 @@ object GameController extends Observable[AppState]:
           nextApp
 
         case Left(errorMsg) =>
-          app.copy(message = Some(TerminalView.error(errorMsg)), highlights = Set.empty, selectedPos = None, messageIsError = true)
+          app.copy(message = Some(errorMsg), highlights = Set.empty, selectedPos = None, messageType = MessageType.Error)
       }
 
   private val MAX_MOVES_PER_GAME = 200
@@ -349,10 +337,10 @@ object GameController extends Observable[AppState]:
   private def handleToggleAi(app: AppState, color: Color): AppState =
     if color == Color.White then
       val msg = if app.aiWhite then "AI White disabled." else "AI White enabled."
-      app.copy(aiWhite = !app.aiWhite, message = Some(TerminalView.info(msg)), messageIsError = false)
+      app.copy(aiWhite = !app.aiWhite, message = Some(msg), messageType = MessageType.Info)
     else
       val msg = if app.aiBlack then "AI Black disabled." else "AI Black enabled."
-      app.copy(aiBlack = !app.aiBlack, message = Some(TerminalView.info(msg)), messageIsError = false)
+      app.copy(aiBlack = !app.aiBlack, message = Some(msg), messageType = MessageType.Info)
 
   private def handleAiTrain(initialApp: AppState, numGames: Int): AppState =
     import java.util.concurrent.atomic.AtomicInteger
@@ -384,29 +372,29 @@ object GameController extends Observable[AppState]:
     initialApp.copy(
       training = true,
       trainingProgress = Some("Initializing training..."),
-      message = Some(TerminalView.success(s"Started parallel training: $numGames games. Checkpoints every $checkpointInterval.")),
-      messageIsError = false
+      message = Some(s"Started parallel training: $numGames games. Checkpoints every $checkpointInterval."),
+      messageType = MessageType.Success
     )
 
   private def handleAiMove(app: AppState): AppState =
     if app.status != GameStatus.Playing && !app.status.isInstanceOf[GameStatus.Check] then
-       app.copy(message = Some(TerminalView.error("Game is already over.")), messageIsError = true)
+       app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
       chess.ai.AiEngine.bestMove(app.game, 3) match
         case Some(move) => 
           handleMove(app, move)
         case None => 
-          app.copy(message = Some(TerminalView.error("AI found no legal moves.")), messageIsError = true)
+          app.copy(message = Some("AI found no legal moves."), messageType = MessageType.Error)
 
   private def handleAiSuggest(app: AppState): AppState =
     if app.status != GameStatus.Playing then
-       app.copy(message = Some(TerminalView.error("Game is already over.")), messageIsError = true)
+       app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
       chess.ai.AiEngine.bestMove(app.game, 3) match
         case Some(move) => 
-          app.copy(highlights = Set(move.from, move.to), message = Some(TerminalView.info(s"AI suggests: ${move.toInputString}")), messageIsError = false)
+          app.copy(highlights = Set(move.from, move.to), message = Some(s"AI suggests: ${move.toInputString}"), messageType = MessageType.Info)
         case None => 
-          app.copy(message = Some(TerminalView.error("AI found no legal moves.")), messageIsError = true)
+          app.copy(message = Some("AI found no legal moves."), messageType = MessageType.Error)
 
   // ── Show legal moves for a square ─────────────────────────────────────────
 
@@ -422,27 +410,27 @@ object GameController extends Observable[AppState]:
           val legal = chess.model.MoveGenerator.legalMoves(app.game)
           legal.find(m => m.from == move.from && m.to == move.to) match
             case Some(m) => handleMove(app, m)
-            case None    => app.copy(message = Some(TerminalView.error("Illegal move!")), messageIsError = true)
+            case None    => app.copy(message = Some("Illegal move!"), messageType = MessageType.Error)
         else
           // 2. REGULAR SELECTION
           app.game.board.get(pos) match
             case None =>
-              app.copy(selectedPos = None, highlights = Set.empty, message = None, messageIsError = false)
+              app.copy(selectedPos = None, highlights = Set.empty, message = None, messageType = MessageType.Info)
             case Some(piece) if piece.color != app.game.activeColor =>
-              app.copy(message = Some(TerminalView.error("That is not your piece.")), highlights = Set.empty, selectedPos = None, messageIsError = true)
+              app.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None, messageType = MessageType.Error)
             case Some(_) =>
               val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
               if targets.isEmpty then
-                app.copy(message = Some(TerminalView.info("No legal moves for that piece.")), highlights = Set.empty, selectedPos = Some(pos), messageIsError = false)
+                app.copy(message = Some("No legal moves for that piece."), highlights = Set.empty, selectedPos = Some(pos), messageType = MessageType.Info)
               else
-                app.copy(highlights = targets, selectedPos = Some(pos), message = None, messageIsError = false)
+                app.copy(highlights = targets, selectedPos = Some(pos), message = None, messageType = MessageType.Info)
 
   // ── Undo ───────────────────────────────────────────────────────────────────
 
   private def handleUndo(app: AppState): AppState =
     app.game.history.lastOption match
       case None =>
-        app.copy(message = Some(TerminalView.error("Nothing to undo.")), messageIsError = true)
+        app.copy(message = Some("Nothing to undo."), messageType = MessageType.Error)
       case Some(prev) =>
         val newStatus = GameRules.computeStatus(prev)
         app.copy(
@@ -451,9 +439,9 @@ object GameController extends Observable[AppState]:
           lastMove   = None,
           highlights = Set.empty,
           selectedPos= None,
-          message    = Some(TerminalView.info("Last move undone.")),
+          message    = Some("Last move undone."),
           viewIndex  = prev.history.size,
-          messageIsError = false
+          messageType = MessageType.Info
         )
 
   // ── Resign ─────────────────────────────────────────────────────────────────
@@ -465,8 +453,8 @@ object GameController extends Observable[AppState]:
     val newStatus = GameStatus.Checkmate(loser)  // reuse checkmate status for resign
     app.copy(
       status  = newStatus,
-      message = Some(TerminalView.info(s"${loser} resigns. $winner wins!")),
-      messageIsError = false
+      message = Some(s"${loser} resigns. $winner wins!"),
+      messageType = MessageType.Info
     )
 
   // ── Draw offer ─────────────────────────────────────────────────────────────
@@ -477,12 +465,12 @@ object GameController extends Observable[AppState]:
       app.copy(
         status    = GameStatus.Draw("agreement"),
         drawOffer = false,
-        message   = Some(TerminalView.info("Draw accepted.")),
-        messageIsError = false
+        message   = Some("Draw accepted."),
+        messageType = MessageType.Info
       )
     else
       app.copy(
         drawOffer = true,
-        message   = Some(TerminalView.info(s"${app.game.activeColor} offers a draw. Type 'draw' to accept.")),
-        messageIsError = false
+        message   = Some(s"${app.game.activeColor} offers a draw. Type 'draw' to accept."),
+        messageType = MessageType.Info
       )
