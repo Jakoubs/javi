@@ -1,14 +1,15 @@
 package chess.view
 
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.*
-import akka.http.scaladsl.model.headers.*
-import akka.http.scaladsl.server.Directives.*
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.model.headers.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
 import io.circe.*
 import io.circe.syntax.*
 import io.circe.parser.*
+import io.circe.generic.semiauto.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Success, Failure}
 
@@ -17,7 +18,9 @@ import chess.model.{Pos, MoveGenerator, ClockState, capturedPieces, MaterialInfo
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 
-case class CommandRequest(command: String) derives Decoder, Encoder
+case class CommandRequest(command: String)
+object CommandRequest:
+  implicit val codec: Codec[CommandRequest] = deriveCodec[CommandRequest]
 case class GameStateResponse(
   fen: String, 
   displayFen: String,
@@ -46,7 +49,9 @@ case class GameStateResponse(
   blackLiveMillis: Long,
   activePgnParser: String,
   activeMoveParser: String
-) derives Decoder, Encoder
+)
+object GameStateResponse:
+  implicit val codec: Codec[GameStateResponse] = deriveCodec[GameStateResponse]
 
 class RestApi extends Observer[AppState]:
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "chess-rest-api")

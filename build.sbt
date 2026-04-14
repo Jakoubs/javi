@@ -8,14 +8,14 @@ lazy val root = (project in file("."))
     name := "chess-functional-improvements",
     libraryDependencies ++= Seq(
       "org.scalafx" %% "scalafx" % "20.0.0-R31",
-      // Web API (Akka HTTP + circe)
-      "com.typesafe.akka"      %% "akka-http"           % "10.5.3",
-      "com.typesafe.akka"      %% "akka-stream"         % "2.8.5",
-      "com.typesafe.akka"      %% "akka-actor-typed"    % "2.8.5",
+      // Web API (Pekko HTTP + circe)
+      "org.apache.pekko"       %% "pekko-http"          % "1.0.1",
+      "org.apache.pekko"       %% "pekko-stream"        % "1.0.2",
+      "org.apache.pekko"       %% "pekko-actor-typed"   % "1.0.2",
       "io.circe"               %% "circe-core"          % "0.14.10",
       "io.circe"               %% "circe-generic"       % "0.14.10",
       "io.circe"               %% "circe-parser"        % "0.14.10",
-      // Testing dependencies
+
       // Testing dependencies
       "org.scalatest" %% "scalatest" % "3.2.17" % Test,
       "org.scalatestplus" %% "scalacheck-1-17" % "3.2.17.0" % Test,
