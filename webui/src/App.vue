@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import ChessBoard from './components/ChessBoard.vue'
 import GameControls from './components/GameControls.vue'
 import GameStatus from './components/GameStatus.vue'
@@ -27,16 +27,60 @@ const state = ref({
   capturedBlack: [],
   message: '',
   training: false,
-  trainingProgress: null
-,
+  trainingProgress: null,
+  materialInfo: null,
   whiteLiveMillis: 0,
   blackLiveMillis: 0})
 
+const showGameOver = ref(false)
+const processedStatus = ref(null)
+
+const isGameOver = computed(() => {
+  const s = state.value.status
+  return s !== 'Playing' && !s.startsWith('Check(') && s !== ''
+})
+
+const gameOverInfo = computed(() => {
+  const s = state.value.status
+  if (s.startsWith('Checkmate')) {
+    const winner = s.includes('White') ? 'Black' : 'White'
+    return { title: 'Checkmate!', result: `${winner} Wins`, reason: s }
+  }
+  if (s.startsWith('Timeout')) {
+    const winner = s.includes('White') ? 'Black' : 'White'
+    return { title: 'Time Out!', result: `${winner} Wins`, reason: s }
+  }
+  if (s === 'Stalemate') return { title: 'Draw', result: 'Stalemate', reason: 'No legal moves left' }
+  if (s.startsWith('Draw')) return { title: 'Draw', result: 'Game is Drawn', reason: s }
+  return { title: 'Game Over', result: '', reason: s }
+})
+
+
+
+const handleNewGameModal = () => {
+  sendCommand('new')
+  showGameOver.value = false
+}
+
+const handleQuitModal = () => {
+  sendCommand('quit')
+  showGameOver.value = false
+}
+
 const fetchState = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/state')
+    const response = await fetch(`http://localhost:8080/api/state?t=${Date.now()}`)
     if (response.ok) {
-      state.value = await response.json()
+      const data = await response.json()
+      state.value = data
+      
+      // Proactive game-over check
+      if (isGameOver.value && processedStatus.value !== data.status) {
+        showGameOver.value = true
+        processedStatus.value = data.status
+      } else if (!isGameOver.value) {
+        processedStatus.value = null
+      }
     }
   } catch (e) {
     console.error('Failed to fetch state', e)
@@ -194,6 +238,24 @@ const isViewingHistory = computed(() => {
         <GameControls :state="state" @command="sendCommand" />
       </div>
     </main>
+
+    <!-- Game Over Modal -->
+    <div v-if="showGameOver" class="modal-overlay">
+      <div class="modal-content glass">
+        <button class="close-x" @click="showGameOver = false">&times;</button>
+        <div class="modal-header">
+          <h2>{{ gameOverInfo.title }}</h2>
+        </div>
+        <div class="modal-body">
+          <div class="result-text">{{ gameOverInfo.result }}</div>
+          <div class="reason-text">{{ gameOverInfo.reason }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" @click="handleNewGameModal">New Game</button>
+          <button class="btn" @click="handleQuitModal">Quit</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -315,5 +377,108 @@ main {
   background: rgba(78, 204, 163, 0.2);
   border-color: var(--primary);
   color: var(--primary);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  position: relative;
+  width: 400px;
+  padding: 2rem;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  animation: modal-in 0.3s ease-out;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.close-x {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  line-height: 1;
+}
+
+.close-x:hover {
+  opacity: 1;
+}
+
+.modal-header h2 {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+  letter-spacing: 1px;
+}
+
+.modal-body {
+  margin-bottom: 2rem;
+}
+
+.result-text {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.reason-text {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #1a1a2e;
+}
+
+.btn.primary:hover {
+  background: #3eb88f;
+  box-shadow: 0 4px 12px rgba(78, 204, 163, 0.3);
 }
 </style>

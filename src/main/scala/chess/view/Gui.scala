@@ -4,6 +4,7 @@ import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.control.{Button, TextArea, ScrollPane, TextInputDialog, Alert, MenuBar, Menu, MenuItem, SeparatorMenuItem}
 import scalafx.scene.layout.{GridPane, StackPane, HBox, VBox, Priority}
+import scalafx.stage.{Stage, Modality}
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, Text}
@@ -80,8 +81,15 @@ object Gui extends JFXApp3:
     if !res.running then System.exit(0)
     
     val stateChanged = lastState.isEmpty || lastState.get != res
-
     lastState = Some(res)
+
+    val isOver = res.status != "Playing" && !res.status.startsWith("Check(") && res.status.nonEmpty
+    if (isOver && !gameOverPopupShown) {
+      gameOverPopupShown = true
+      showGameOverModal(res)
+    } else if (!isOver) {
+      gameOverPopupShown = false
+    }
 
     if (stateChanged) {
       updateBoard(res, res.displayFen)
@@ -219,6 +227,54 @@ object Gui extends JFXApp3:
     })
     pollThread.setDaemon(true)
     pollThread.start()
+
+  private def showGameOverModal(res: GameStateResponse): Unit =
+    val titleStr = if res.status.startsWith("Checkmate") then "Checkmate!"
+                   else if res.status.startsWith("Timeout") then "Time Out!"
+                   else if res.status == "Stalemate" then "Draw"
+                   else "Game Over"
+                   
+    val resultStr = if res.status.contains("White") then "Black Wins"
+                    else if res.status.contains("Black") then "White Wins"
+                    else res.status
+                    
+    Platform.runLater {
+      new Stage {
+        title = titleStr
+        initModality(Modality.ApplicationModal)
+        initOwner(stage)
+        scene = new Scene {
+          fill = Color.web("#f8f9fa")
+          root = new VBox {
+            padding = Insets(30); spacing = 20; alignment = Pos.Center; minWidth = 300
+            children = Seq(
+              new Text(titleStr) { font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 24); fill = Color.web("#2c3e50") },
+              new VBox {
+                alignment = Pos.Center; spacing = 5
+                children = Seq(
+                  new Text(resultStr) { font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 18) },
+                  new Text(res.message.getOrElse("")) { font = Font.font("Arial", 14); fill = Color.Gray }
+                )
+              },
+              new HBox {
+                spacing = 15; alignment = Pos.Center
+                children = Seq(
+                  new Button("New Game") { 
+                    padding = Insets(10, 20, 10, 20); minWidth = 100
+                    onAction = _ => { client.sendCommand("new").foreach(_ => { refresh(); Platform.runLater { close() } }) }
+                    style = "-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;"
+                  },
+                  new Button("Quit") { 
+                    padding = Insets(10, 20, 10, 20); minWidth = 100
+                    onAction = _ => { client.sendCommand("quit").foreach(_ => { Platform.runLater { close() } }) }
+                  }
+                )
+              }
+            )
+          }
+        }
+      }.showAndWait()
+    }
 
   private def updateCapturedPieces(res: GameStateResponse): Unit =
     val m = res.materialInfo
