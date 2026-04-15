@@ -80,7 +80,7 @@ def resolve_symbol(token: str, known_by_fq: Dict[str, Decl], known_by_simple: Di
 def generate_puml(source_dir: Path, output_file: Path) -> None:
     scala_files = sorted(source_dir.rglob("*.scala"))
 
-    declarations: List[Decl] = []
+    declaration_map: Dict[str, Decl] = {}
     raw_extends: List[Tuple[str, str]] = []
     raw_imports: List[Tuple[str, str]] = []
 
@@ -91,7 +91,8 @@ def generate_puml(source_dir: Path, output_file: Path) -> None:
                 continue
 
             fq_name = f"{package_name}.{name}"
-            declarations.append(Decl(kind=kind, fq_name=fq_name))
+            if fq_name not in declaration_map:
+                declaration_map[fq_name] = Decl(kind=kind, fq_name=fq_name)
 
             for token in TYPE_TOKEN_RE.findall(extends_expr):
                 raw_extends.append((fq_name, token))
@@ -102,6 +103,7 @@ def generate_puml(source_dir: Path, output_file: Path) -> None:
             for imported in imports:
                 raw_imports.append((owner_fq, imported))
 
+    declarations = sorted(declaration_map.values(), key=lambda d: d.fq_name)
     known_by_fq: Dict[str, Decl] = {decl.fq_name: decl for decl in declarations}
     known_by_simple: Dict[str, Set[str]] = {}
 
@@ -132,7 +134,7 @@ def generate_puml(source_dir: Path, output_file: Path) -> None:
         "' Auto-generated from src/main/scala by scripts/generate-scala-puml.py",
     ]
 
-    for decl in sorted(declarations, key=lambda d: d.fq_name):
+    for decl in declarations:
         alias = alias_for(decl.fq_name)
         kind = display_kind(decl.kind)
         lines.append(f'{kind} "{decl.fq_name}" as {alias}')
