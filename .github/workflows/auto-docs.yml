@@ -1,37 +1,38 @@
-name: Auto-Generate Architecture Diagrams
+name: Generate Scala PUML from Source
+
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - "src/main/scala/**/*.scala"
+      - "scripts/generate-scala-puml.py"
+      - ".github/workflows/auto-docs.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
 
 jobs:
-  generate-docs:
+  generate-puml:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # Schritt 1: Extraktion (Code -> .puml)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
-          
-      - name: Generate PUML from Code
-        run: |
-          npx tplant -f "src/models/**/*.ts" -o ./diagrams/class_structure.puml
-          # Du kannst hier weitere Filter setzen, um nur "wichtige" Ordner zu scannen
+          python-version: "3.x"
 
-      # Schritt 2: Rendering (.puml -> .svg)
-      - name: Render PlantUML
-        uses: holowinski/plantuml-github-action@main
-        with:
-          args: -v -tsvg -o "../out" "diagrams/**.puml"
+      - name: Generate PUML from Scala source
+        run: python3 ./scripts/generate-scala-puml.py
 
-      # Schritt 3: Zurückschreiben ins Repo
-      - name: Commit & Push Diagrams
+      - name: Commit and push generated PUML
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add diagrams/*.puml out/*.svg
-          git commit -m "docs: update automated architecture diagrams" || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add diagrams/generated/scala-architecture.puml
+          git diff --cached --quiet && exit 0
+          git commit -m "docs: update Scala source PlantUML"
           git push

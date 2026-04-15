@@ -168,15 +168,27 @@ Ein detaillierter Implementierungs-Guide fuer die REST API liegt in `REST_API_GU
 
 ## PlantUML Diagramme automatisch generieren
 
-Die automatische Diagramm-Erstellung ist ueber den Workflow `plantUML.yml` konfiguriert.
+Die automatische Diagramm-Erstellung laeuft in zwei Workflows:
 
-- Trigger: Push auf `main` bei Aenderungen in `diagrams/**/*.puml`
+1. `auto-docs.yml`: generiert `.puml` aus Scala-Sourcecode
+2. `plantUML.yml`: rendert `.puml` nach `.svg`
+
+Generierte PUML-Datei:
+
+- `diagrams/generated/scala-architecture.puml`
+
+- Trigger 1: Push auf `main` bei Aenderungen in `src/main/scala/**/*.scala`
+- Trigger 2: Push auf `main` bei Aenderungen in `diagrams/**/*.puml`
 - Output: SVG-Dateien in `out/`
-- Commit: Aktualisierte Diagramme werden vom Workflow automatisch ins Repo committed
+- Commit: Aktualisierte PUML/SVG-Dateien werden vom jeweiligen Workflow automatisch committed
 
 ### Lokal testen
 
-Voraussetzung lokal: installierte `plantuml`-CLI.
+Voraussetzung lokal: installierte `python3`- und `plantuml`-CLI.
+
+```bash
+python3 ./scripts/generate-scala-puml.py
+```
 
 ```bash
 sh ./scripts/generate-diagrams.sh
@@ -184,11 +196,11 @@ sh ./scripts/generate-diagrams.sh
 
 ### In GitHub Actions ausloesen
 
-1. Aendere oder erstelle eine Datei in `diagrams/` mit Endung `.puml`.
-2. Committe die Aenderung und pushe nach `main`.
-3. Der Workflow generiert SVGs in `out/` und committed sie automatisch.
+1. Aendere Scala-Code in `src/main/scala/` und pushe nach `main`.
+2. `auto-docs.yml` erstellt/aktualisiert `diagrams/generated/scala-architecture.puml`.
+3. Dieser Push triggert `plantUML.yml`, das SVGs in `out/` erzeugt.
 
-Alternativ kannst du den Workflow manuell ueber `workflow_dispatch` starten.
+Beide Workflows kannst du alternativ manuell ueber `workflow_dispatch` starten.
 
 ---
 
