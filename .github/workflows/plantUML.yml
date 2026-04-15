@@ -5,7 +5,10 @@ on:
     branches: [ main ]
     paths:
       - "diagrams/**/*.puml"
-      - "scripts/generate-diagrams.sh"
+      - "!diagrams/generated/scala-architecture.puml"
+  workflow_run:
+    workflows: ["Generate Scala PUML from Source"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -14,10 +17,17 @@ permissions:
 jobs:
   plantuml:
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main')
 
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Java
         uses: actions/setup-java@v4

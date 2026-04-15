@@ -177,8 +177,9 @@ Generierte PUML-Datei:
 
 - `diagrams/generated/scala-architecture.puml`
 
-- Trigger 1: Push auf `main` bei Aenderungen in `src/main/scala/**/*.scala`
-- Trigger 2: Push auf `main` bei Aenderungen in `diagrams/**/*.puml`
+- Trigger 1: Push auf `main` bei Aenderungen in `src/main/scala/**/*.scala` (`auto-docs.yml`)
+- Trigger 2: Nach erfolgreichem Abschluss von `auto-docs.yml` startet `plantUML.yml` und rendert die generierte PUML
+- Trigger 3: Direkte manuelle Aenderungen in `diagrams/**/*.puml` (ausser `diagrams/generated/scala-architecture.puml`) rendern ebenfalls
 - Output: SVG-Dateien in `out/`
 - Commit: Aktualisierte PUML/SVG-Dateien werden vom jeweiligen Workflow automatisch committed
 
