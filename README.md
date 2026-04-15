@@ -5,7 +5,7 @@
 [![sbt Build](https://img.shields.io/badge/sbt-1.9+-blue)](https://scala-sbt.org/)
 [![CI](https://img.shields.io/github/actions/workflow/status/Jakoubs/javi/ci.yml)](https://github.com/Jakoubs/javi/actions/workflows/ci.yml)
 
-A fully playable, legal-moves-only chess game for the terminal, built in pure Scala 3 with MVC architecture inspired by lichess
+A fully playable, legal-moves-only chess game for the terminal, built in pure Scala 3 with MVC architecture inspired by lichess.
 
 ---
 
