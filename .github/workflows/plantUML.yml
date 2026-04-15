@@ -1,25 +1,43 @@
 name: Generate PlantUML Diagrams
+
 on:
   push:
+    branches: [ main ]
     paths:
-      - 'diagrams/**.puml' # Wird nur bei Änderungen an Diagrammen ausgeführt
+      - "diagrams/**/*.puml"
+      - "scripts/generate-diagrams.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  plantuml:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Generate SVG Diagrams
-        uses: holowinski/plantuml-github-action@main
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          args: -v -tsvg -o "../out" "diagrams/**.puml"
+          distribution: temurin
+          java-version: "17"
 
-      - name: Commit and Push changes
+      - name: Install PlantUML dependencies
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add out/*.svg
-          git commit -m "chore: update diagrams" || exit 0
+          sudo apt-get update
+          sudo apt-get install -y graphviz plantuml
+
+      - name: Generate SVG diagrams
+        run: sh ./scripts/generate-diagrams.sh
+
+      - name: Commit and push diagram changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add out
+          git diff --cached --quiet && exit 0
+          git commit -m "docs: update PlantUML diagrams [skip ci]"
           git push

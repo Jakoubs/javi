@@ -1,7 +1,7 @@
 name: Auto-Generate Architecture Diagrams
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
+
 
 jobs:
   generate-docs:

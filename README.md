@@ -160,6 +160,38 @@ java -jar target/scala-3.3.1/chess-assembly-1.0.0.jar
 
 ---
 
+## REST API Guide
+
+Ein detaillierter Implementierungs-Guide fuer die REST API liegt in `REST_API_GUIDE.md`.
+
+---
+
+## PlantUML Diagramme automatisch generieren
+
+Die automatische Diagramm-Erstellung ist ueber den Workflow `plantUML.yml` konfiguriert.
+
+- Trigger: Push auf `main` bei Aenderungen in `diagrams/**/*.puml`
+- Output: SVG-Dateien in `out/`
+- Commit: Aktualisierte Diagramme werden vom Workflow automatisch ins Repo committed
+
+### Lokal testen
+
+Voraussetzung lokal: installierte `plantuml`-CLI.
+
+```bash
+sh ./scripts/generate-diagrams.sh
+```
+
+### In GitHub Actions ausloesen
+
+1. Aendere oder erstelle eine Datei in `diagrams/` mit Endung `.puml`.
+2. Committe die Aenderung und pushe nach `main`.
+3. Der Workflow generiert SVGs in `out/` und committed sie automatisch.
+
+Alternativ kannst du den Workflow manuell ueber `workflow_dispatch` starten.
+
+---
+
 ## Design Principles
 
 - **Functional**: `GameState`, `Board`, `Move` are all immutable case classes. State transitions return new values.
