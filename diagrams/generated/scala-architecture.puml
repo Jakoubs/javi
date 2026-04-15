@@ -1,0 +1,102 @@
+@startuml
+skinparam shadowing false
+hide empty members
+
+' Auto-generated from src/main/scala by scripts/generate-scala-puml.py
+class "chess.Main" as chess_Main
+class "chess.TrainMain" as chess_TrainMain
+class "chess.ai.AiEngine" as chess_ai_AiEngine
+class "chess.ai.Evaluator" as chess_ai_Evaluator
+class "chess.ai.PassiveTrainer" as chess_ai_PassiveTrainer
+interface "chess.ai.Trainer" as chess_ai_Trainer
+class "chess.controller.AppState" as chess_controller_AppState
+class "chess.controller.AppState" as chess_controller_AppState
+enum "chess.controller.Command" as chess_controller_Command
+class "chess.controller.GameController" as chess_controller_GameController
+enum "chess.controller.MessageType" as chess_controller_MessageType
+class "chess.model.BlackToMove" as chess_model_BlackToMove
+class "chess.model.Board" as chess_model_Board
+class "chess.model.Board" as chess_model_Board
+class "chess.model.CastlingRights" as chess_model_CastlingRights
+class "chess.model.CastlingRights" as chess_model_CastlingRights
+class "chess.model.ClockState" as chess_model_ClockState
+enum "chess.model.Color" as chess_model_Color
+class "chess.model.GameRules" as chess_model_GameRules
+interface "chess.model.GameState" as chess_model_GameState
+class "chess.model.GameState" as chess_model_GameState
+enum "chess.model.GameStatus" as chess_model_GameStatus
+class "chess.model.MaterialInfo" as chess_model_MaterialInfo
+class "chess.model.Move" as chess_model_Move
+class "chess.model.MoveGenerator" as chess_model_MoveGenerator
+class "chess.model.Piece" as chess_model_Piece
+class "chess.model.Piece" as chess_model_Piece
+enum "chess.model.PieceType" as chess_model_PieceType
+class "chess.model.PieceType" as chess_model_PieceType
+class "chess.model.PlayerInfo" as chess_model_PlayerInfo
+class "chess.model.Pos" as chess_model_Pos
+class "chess.model.Pos" as chess_model_Pos
+class "chess.model.TimeControl" as chess_model_TimeControl
+class "chess.model.TimeControl" as chess_model_TimeControl
+class "chess.model.WhiteToMove" as chess_model_WhiteToMove
+class "chess.util.Failure" as chess_util_Failure
+interface "chess.util.Observable" as chess_util_Observable
+interface "chess.util.Observer" as chess_util_Observer
+class "chess.util.Pgn" as chess_util_Pgn
+interface "chess.util.Result" as chess_util_Result
+class "chess.util.Result" as chess_util_Result
+class "chess.util.Success" as chess_util_Success
+class "chess.util.parser.CombinatorPgnParser" as chess_util_parser_CombinatorPgnParser
+class "chess.util.parser.CoordinateMoveParser" as chess_util_parser_CoordinateMoveParser
+class "chess.util.parser.DelegatingPgnParser" as chess_util_parser_DelegatingPgnParser
+class "chess.util.parser.DelegatingPgnParser" as chess_util_parser_DelegatingPgnParser
+class "chess.util.parser.FastPgnParser" as chess_util_parser_FastPgnParser
+interface "chess.util.parser.MoveParser" as chess_util_parser_MoveParser
+class "chess.util.parser.ParserRegistry" as chess_util_parser_ParserRegistry
+interface "chess.util.parser.PgnParser" as chess_util_parser_PgnParser
+class "chess.util.parser.PgnParser" as chess_util_parser_PgnParser
+class "chess.util.parser.RegexPgnParser" as chess_util_parser_RegexPgnParser
+class "chess.util.parser.SanMoveParser" as chess_util_parser_SanMoveParser
+class "chess.view.CommandParser" as chess_view_CommandParser
+class "chess.view.CommandRequest" as chess_view_CommandRequest
+class "chess.view.CommandRequest" as chess_view_CommandRequest
+interface "chess.view.ConsoleIO" as chess_view_ConsoleIO
+class "chess.view.GameStateResponse" as chess_view_GameStateResponse
+class "chess.view.GameStateResponse" as chess_view_GameStateResponse
+class "chess.view.Gui" as chess_view_Gui
+class "chess.view.JaviClient" as chess_view_JaviClient
+class "chess.view.JaviClient" as chess_view_JaviClient
+class "chess.view.RestApi" as chess_view_RestApi
+class "chess.view.StdConsoleIO" as chess_view_StdConsoleIO
+class "chess.view.TerminalView" as chess_view_TerminalView
+class "chess.view.Tui" as chess_view_Tui
+
+chess_ai_PassiveTrainer --|> chess_ai_Trainer
+chess_controller_GameController --|> chess_controller_AppState
+chess_controller_GameController --|> chess_util_Observable
+chess_util_Failure --|> chess_util_Result
+chess_util_Success --|> chess_util_Result
+chess_util_parser_CombinatorPgnParser --|> chess_util_parser_PgnParser
+chess_util_parser_CoordinateMoveParser --|> chess_util_parser_MoveParser
+chess_util_parser_DelegatingPgnParser --|> chess_util_parser_PgnParser
+chess_util_parser_FastPgnParser --|> chess_util_parser_PgnParser
+chess_util_parser_RegexPgnParser --|> chess_util_parser_PgnParser
+chess_util_parser_SanMoveParser --|> chess_util_parser_MoveParser
+chess_view_RestApi --|> chess_controller_AppState
+chess_view_RestApi --|> chess_util_Observer
+chess_view_StdConsoleIO --|> chess_view_ConsoleIO
+chess_view_Tui --|> chess_controller_AppState
+chess_view_Tui --|> chess_util_Observer
+chess_Main ..> chess_controller_GameController
+chess_controller_MessageType ..> chess_util_Observable
+chess_controller_MessageType ..> chess_util_parser_ParserRegistry
+chess_util_Pgn ..> chess_util_parser_PgnParser
+chess_util_parser_CombinatorPgnParser ..> chess_util_Pgn
+chess_util_parser_DelegatingPgnParser ..> chess_model_GameState
+chess_util_parser_FastPgnParser ..> chess_util_Pgn
+chess_util_parser_MoveParser ..> chess_util_Pgn
+chess_util_parser_PgnParser ..> chess_model_GameState
+chess_util_parser_RegexPgnParser ..> chess_util_Pgn
+chess_view_CommandParser ..> chess_util_parser_ParserRegistry
+chess_view_CommandRequest ..> chess_util_Observer
+chess_view_ConsoleIO ..> chess_util_Observer
+@enduml
