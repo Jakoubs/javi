@@ -1,0 +1,37 @@
+name: Auto-Generate Architecture Diagrams
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Schritt 1: Extraktion (Code -> .puml)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Generate PUML from Code
+        run: |
+          npx tplant -f "src/models/**/*.ts" -o ./diagrams/class_structure.puml
+          # Du kannst hier weitere Filter setzen, um nur "wichtige" Ordner zu scannen
+
+      # Schritt 2: Rendering (.puml -> .svg)
+      - name: Render PlantUML
+        uses: holowinski/plantuml-github-action@main
+        with:
+          args: -v -tsvg -o "../out" "diagrams/**.puml"
+
+      # Schritt 3: Zurückschreiben ins Repo
+      - name: Commit & Push Diagrams
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add diagrams/*.puml out/*.svg
+          git commit -m "docs: update automated architecture diagrams" || exit 0
+          git push

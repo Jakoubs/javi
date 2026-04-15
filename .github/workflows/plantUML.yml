@@ -1,0 +1,25 @@
+name: Generate PlantUML Diagrams
+on:
+  push:
+    paths:
+      - 'diagrams/**.puml' # Wird nur bei Änderungen an Diagrammen ausgeführt
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Generate SVG Diagrams
+        uses: holowinski/plantuml-github-action@main
+        with:
+          args: -v -tsvg -o "../out" "diagrams/**.puml"
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add out/*.svg
+          git commit -m "chore: update diagrams" || exit 0
+          git push
