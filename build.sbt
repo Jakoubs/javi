@@ -97,3 +97,5 @@ lazy val lichess = (project in file("lichess"))
       "co.fs2"     %% "fs2-io"              % "3.9.4"
     )
   )
+
+addCommandAlias("fullCoverage", ";coverage;test;coverageAggregate")

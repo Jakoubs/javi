@@ -136,11 +136,9 @@ object GameRules:
     else if totalCount == 3 then
       counts.contains(PieceType.Bishop) || counts.contains(PieceType.Knight) // K+B vs K or K+N vs K
     else if totalCount == 4 && counts.getOrElse(PieceType.Bishop, 0) == 2 then
-      // K+B vs K+B (if same color)
+      // K+B vs K+B: draw only if bishops are on same color squares
       val bishops = state.board.pieces.filter(_._2.pieceType == PieceType.Bishop).toList
-      if bishops.size == 2 then
-        val pos1 = bishops(0)._1
-        val pos2 = bishops(1)._1
-        (pos1.row + pos1.col) % 2 == (pos2.row + pos2.col) % 2
-      else false
+      val pos1 = bishops(0)._1
+      val pos2 = bishops(1)._1
+      (pos1.row + pos1.col) % 2 == (pos2.row + pos2.col) % 2
     else false

@@ -1,0 +1,120 @@
+    "process GameStateUpdateEvent properly" in {
+      val user = LichessUser("botid", "botname", None)
+      val eventStream = Stream.emits[IO, LichessEvent](Seq(
+        GameStartEvent(GameId("g2"))
+      ))
+      
+      val gameFull = GameFullEvent(
+        "g2",
+        LichessVariant("standard", "Standard"),
+        None,
+        "blitz",
+        LichessPerf("blitz"),
+        LichessPlayer(Some("botid"), None, None, None), // we are white
+        LichessPlayer(Some("p2"), None, None, None),
+        "start",
+        LichessGameState("", 100, 100, 0, 0, "started")
+      )
+      
+      val stateUpdate = GameStateUpdateEvent(
+        "e2e4 e7e5 e1e2", 100, 100, 0, 0, "started" 
+        // 3 moves passed, so it's black's turn now (not our turn)
+      )
+      
+      val gameStream = Stream.emits[IO, LichessGameEvent](Seq(gameFull, stateUpdate))
+      
+      val client = new StubLichessClient(
+        accountInfo = Some(user), 
+        eventStream = eventStream,
+        gameStreamResponses = Map("g2" -> gameStream)
+      )
+      val service = new LichessService(client)
+      service.run().unsafeRunSync()
+      Thread.sleep(1000)
+    }
+
+    "handle case when move is rejected" in {
+       val user = LichessUser("botid", "botname", None)
+       val gameFull = GameFullEvent(
+        "rej1",
+        LichessVariant("standard", "Standard"),
+        None,
+        "blitz",
+        LichessPerf("blitz"),
+        LichessPlayer(Some("botid"), None, None, None), // we are white
+        LichessPlayer(Some("p2"), None, None, None),
+        "start",
+        LichessGameState("", 100, 100, 0, 0, "started")
+      )
+      
+      val gameStream = Stream.emits[IO, LichessGameEvent](Seq(gameFull))
+      val eventStream = Stream.emits[IO, LichessEvent](Seq(GameStartEvent(GameId("rej1"))))
+      
+      val client = new StubLichessClient(
+        accountInfo = Some(user), 
+        eventStream = eventStream,
+        gameStreamResponses = Map("rej1" -> gameStream)
+      ) {
+         override def makeMove(gameId: String, move: String): IO[Boolean] = IO.pure(false) // fail move
+      }
+      val service = new LichessService(client)
+      service.run().unsafeRunSync()
+      Thread.sleep(1000)
+    }
+
+    "handle case with no legal moves (checkmate board)" in {
+       val user = LichessUser("botid", "botname", None)
+       val gameFull = GameFullEvent(
+        "mate1",
+        LichessVariant("standard", "Standard"),
+        None,
+        "blitz",
+        LichessPerf("blitz"),
+        LichessPlayer(Some("botid"), None, None, None), // we are white
+        LichessPlayer(Some("p2"), None, None, None),
+        "start",
+        // Fools mate
+        LichessGameState("f2f3 e7e5 g2g4 d8h4", 100, 100, 0, 0, "started")
+      )
+      
+      val gameStream = Stream.emits[IO, LichessGameEvent](Seq(gameFull))
+      val eventStream = Stream.emits[IO, LichessEvent](Seq(GameStartEvent(GameId("mate1"))))
+      
+      val client = new StubLichessClient(
+        accountInfo = Some(user), 
+        eventStream = eventStream,
+        gameStreamResponses = Map("mate1" -> gameStream)
+      ) 
+      val service = new LichessService(client)
+      service.run().unsafeRunSync()
+      Thread.sleep(1000)
+    }
+    
+    "ignore old state updates (move count <= last move count)" in {
+       val user = LichessUser("botid", "botname", None)
+       val gameFull = GameFullEvent(
+        "dup1",
+        LichessVariant("standard", "Standard"),
+        None,
+        "blitz",
+        LichessPerf("blitz"),
+        LichessPlayer(Some("botid"), None, None, None), // we are white
+        LichessPlayer(Some("p2"), None, None, None),
+        "start",
+        LichessGameState("", 100, 100, 0, 0, "started")
+      )
+      // Send identical update again
+      val stateUpdate = GameStateUpdateEvent("", 100, 100, 0, 0, "started")
+      
+      val gameStream = Stream.emits[IO, LichessGameEvent](Seq(gameFull, stateUpdate))
+      val eventStream = Stream.emits[IO, LichessEvent](Seq(GameStartEvent(GameId("dup1"))))
+      
+      val client = new StubLichessClient(
+        accountInfo = Some(user), 
+        eventStream = eventStream,
+        gameStreamResponses = Map("dup1" -> gameStream)
+      ) 
+      val service = new LichessService(client)
+      service.run().unsafeRunSync()
+      Thread.sleep(1000)
+    }

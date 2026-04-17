@@ -61,13 +61,19 @@ object LichessModels:
       case other        => Left(DecodingFailure(s"Unknown event type: $other", c.history))
     }
 
-  implicit val decodeLichessGameEvent: Decoder[LichessGameEvent] = (c: HCursor) =>
-    c.get[String]("type") match {
-      case Right("gameFull")  => c.as[GameFullEvent]
-      case Right("gameState") => c.as[GameStateUpdateEvent]
-      case Right(other)       => Left(DecodingFailure(s"Unknown game event type: $other", c.history))
-      case Left(_)            => c.as[GameStateUpdateEvent] // Sometimes type is missing in partial updates? Actually usually it's there.
+  implicit val decodeLichessGameEvent: Decoder[LichessGameEvent] = new Decoder[LichessGameEvent] {
+    final def apply(c: HCursor): Decoder.Result[LichessGameEvent] = {
+      val t = c.downField("type").as[String]
+      if (t.isRight) {
+        val tStr = t.getOrElse("")
+        if (tStr == "gameFull") c.as[GameFullEvent]
+        else if (tStr == "gameState") c.as[GameStateUpdateEvent]
+        else Left(DecodingFailure(s"Unknown game event type: $tStr", c.history))
+      } else {
+        c.as[GameStateUpdateEvent]
+      }
     }
+  }
 
   // Automatic derivation for nested classes
   implicit val decodeChallengeEvent: Decoder[ChallengeEvent] = deriveDecoder

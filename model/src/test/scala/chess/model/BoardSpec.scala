@@ -48,6 +48,10 @@ class BoardSpec extends AnyFunSpec with Matchers {
       it("should fail on invalid empty-square count") {
         Board.fromFenPlacement("9/8/8/8/8/8/8/8").isLeft shouldBe true
       }
+      it("should fail on zero empty-square digit in rank") {
+        // '0' is a digit but emptySquares < 1 — the other uncovered branch
+        Board.fromFenPlacement("p0pppppp/8/8/8/8/8/8/8").isLeft shouldBe true
+      }
       it("should fail on rank exceeding 8 files (empty squares)") {
         Board.fromFenPlacement("45/8/8/8/8/8/8/8").isLeft shouldBe true
       }

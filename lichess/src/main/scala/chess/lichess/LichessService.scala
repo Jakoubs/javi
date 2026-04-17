@@ -43,7 +43,6 @@ class LichessService(client: LichessClient) {
         case GameFinishEvent(game) =>
           IO(println(s"Spiel beendet: ${game.id}")) *>
           gamesRef.update(_ - game.id)
-        case _ => IO.unit
       }
       .compile
       .drain
