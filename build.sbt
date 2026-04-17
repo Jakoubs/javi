@@ -91,8 +91,9 @@ lazy val lichess = (project in file("lichess"))
     commonSettings,
     name := "chess-lichess",
     libraryDependencies ++= Seq(
-      "org.apache.pekko" %% "pekko-http" % "1.0.1",
-      "org.apache.pekko" %% "pekko-stream" % "1.0.1",
-      "org.apache.pekko" %% "pekko-actor-typed" % "1.0.1"
+      "org.http4s" %% "http4s-ember-client" % http4sVersion,
+      "org.http4s" %% "http4s-circe"        % http4sVersion,
+      "org.http4s" %% "http4s-dsl"          % http4sVersion,
+      "co.fs2"     %% "fs2-io"              % "3.9.4"
     )
   )

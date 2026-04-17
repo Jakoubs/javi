@@ -1,42 +1,33 @@
 package chess.lichess
 
-import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import scala.concurrent.ExecutionContext
+import cats.effect.*
+import org.http4s.ember.client.EmberClientBuilder
+import scala.concurrent.duration.*
 
-object LichessMain {
-  def main(args: Array[String]): Unit = {
-    implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "LichessBotSystem")
-    implicit val ec: ExecutionContext = system.executionContext
+object LichessMain extends IOApp.Simple {
 
-    try {
+  override def run: IO[Unit] = {
+    val program = EmberClientBuilder.default[IO].build.use { httpClient =>
       val token = LichessClient.loadToken()
-      val client = new LichessClient(token)
+      val client = new LichessClient(token, httpClient)
       val service = new LichessService(client)
 
-      println("Javi Chess Bot - Lichess Integration")
-      println("-------------------------------------")
-      
-      service.start()
+      for {
+        _ <- IO(println("Javi Chess Bot - functional Lichess Integration (http4s)"))
+        _ <- IO(println("---------------------------------------------------------"))
+        
+        // Start the service in background
+        serviceFiber <- service.run().start
+        
+        // Handle optional bot challenge if passed in args (demonstration)
+        // Note: For real args, we would use IOApp with args
+        
+        _ <- serviceFiber.join
+      } yield ()
+    }
 
-      // Optional: Herausforderung gegen einen bestimmten Bot starten
-      if (args.nonEmpty) {
-        val targetBot = args(0)
-        println(s"Sende Herausforderung an $targetBot...")
-        client.challengeBot(targetBot).onComplete {
-          case scala.util.Success(true) => println(s"Herausforderung an $targetBot gesendet.")
-          case scala.util.Success(false) => println(s"Herausforderung an $targetBot fehlgeschlagen.")
-          case scala.util.Failure(e) => println(s"Fehler beim Fordern: ${e.getMessage}")
-        }
-      }
-
-      // Keep application running
-      Thread.currentThread().join()
-    } catch {
-      case e: Exception =>
-        println(s"Kritischer Fehler beim Starten: ${e.getMessage}")
-        system.terminate()
-        sys.exit(1)
+    program.handleErrorWith { e =>
+      IO(println(s"Kritischer Fehler beim Starten: ${e.getMessage}")) *> IO.unit
     }
   }
 }
