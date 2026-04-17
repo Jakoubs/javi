@@ -34,5 +34,6 @@ lazy val root = (project in file("."))
     coverageMinimumStmtTotal := 85,
     coverageMinimumBranchTotal := 75,
     coverageFailOnMinimum := false,
-    coverageHighlighting := true
+    coverageHighlighting := true,
+    scalacOptions ++= Seq("-Xmax-inlines", "64")
   )

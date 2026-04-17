@@ -30,7 +30,10 @@ const state = ref({
   trainingProgress: null,
   whiteLiveMillis: 0,
   blackLiveMillis: 0,
-  activePgnParser: 'regex'
+  activePgnParser: 'regex',
+  activeMoveParser: 'coordinate',
+  aiBot: 'alphabeta',
+  aiThinkingTime: 5000
 })
 
 const showGameOver = ref(false)
@@ -121,6 +124,16 @@ const handleSwitchParser = (event) => {
   sendCommand(`parser pgn ${variant}`)
 }
 
+const handleSwitchBot = (event) => {
+  const bot = event.target.value
+  sendCommand(`bot ${bot}`)
+}
+
+const handleSwitchAiTime = (event) => {
+  const ms = event.target.value
+  sendCommand(`aitime ${ms}`)
+}
+
 
 let pollInterval
 let tickerInterval
@@ -196,6 +209,23 @@ const isViewingHistory = computed(() => {
             <option value="regex">Regex</option>
             <option value="fast">Fastparse</option>
             <option value="combinator">Combinator</option>
+          </select>
+        </div>
+        <div class="parser-switcher">
+          <label for="bot-select">AI Bot:</label>
+          <select id="bot-select" :value="state.aiBot" @change="handleSwitchBot" class="glass-select">
+            <option value="simple">Simple (AiEngine)</option>
+            <option value="alphabeta">Alpha-Beta Agent</option>
+          </select>
+        </div>
+        <div class="parser-switcher">
+          <label for="aitime-select">AI Time:</label>
+          <select id="aitime-select" :value="state.aiThinkingTime" @change="handleSwitchAiTime" class="glass-select">
+            <option value="1000">1s</option>
+            <option value="2000">2s</option>
+            <option value="5000">5s</option>
+            <option value="10000">10s</option>
+            <option value="20000">20s</option>
           </select>
         </div>
       </div>

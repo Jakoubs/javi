@@ -48,7 +48,9 @@ case class GameStateResponse(
   whiteLiveMillis: Long,
   blackLiveMillis: Long,
   activePgnParser: String,
-  activeMoveParser: String
+  activeMoveParser: String,
+  aiBot: String,
+  aiThinkingTime: Int
 )
 object GameStateResponse:
   implicit val codec: Codec[GameStateResponse] = deriveCodec[GameStateResponse]
@@ -110,7 +112,9 @@ class RestApi extends Observer[AppState]:
                   whiteLiveMillis = state.liveMillis(chess.model.Color.White),
                   blackLiveMillis = state.liveMillis(chess.model.Color.Black),
                   activePgnParser = state.activePgnParser,
-                  activeMoveParser = state.activeMoveParser
+                  activeMoveParser = state.activeMoveParser,
+                  aiBot = state.aiBot,
+                  aiThinkingTime = state.aiThinkingTime
                 )
                 complete(HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
               }

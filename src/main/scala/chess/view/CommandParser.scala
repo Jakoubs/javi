@@ -68,6 +68,15 @@ object CommandParser:
           case Some(i) => Command.JumpToHistory(i)
           case _       => Command.Unknown(s"Invalid jump index: $idxStr")
 
+      case s if s.startsWith("bot ") =>
+        Command.SwitchBot(s.drop(4).trim)
+
+      case s if s.startsWith("aitime ") =>
+        val msStr = s.drop(7).trim
+        msStr.toIntOption match
+          case Some(ms) if ms >= 100 => Command.SetAiTime(ms)
+          case _                     => Command.Unknown(s"Invalid AI time (min 100ms): $msStr")
+
       case s if s.startsWith("parser ") =>
         val parts = s.drop(7).trim.split("\\s+").filter(_.nonEmpty)
         if parts.length == 2 then 

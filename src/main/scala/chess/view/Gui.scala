@@ -166,6 +166,12 @@ object Gui extends JFXApp3:
             new MenuItem("Fastparse") { onAction = _ => client.sendCommand("parser pgn fast").foreach(_ => refresh()) },
             new MenuItem("Combinator") { onAction = _ => client.sendCommand("parser pgn combinator").foreach(_ => refresh()) }
           )
+        },
+        new Menu("Bot") {
+          items = Seq(
+            new MenuItem("Simple (AiEngine)") { onAction = _ => client.sendCommand("bot simple").foreach(_ => refresh()) },
+            new MenuItem("Alpha-Beta Agent") { onAction = _ => client.sendCommand("bot alphabeta").foreach(_ => refresh()) }
+          )
         }
       )
     }

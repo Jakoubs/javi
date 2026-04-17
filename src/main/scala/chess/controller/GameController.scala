@@ -35,6 +35,8 @@ enum Command:
   case ShowPgn
   case ShowFen
   case AiProgress(msg: String)
+  case SwitchBot(name: String)
+  case SetAiTime(ms: Int)
   case Unknown(input: String)
 
 // AppState ─────────────────────────────────────────────────────────────────
@@ -58,7 +60,9 @@ case class AppState(
   clock:       Option[ClockState] = None,
   viewIndex:   Int             = 0,    // which history state we are viewing
   activePgnParser: String    = "regex",
-  activeMoveParser: String   = "coordinate"
+  activeMoveParser: String   = "coordinate",
+  aiBot: String              = "alphabeta",
+  aiThinkingTime: Int        = 5000
 )
 
 extension (s: AppState)
@@ -215,6 +219,10 @@ object GameController extends Observable[AppState]:
       case ShowFen        => 
         val fen = app.game.toFen
         app.copy(message = Some(s"FEN: $fen"), messageType = MessageType.Info)
+      case SwitchBot(name) =>
+        app.copy(aiBot = name.toLowerCase, message = Some(s"AI Bot switched to $name"), messageType = MessageType.Success)
+      case SetAiTime(ms) =>
+        app.copy(aiThinkingTime = ms, message = Some(s"AI thinking time set to ${ms}ms"), messageType = MessageType.Success)
       case Unknown(msg)   => app.copy(message = Some(msg), highlights = Set.empty, messageType = MessageType.Error)
 
   // ── Move handler ───────────────────────────────────────────────────────────
@@ -391,7 +399,11 @@ object GameController extends Observable[AppState]:
     if app.status != GameStatus.Playing && !app.status.isInstanceOf[GameStatus.Check] then
        app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
-      chess.ai.AiEngine.bestMove(app.game, 3) match
+      val moveOpt = app.aiBot match
+        case "simple" => chess.ai.AiEngine.bestMove(app.game, 3)
+        case _        => chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
+      
+      moveOpt match
         case Some(move) => 
           handleMove(app, move)
         case None => 
@@ -401,11 +413,23 @@ object GameController extends Observable[AppState]:
     if app.status != GameStatus.Playing then
        app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
-      chess.ai.AiEngine.bestMove(app.game, 3) match
+      val moveOpt = app.aiBot match
+        case "simple" => chess.ai.AiEngine.bestMove(app.game, 3)
+        case _        => chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
+
+      moveOpt match
         case Some(move) => 
           app.copy(highlights = Set(move.from, move.to), message = Some(s"AI suggests: ${move.toInputString}"), messageType = MessageType.Info)
         case None => 
           app.copy(message = Some("AI found no legal moves."), messageType = MessageType.Error)
+
+  private def timeLimitFromClock(app: AppState): Long =
+    app.clock match
+      case None => app.aiThinkingTime.toLong
+      case Some(c) =>
+        val remaining = c.activeMillis(app.game.activeColor)
+        val limit = (remaining / 30) + (c.incrementMillis * 0.8).toLong
+        Math.max(100L, Math.min(5000L, limit))
 
   // ── Show legal moves for a square ─────────────────────────────────────────
 
