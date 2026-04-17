@@ -27,3 +27,6 @@ webui/.vite/
 
 # Agent data
 .gemini/
+
+# Sensitive data
+lichess.token
