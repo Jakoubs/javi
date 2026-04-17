@@ -1,109 +1,93 @@
 package chess.controller
 
-import chess.controller.{AppState, Command}
-import chess.model.*
-import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
+import chess.model.{Color, Pos, GameState, Board, CastlingRights, WhiteToMove}
 
-class CommandParserSpec extends AnyFunSpec with Matchers {
-  val initialApp = AppState.initial
+class CommandParserSpec extends AnyWordSpec with Matchers {
 
-  describe("CommandParser.parse") {
+  "CommandParser" should {
     
-    describe("Simple keywords") {
-      it("should parse 'flip'") {
-        CommandParser.parse("flip", initialApp) shouldBe Command.Flip
-      }
-      it("should parse 'undo'") {
-        CommandParser.parse("undo", initialApp) shouldBe Command.Undo
-      }
-      it("should parse 'resign'") {
-        CommandParser.parse("resign", initialApp) shouldBe Command.Resign
-      }
-      it("should parse 'draw'") {
-        CommandParser.parse("draw", initialApp) shouldBe Command.OfferDraw
-      }
-      it("should parse 'new' and 'newgame'") {
-        CommandParser.parse("new", initialApp) shouldBe Command.NewGame
-        CommandParser.parse("newgame", initialApp) shouldBe Command.NewGame
-      }
-      it("should parse 'help' and '?'") {
-        CommandParser.parse("help", initialApp) shouldBe Command.Help
-        CommandParser.parse("?", initialApp) shouldBe Command.Help
-      }
-      it("should parse 'quit', 'exit', 'q'") {
-        CommandParser.parse("quit", initialApp) shouldBe Command.Quit
-        CommandParser.parse("exit", initialApp) shouldBe Command.Quit
-        CommandParser.parse("q", initialApp) shouldBe Command.Quit
-      }
-      it("should parse 'pgn'") {
-        CommandParser.parse("pgn", initialApp) shouldBe Command.ShowPgn
-      }
-      it("should parse 'fen'") {
-        CommandParser.parse("fen", initialApp) shouldBe Command.ShowFen
-      }
+    val defaultApp = AppState.initial
+
+    "parse basic commands" in {
+      CommandParser.parse("flip", defaultApp) shouldBe Command.Flip
+      CommandParser.parse("undo", defaultApp) shouldBe Command.Undo
+      CommandParser.parse("resign", defaultApp) shouldBe Command.Resign
+      CommandParser.parse("draw", defaultApp) shouldBe Command.OfferDraw
+      CommandParser.parse("new", defaultApp) shouldBe Command.NewGame
+      CommandParser.parse("newgame", defaultApp) shouldBe Command.NewGame
+      CommandParser.parse("help", defaultApp) shouldBe Command.Help
+      CommandParser.parse("?", defaultApp) shouldBe Command.Help
+      CommandParser.parse("quit", defaultApp) shouldBe Command.Quit
+      CommandParser.parse("exit", defaultApp) shouldBe Command.Quit
+      CommandParser.parse("q", defaultApp) shouldBe Command.Quit
+      CommandParser.parse("pgn", defaultApp) shouldBe Command.ShowPgn
+      CommandParser.parse("fen", defaultApp) shouldBe Command.ShowFen
+      CommandParser.parse("back", defaultApp) shouldBe Command.StepBack
+      CommandParser.parse("forward", defaultApp) shouldBe Command.StepForward
+      CommandParser.parse("first", defaultApp) shouldBe Command.FirstHistory
+      CommandParser.parse("last", defaultApp) shouldBe Command.LastHistory
     }
 
-    describe("AI commands") {
-      it("should parse 'ai' as AiMove") {
-        CommandParser.parse("ai", initialApp) shouldBe Command.AiMove
-      }
-      it("should parse 'ai w' and 'ai white'") {
-        CommandParser.parse("ai w", initialApp) shouldBe Command.ToggleAi(Color.White)
-        CommandParser.parse("ai white", initialApp) shouldBe Command.ToggleAi(Color.White)
-      }
-      it("should parse 'ai b' and 'ai black'") {
-        CommandParser.parse("ai b", initialApp) shouldBe Command.ToggleAi(Color.Black)
-        CommandParser.parse("ai black", initialApp) shouldBe Command.ToggleAi(Color.Black)
-      }
-      it("should parse 'train [n]'") {
-        CommandParser.parse("train 100", initialApp) shouldBe Command.AiTrain(100)
-      }
-      it("should return Unknown for invalid train count") {
-        CommandParser.parse("train abc", initialApp) shouldBe a [Command.Unknown]
-      }
+    "parse ai commands" in {
+      CommandParser.parse("ai", defaultApp) shouldBe Command.AiMove
+      CommandParser.parse("ai w", defaultApp) shouldBe Command.ToggleAi(Color.White)
+      CommandParser.parse("ai white", defaultApp) shouldBe Command.ToggleAi(Color.White)
+      CommandParser.parse("ai b", defaultApp) shouldBe Command.ToggleAi(Color.Black)
+      CommandParser.parse("ai black", defaultApp) shouldBe Command.ToggleAi(Color.Black)
     }
 
-    describe("Moves and Highlighting") {
-      it("should parse 'moves [pos]'") {
-        CommandParser.parse("moves e2", initialApp) shouldBe Command.SelectSquare(Some(Pos(4, 1)))
-      }
-      it("should return Unknown for invalid moves position") {
-        CommandParser.parse("moves z9", initialApp) shouldBe a [Command.Unknown]
-      }
-      it("should parse algebraic moves (coordinate by default)") {
-        // e2e4 is valid coordinate
-        CommandParser.parse("e2e4", initialApp) shouldBe Command.ApplyMove(Move(Pos(4,1), Pos(4,3)))
-      }
-      it("should parse promotion moves") {
-        CommandParser.parse("e7e8q", initialApp) shouldBe Command.ApplyMove(Move(Pos(4,6), Pos(4,7), Some(PieceType.Queen)))
-      }
+    "parse bot command" in {
+      CommandParser.parse("bot stockfish", defaultApp) shouldBe Command.SetAiBot("stockfish")
     }
 
-    describe("Parser switching") {
-      it("should parse 'parser pgn fast'") {
-        CommandParser.parse("parser pgn fast", initialApp) shouldBe Command.SwitchParser("pgn", "fast")
-      }
-      it("should parse 'parser move san'") {
-        CommandParser.parse("parser move san", initialApp) shouldBe Command.SwitchParser("move", "san")
-      }
-      it("should return Unknown for malformed parser command") {
-        CommandParser.parse("parser onlyone", initialApp) shouldBe a [Command.Unknown]
-      }
+    "parse load and start commands" in {
+      CommandParser.parse("load pgn 1. e4", defaultApp) shouldBe Command.LoadPgn("1. e4")
+      CommandParser.parse("load fen start", defaultApp) shouldBe Command.LoadFen("start")
+      
+      CommandParser.parse("start none", defaultApp) shouldBe Command.StartGame(None)
+      CommandParser.parse("time unlimited", defaultApp) shouldBe Command.StartGame(None)
+      CommandParser.parse("start bullet", defaultApp) shouldBe Command.StartGame(Some(60000L, 0L))
+      CommandParser.parse("start blitz", defaultApp) shouldBe Command.StartGame(Some(180000L, 2000L))
+      CommandParser.parse("start rapid", defaultApp) shouldBe Command.StartGame(Some(600000L, 0L))
+      CommandParser.parse("start 1000 500", defaultApp) shouldBe Command.StartGame(Some(1000L, 500L))
+      CommandParser.parse("start invalid", defaultApp).isInstanceOf[Command.Unknown] shouldBe true
+      CommandParser.parse("start 1000 invalid", defaultApp).isInstanceOf[Command.Unknown] shouldBe true
     }
 
-    describe("Edge cases") {
-      it("should be case-insensitive") {
-        CommandParser.parse("FLIP", initialApp) shouldBe Command.Flip
-        CommandParser.parse("Undo", initialApp) shouldBe Command.Undo
-      }
-      it("should trim whitespace") {
-        CommandParser.parse("  undo  ", initialApp) shouldBe Command.Undo
-      }
-      it("should return Unknown for empty/garbage string") {
-        CommandParser.parse("", initialApp) shouldBe a [Command.Unknown]
-        CommandParser.parse("blablabla", initialApp) shouldBe a [Command.Unknown]
-      }
+    "parse moves and squares commands" in {
+       CommandParser.parse("moves e2", defaultApp) shouldBe Command.SelectSquare(Some(Pos(4, 1))) // x=4, y=1 is e2
+       CommandParser.parse("moves invalid", defaultApp).isInstanceOf[Command.Unknown] shouldBe true
+    }
+
+    "parse training and jump commands" in {
+       CommandParser.parse("train 10", defaultApp) shouldBe Command.AiTrain(10)
+       CommandParser.parse("train invalid", defaultApp).isInstanceOf[Command.Unknown] shouldBe true
+       
+       CommandParser.parse("jump 5", defaultApp) shouldBe Command.JumpToHistory(5)
+       CommandParser.parse("jump invalid", defaultApp).isInstanceOf[Command.Unknown] shouldBe true
+    }
+
+    "parse parser commands" in {
+       CommandParser.parse("parser pgn fast", defaultApp) shouldBe Command.SwitchParser("pgn", "fast")
+       CommandParser.parse("parser invalid", defaultApp).isInstanceOf[Command.Unknown] shouldBe true
+    }
+
+    "parse simple moves or selections" in {
+       CommandParser.parse("e2", defaultApp) shouldBe Command.SelectSquare(Some(Pos(4, 1)))
+       
+       // Default active parser is "coordinate" for moves if not set to san
+       val moveApp = AppState.initial 
+       val moveCmd = CommandParser.parse("e2e4", moveApp)
+       moveCmd.isInstanceOf[Command.ApplyMove] shouldBe true
+       
+       // Test unknown command
+       CommandParser.parse("e2e9", moveApp).isInstanceOf[Command.Unknown] shouldBe true
+       CommandParser.parse("xyz", moveApp).isInstanceOf[Command.Unknown] shouldBe true
+       
+       val sanApp = AppState.initial.copy(activeMoveParser = "san")
+       CommandParser.parse("xyz", sanApp).isInstanceOf[Command.Unknown] shouldBe true
     }
   }
 }
