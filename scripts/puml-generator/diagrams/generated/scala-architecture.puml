@@ -1,0 +1,16 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+' Auto-generated from src/main/scala by Scalameta generator
+
+package diagrams {
+object "diagrams.PumlGenerator" as diagrams_PumlGenerator {
+  + main(args: Array[String]): Unit
+}
+}
+
+
+' Relations
+@enduml

@@ -1,4 +1,4 @@
-package chess.view
+package chess.controller
 
 import chess.controller.{AppState, Command}
 import chess.model.{Color, Pos}

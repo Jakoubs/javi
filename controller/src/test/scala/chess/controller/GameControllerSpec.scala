@@ -1,7 +1,6 @@
 package chess.controller
 
 import chess.model.*
-import chess.view.{ConsoleIO, StdConsoleIO}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import scala.concurrent.{Promise, Await}
@@ -586,31 +585,6 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
         val flipped = s.copy(flipped = true)
         flipped.bottomPlayer.color shouldBe "Black"
         flipped.topPlayer.color shouldBe "White"
-      }
-    }
-
-    describe("StdConsoleIO") {
-      it("should print to console") {
-        val out = new java.io.ByteArrayOutputStream()
-        Console.withOut(out) {
-          StdConsoleIO.print("hello")
-        }
-        out.toString shouldBe "hello"
-      }
-
-      it("should clear terminal") {
-        val out = new java.io.ByteArrayOutputStream()
-        Console.withOut(out) {
-          StdConsoleIO.clear()
-        }
-        out.toString should (include ("\u001b[H") and include ("\u001b[2J"))
-      }
-
-      it("should read from line") {
-        val in = new java.io.ByteArrayInputStream("test\n".getBytes)
-        Console.withIn(in) {
-          StdConsoleIO.readLine() shouldBe Some("test")
-        }
       }
     }
   }

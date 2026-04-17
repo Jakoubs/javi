@@ -1,0 +1,23 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+package chess {
+object "chess.Main" as chess_Main {
+  + main(args: Array[String]): Unit
+  + setup(args: Array[String]): Unit
+  + shutdown(): Unit
+}
+
+object "chess.TrainMain" as chess_TrainMain {
+  + main(args: Array[String]): Unit
+}
+
+}
+
+
+' Inheritance
+
+' Dependencies
+@enduml

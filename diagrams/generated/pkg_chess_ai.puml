@@ -1,0 +1,64 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+package chess.ai {
+object "chess.ai.AiEngine" as chess_ai_AiEngine {
+  + clearTranspositionTable(): Unit
+  + bestMove(state: GameState, depth: Int, epsilon: Double): Option[Move]
+}
+
+class "chess.ai.AtomicDouble" as chess_ai_AtomicDouble {
+  + initialValue: Double
+  + get(): Double
+  + set(v: Double): Unit
+  + add(delta: Double): Unit
+}
+
+object "chess.ai.Evaluator" as chess_ai_Evaluator {
+  + evaluate(state: GameState): Double
+  + loadWeights(path: String): Unit
+  + saveWeights(path: String): Unit
+  + updateWeights(delta: Double, pieceType: PieceType, color: Color, pos: Option[Pos]): Unit
+  + updateGlobalWeight(ref: AtomicDouble, delta: Double): Unit
+  + getOpeningCenterPawn(): Any
+  + getOpeningCenterKnight(): Any
+  + getOpeningUndevelopedMinor(): Any
+  + getOpeningPawnPushPenalty(): Any
+  + getOpeningEarlyQueen(): Any
+  + getOpeningCastledBonus(): Any
+  + getOpeningLostCastle(): Any
+  + getOpeningUncastled(): Any
+  + getOpeningConnectedRooks(): Any
+  + getOpeningWeakPawnF(): Any
+  + getOpeningWeakPawnH(): Any
+  + resetWeights(): Unit
+}
+
+interface "chess.ai.Trainer" as chess_ai_Trainer {
+  + train(game: GameState, status: GameStatus): Unit
+}
+
+object "chess.ai.PassiveTrainer" as chess_ai_PassiveTrainer {
+  + train(game: GameState, status: GameStatus): Unit
+}
+
+}
+
+
+' Inheritance
+
+' Dependencies
+chess_ai_AiEngine --> chess_model_Move
+chess_ai_AiEngine --> chess_model_GameState
+chess_ai_Evaluator --> chess_model_GameState
+chess_ai_Evaluator --> chess_model_PieceType
+chess_ai_Evaluator --> chess_model_Color
+chess_ai_Evaluator --> chess_model_Pos
+chess_ai_Evaluator --> chess_ai_AtomicDouble
+chess_ai_Trainer --> chess_model_GameState
+chess_ai_Trainer --> chess_model_GameStatus
+chess_ai_PassiveTrainer --> chess_model_GameState
+chess_ai_PassiveTrainer --> chess_model_GameStatus
+@enduml

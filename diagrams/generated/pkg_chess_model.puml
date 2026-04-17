@@ -1,0 +1,219 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+package chess.model {
+class "chess.model.Board" as chess_model_Board << (C,#FFDDDD) case >> {
+  + pieces: Map[Pos, Piece]
+  + get(pos: Pos): Option[Piece]
+  + isOccupied(pos: Pos): Boolean
+  + isOccupiedBy(pos: Pos, color: Color): Boolean
+  + isEmpty(pos: Pos): Boolean
+  + put(pos: Pos, piece: Piece): Board
+  + remove(pos: Pos): Board
+  + movePiece(from: Pos, to: Pos): Board
+  + findKing(color: Color): Option[Pos]
+  + allPiecesOf(color: Color): List[(Pos, Piece)]
+  + toFenPlacement(): String
+}
+
+object "chess.model.Board" as chess_model_Board {
+  + initial(): Board
+  + empty(): Board
+  + fromFenPlacement(placement: String): Either[String, Board]
+  + fromFEN(fen: String): Either[String, Board]
+}
+
+interface "chess.model.GameState" as chess_model_GameState {
+  + board(): Board
+  + activeColor(): Color
+  + castlingRights(): CastlingRights
+  + enPassantTarget(): Option[Pos]
+  + halfMoveClock(): Int
+  + fullMoveNumber(): Int
+  + history(): List[GameState]
+  + withHistory(): GameState
+  + toFen(): String
+}
+
+class "chess.model.WhiteToMove" as chess_model_WhiteToMove << (C,#FFDDDD) case >> {
+  + board: Board
+  + castlingRights: CastlingRights
+  + enPassantTarget: Option[Pos]
+  + halfMoveClock: Int
+  + fullMoveNumber: Int
+  + history: List[GameState]
+  + activeColor: Color
+  + withHistory(): GameState
+}
+
+class "chess.model.BlackToMove" as chess_model_BlackToMove << (C,#FFDDDD) case >> {
+  + board: Board
+  + castlingRights: CastlingRights
+  + enPassantTarget: Option[Pos]
+  + halfMoveClock: Int
+  + fullMoveNumber: Int
+  + history: List[GameState]
+  + activeColor: Color
+  + withHistory(): GameState
+}
+
+object "chess.model.GameState" as chess_model_GameState {
+  + initial(): GameState
+  + fromFen(fen: String): Either[String, GameState]
+}
+
+object "chess.model.GameRules" as chess_model_GameRules {
+  + applyMove(state: GameState, move: Move): GameState
+  + computeStatus(state: GameState): GameStatus
+}
+
+object "chess.model.MoveGenerator" as chess_model_MoveGenerator {
+  + legalMoves(state: GameState): List[Move]
+  + legalMovesFrom(state: GameState, from: Pos): List[Move]
+  + isInCheck(state: GameState, color: Color): Boolean
+  + isAttackedBy(board: Board, pos: Pos, attacker: Color): Boolean
+}
+
+enum "chess.model.Color" as chess_model_Color {
+  + opposite(): Color
+}
+
+enum "chess.model.PieceType" as chess_model_PieceType {
+}
+
+object "chess.model.PieceType" as chess_model_PieceType {
+  + pieceValue(pt: PieceType): Int
+}
+
+class "chess.model.Piece" as chess_model_Piece << (C,#FFDDDD) case >> {
+  + color: Color
+  + pieceType: PieceType
+  + symbol(): String
+  + letter(): String
+}
+
+object "chess.model.Piece" as chess_model_Piece {
+  + fromFenChar(char: Char): Option[Piece]
+}
+
+class "chess.model.Pos" as chess_model_Pos << (C,#FFDDDD) case >> {
+  + col: Int
+  + row: Int
+  + isValid(): Boolean
+  + +(dc: Int, dr: Int): Pos
+  + toAlgebraic(): String
+}
+
+object "chess.model.Pos" as chess_model_Pos {
+  + fromAlgebraic(s: String): Option[Pos]
+}
+
+class "chess.model.Move" as chess_model_Move << (C,#FFDDDD) case >> {
+  + from: Pos
+  + to: Pos
+  + promotion: Option[PieceType]
+  + toInputString(): String
+}
+
+class "chess.model.CastlingRights" as chess_model_CastlingRights << (C,#FFDDDD) case >> {
+  + whiteKingSide: Boolean
+  + whiteQueenSide: Boolean
+  + blackKingSide: Boolean
+  + blackQueenSide: Boolean
+  + disableWhite(): CastlingRights
+  + disableBlack(): CastlingRights
+  + disableWhiteKingSide(): CastlingRights
+  + disableWhiteQueenSide(): CastlingRights
+  + disableBlackKingSide(): CastlingRights
+  + disableBlackQueenSide(): CastlingRights
+  + toFen(): String
+}
+
+object "chess.model.CastlingRights" as chess_model_CastlingRights {
+  + fromFen(value: String): Option[CastlingRights]
+}
+
+enum "chess.model.GameStatus" as chess_model_GameStatus {
+  Playing
+  Check
+  Checkmate
+  Resigned
+  Timeout
+  Stalemate
+  Draw
+}
+
+class "chess.model.ClockState" as chess_model_ClockState << (C,#FFDDDD) case >> {
+  + whiteMillis: Long
+  + blackMillis: Long
+  + incrementMillis: Long
+  + lastTickSysTime: Option[Long]
+  + isActive: Boolean
+  + activeMillis(color: Color): Long
+}
+
+class "chess.model.MaterialInfo" as chess_model_MaterialInfo << (C,#FFDDDD) case >> {
+  + whiteCapturedSymbols: List[String]
+  + blackCapturedSymbols: List[String]
+  + whiteAdvantage: Int
+  + blackAdvantage: Int
+}
+
+class "chess.model.PlayerInfo" as chess_model_PlayerInfo << (C,#FFDDDD) case >> {
+  + color: String
+  + capturedSymbols: List[String]
+  + advantage: Int
+  + clockMillis: Long
+}
+
+class "chess.model.TimeControl" as chess_model_TimeControl << (C,#FFDDDD) case >> {
+  + name: String
+  + initialMillis: Option[Long]
+  + incrementMillis: Long
+  + toCommand(): String
+}
+
+object "chess.model.TimeControl" as chess_model_TimeControl {
+}
+
+}
+
+
+' Inheritance
+chess_model_GameState <|-- chess_model_WhiteToMove
+chess_model_GameState <|-- chess_model_BlackToMove
+
+' Dependencies
+chess_model_Board --> chess_model_Pos
+chess_model_Board --> chess_model_Piece
+chess_model_Board --> chess_model_Color
+chess_model_GameState --> chess_model_Board
+chess_model_GameState --> chess_model_Color
+chess_model_GameState --> chess_model_CastlingRights
+chess_model_GameState --> chess_model_Pos
+chess_model_WhiteToMove --> chess_model_Board
+chess_model_WhiteToMove --> chess_model_CastlingRights
+chess_model_WhiteToMove --> chess_model_Pos
+chess_model_WhiteToMove --> chess_model_GameState
+chess_model_WhiteToMove --> chess_model_Color
+chess_model_BlackToMove --> chess_model_Board
+chess_model_BlackToMove --> chess_model_CastlingRights
+chess_model_BlackToMove --> chess_model_Pos
+chess_model_BlackToMove --> chess_model_GameState
+chess_model_BlackToMove --> chess_model_Color
+chess_model_GameRules --> chess_model_GameState
+chess_model_GameRules --> chess_model_Move
+chess_model_GameRules --> chess_model_GameStatus
+chess_model_MoveGenerator --> chess_model_Move
+chess_model_MoveGenerator --> chess_model_GameState
+chess_model_MoveGenerator --> chess_model_Pos
+chess_model_MoveGenerator --> chess_model_Color
+chess_model_MoveGenerator --> chess_model_Board
+chess_model_Piece --> chess_model_Color
+chess_model_Piece --> chess_model_PieceType
+chess_model_Move --> chess_model_Pos
+chess_model_Move --> chess_model_PieceType
+chess_model_ClockState --> chess_model_Color
+@enduml

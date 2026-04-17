@@ -13,7 +13,7 @@ import scalafx.Includes.*
 import scalafx.application.Platform
 import scalafx.animation.AnimationTimer
 
-import chess.controller.{AppState}
+import chess.controller.{AppState, GameStateResponse}
 import chess.model.{PieceType}
 
 object Gui extends JFXApp3:

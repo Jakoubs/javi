@@ -1,38 +1,86 @@
 ThisBuild / scalaVersion := "3.3.4"
 ThisBuild / version      := "1.0.0"
 
+lazy val circeVersion = "0.14.10"
+lazy val http4sVersion = "0.23.23"
 
+lazy val commonSettings = Seq(
+  Test / parallelExecution := false,
+  Test / logBuffered := false,
+  coverageMinimumStmtTotal := 85,
+  coverageMinimumBranchTotal := 75,
+  coverageFailOnMinimum := false,
+  coverageHighlighting := true,
+  libraryDependencies ++= Seq(
+    "org.scalatest" %% "scalatest" % "3.2.17" % Test,
+    "org.scalatestplus" %% "scalacheck-1-17" % "3.2.17.0" % Test,
+    "io.circe"   %% "circe-core"          % circeVersion,
+    "io.circe"   %% "circe-generic"       % circeVersion,
+    "io.circe"   %% "circe-parser"        % circeVersion
+  )
+)
 
-lazy val root = (project in file("."))
+lazy val model = (project in file("model"))
   .settings(
-    name := "chess-functional-improvements",
-    libraryDependencies ++= Seq(
-      "org.scalafx" %% "scalafx" % "20.0.0-R31",
-      // Web API (Pekko HTTP + circe)
-      "org.apache.pekko"       %% "pekko-http"          % "1.0.1",
-      "org.apache.pekko"       %% "pekko-stream"        % "1.0.2",
-      "org.apache.pekko"       %% "pekko-actor-typed"   % "1.0.2",
-      "io.circe"               %% "circe-core"          % "0.14.10",
-      "io.circe"               %% "circe-generic"       % "0.14.10",
-      "io.circe"               %% "circe-parser"        % "0.14.10",
+    commonSettings,
+    name := "chess-model"
+  )
 
-      // Testing dependencies
-      "org.scalatest" %% "scalatest" % "3.2.17" % Test,
-      "org.scalatestplus" %% "scalacheck-1-17" % "3.2.17.0" % Test,
-      // Parser libraries
+lazy val util = (project in file("util"))
+  .dependsOn(model)
+  .settings(
+    commonSettings,
+    name := "chess-util",
+    libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
       "com.lihaoyi" %% "fastparse" % "3.1.1"
+    )
+  )
+
+lazy val ai = (project in file("ai"))
+  .dependsOn(model, util)
+  .settings(
+    commonSettings,
+    name := "chess-ai"
+  )
+
+lazy val controller = (project in file("controller"))
+  .dependsOn(model, util, ai)
+  .settings(
+    commonSettings,
+    name := "chess-controller"
+  )
+
+lazy val view = (project in file("view"))
+  .dependsOn(controller, model, util)
+  .settings(
+    commonSettings,
+    name := "chess-view",
+    libraryDependencies ++= Seq(
+      "org.scalafx" %% "scalafx" % "20.0.0-R31"
     ),
-    // Enable running with `sbt run`
-    Compile / mainClass := Some("chess.Main"),
-    // Test configuration
-    Test / parallelExecution := false,
-    Test / logBuffered := false,
-    // Coverage configuration
-    coverageExcludedPackages := "chess\\.view.*",
-      
-    coverageMinimumStmtTotal := 85,
-    coverageMinimumBranchTotal := 75,
-    coverageFailOnMinimum := false,
-    coverageHighlighting := true
+    coverageExcludedPackages := "chess\\.view.*"
+  )
+
+lazy val rest = (project in file("rest"))
+  .dependsOn(controller, model, util)
+  .settings(
+    commonSettings,
+    name := "chess-rest",
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-ember-server" % http4sVersion,
+      "org.http4s" %% "http4s-dsl"          % http4sVersion,
+      "org.http4s" %% "http4s-circe"        % http4sVersion,
+      "ch.qos.logback" % "logback-classic"  % "1.4.11" // Added for Http4s logging
+    ),
+    coverageExcludedPackages := "chess\\.rest.*"
+  )
+
+lazy val root = (project in file("."))
+  .aggregate(util, model, ai, controller, view, rest)
+  .dependsOn(view, rest)
+  .settings(
+    commonSettings,
+    name := "chess-functional-improvements",
+    Compile / mainClass := Some("chess.Main")
   )

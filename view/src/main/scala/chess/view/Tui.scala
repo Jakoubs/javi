@@ -1,6 +1,6 @@
 package chess.view
 
-import chess.controller.{AppState, GameController, Command, MessageType}
+import chess.controller.{AppState, GameController, Command, MessageType, CommandParser}
 import chess.util.Observer
 import chess.model.{GameStatus, Color, Pos}
 
