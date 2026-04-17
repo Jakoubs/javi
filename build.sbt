@@ -77,10 +77,22 @@ lazy val rest = (project in file("rest"))
   )
 
 lazy val root = (project in file("."))
-  .aggregate(util, model, ai, controller, view, rest)
-  .dependsOn(view, rest)
+  .aggregate(util, model, ai, controller, view, rest, lichess)
+  .dependsOn(view, rest, lichess)
   .settings(
     commonSettings,
     name := "chess-functional-improvements",
     Compile / mainClass := Some("chess.Main")
+  )
+
+lazy val lichess = (project in file("lichess"))
+  .dependsOn(model, util, ai)
+  .settings(
+    commonSettings,
+    name := "chess-lichess",
+    libraryDependencies ++= Seq(
+      "org.apache.pekko" %% "pekko-http" % "1.0.1",
+      "org.apache.pekko" %% "pekko-stream" % "1.0.1",
+      "org.apache.pekko" %% "pekko-actor-typed" % "1.0.1"
+    )
   )

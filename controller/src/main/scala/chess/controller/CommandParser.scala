@@ -31,6 +31,9 @@ object CommandParser:
       case "forward"            => Command.StepForward
       case "first"              => Command.FirstHistory
       case "last"               => Command.LastHistory
+      case s if s.startsWith("bot ") =>
+        val botName = s.drop(4).trim
+        Command.SetAiBot(botName)
 
       case s if s.startsWith("load pgn ") => 
         Command.LoadPgn(original.drop(9).trim)

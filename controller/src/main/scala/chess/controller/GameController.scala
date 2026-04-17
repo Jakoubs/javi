@@ -35,6 +35,7 @@ enum Command:
   case ShowPgn
   case ShowFen
   case AiProgress(msg: String)
+  case SetAiBot(bot: String)
   case Unknown(input: String)
 
 // AppState ─────────────────────────────────────────────────────────────────
@@ -58,7 +59,9 @@ case class AppState(
   clock:       Option[ClockState] = None,
   viewIndex:   Int             = 0,    // which history state we are viewing
   activePgnParser: String    = "regex",
-  activeMoveParser: String   = "coordinate"
+  activeMoveParser: String   = "coordinate",
+  aiBot:       String          = "alphabeta",
+  aiThinkingTime: Int          = 2000
 )
 
 extension (s: AppState)
@@ -180,6 +183,7 @@ object GameController extends Observable[AppState]:
       case AiTrain(n)     => handleAiTrain(app, n)
       case AiProgress(p)  => app.copy(trainingProgress = Some(p), messageType = MessageType.Info)
       case ToggleAi(c)    => handleToggleAi(app, c)
+      case SetAiBot(b)    => handleSetAiBot(app, b)
       case LoadPgn(pgn)   => 
         chess.util.Pgn.importPgn(pgn) match
           case scala.util.Success(state) => 
@@ -391,7 +395,11 @@ object GameController extends Observable[AppState]:
     if app.status != GameStatus.Playing && !app.status.isInstanceOf[GameStatus.Check] then
        app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
-      chess.ai.AiEngine.bestMove(app.game, 3) match
+      val moveOpt = app.aiBot match
+        case "simple" => chess.ai.AiEngine.bestMove(app.game, 3)
+        case _        => chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
+      
+      moveOpt match
         case Some(move) => 
           handleMove(app, move)
         case None => 
@@ -401,11 +409,31 @@ object GameController extends Observable[AppState]:
     if app.status != GameStatus.Playing then
        app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
-      chess.ai.AiEngine.bestMove(app.game, 3) match
+      val moveOpt = app.aiBot match
+        case "simple" => chess.ai.AiEngine.bestMove(app.game, 3)
+        case _        => chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
+
+      moveOpt match
         case Some(move) => 
           app.copy(highlights = Set(move.from, move.to), message = Some(s"AI suggests: ${move.toInputString}"), messageType = MessageType.Info)
         case None => 
           app.copy(message = Some("AI found no legal moves."), messageType = MessageType.Error)
+
+  private def handleSetAiBot(app: AppState, bot: String): AppState =
+    val b = bot.toLowerCase
+    if b == "simple" || b == "alphabeta" then
+      app.copy(aiBot = b, message = Some(s"AI bot set to $b."), messageType = MessageType.Success)
+    else
+      app.copy(message = Some(s"Unknown bot: $b"), messageType = MessageType.Error)
+
+  private def timeLimitFromClock(app: AppState): Long =
+    app.clock match
+      case None => app.aiThinkingTime.toLong
+      case Some(c) =>
+        val remaining = c.activeMillis(app.game.activeColor)
+        // Simple heuristic: 1/30th of remaining time + 80% of increment
+        val limit = (remaining / 30) + (c.incrementMillis * 0.8).toLong
+        Math.max(100L, Math.min(5000L, limit))
 
   // ── Show legal moves for a square ─────────────────────────────────────────
 
