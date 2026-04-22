@@ -1,0 +1,149 @@
+@startuml 03_controller_and_observer
+title Klassen — chess.controller + Observer-Pattern
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #ffeaa7
+  BorderColor #f9ca24
+  FontSize 12
+}
+skinparam interface {
+  BackgroundColor #fd79a8
+  BorderColor #d63031
+}
+
+' ─── util ────────────────────────────────────────────────
+package "chess.util" {
+  interface Observer<T> {
+    + update(state: T): Unit
+  }
+
+  abstract class Observable<T> {
+    - subscribers: Vector[Observer[T]]
+    + addObserver(s): Unit
+    + removeObserver(s): Unit
+    + notifyObservers(state): Unit
+  }
+}
+
+' ─── controller ──────────────────────────────────────────
+package "chess.controller" {
+
+  enum MessageType {
+    Info
+    Success
+    Error
+  }
+
+  enum Command {
+    ApplyMove(move)
+    SelectSquare(pos)
+    Flip / Undo / Resign
+    OfferDraw / NewGame
+    StartGame(clockMode)
+    AiMove / AiSuggest / AiTrain(n)
+    ToggleAi(color)
+    LoadPgn / LoadFen
+    SwitchParser(type, variant)
+    StepBack / StepForward
+    FirstHistory / LastHistory / JumpToHistory(i)
+    ShowPgn / ShowFen
+    Help / Quit
+    AiProgress(msg)
+    Unknown(input)
+  }
+
+  class AppState {
+    + game: GameState
+    + status: GameStatus
+    + flipped: Boolean
+    + highlights: Set[Pos]
+    + selectedPos: Option[Pos]
+    + lastMove: Option[Move]
+    + message: Option[String]
+    + messageType: MessageType
+    + drawOffer: Boolean
+    + running: Boolean
+    + training: Boolean
+    + aiWhite: Boolean
+    + aiBlack: Boolean
+    + clock: Option[ClockState]
+    + viewIndex: Int
+    + activePgnParser: String
+    + activeMoveParser: String
+    + aiBot: String
+    ' Extension methods:
+    + liveMillis(color): Long
+    + displayFen(): String
+    + historyFen(): List[String]
+    + bottomPlayer(): PlayerInfo
+    + topPlayer(): PlayerInfo
+  }
+
+  class GameController <<object>> {
+    + appState: AppState
+    + eval(cmd: Command): AppState
+    + handleCommand(app, cmd): AppState
+    - handleMove(app, move): AppState
+    - handleSelectSquare(app, pos): AppState
+    - handleUndo(app): AppState
+    - handleResign(app): AppState
+    - handleDraw(app): AppState
+    - handleAiMove(app): AppState
+    - handleAiSuggest(app): AppState
+    - handleAiTrain(app, n): AppState
+    - handleToggleAi(app, color): AppState
+    - simulateGame(): Unit
+  }
+
+  class CommandParser <<object>> {
+    + parse(input: String, app: AppState): Command
+  }
+
+  class CommandRequest {
+    + command: String
+  }
+
+  class GameStateResponse {
+    + fen: String
+    + displayFen: String
+    + pgn: String
+    + status: String
+    + activeColor: String
+    + highlights: List[String]
+    + aiWhite: Boolean
+    + aiBlack: Boolean
+    + clock: Option[ClockState]
+    + materialInfo: MaterialInfo
+    + historyMoves: List[String]
+    + ... (weitere Felder)
+  }
+}
+
+' ─── view (Observer-Clients) ─────────────────────────────
+package "chess.view" {
+  class Tui {
+    + run(): Unit
+    + update(state): Unit
+  }
+  class Http4sRestApi as "chess.rest.Http4sRestApi" {
+    - currentState: AtomicReference[AppState]
+    + update(state): Unit
+    + routes: HttpRoutes[IO]
+  }
+}
+
+' ─── Relationships ───────────────────────────────────────
+Observable <|-- GameController
+Observer <|.. Tui
+Observer <|.. Http4sRestApi
+
+GameController "1" o-- "0..*" Observer : subscribers
+GameController --> AppState : produces
+GameController --> Command : consumes
+CommandParser ..> Command : creates
+AppState --> MessageType
+AppState ..> GameStateResponse : mapped to (in rest/view)
+CommandRequest ..> Command : triggers
+
+@enduml

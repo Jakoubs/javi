@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Chess Application – Docker Compose
+#
+# Services:
+#   rest    – Scala/http4s REST API (port 8080)
+#   webui   – Vue 3 / Vite frontend served by nginx (port 3000)
+#   lichess – Lichess bot client (outbound only)
+#
+# The `view` service (ScalaFX GUI) is intentionally omitted from docker-compose
+# because a GUI needs direct display access. Run it locally with `sbt view/run`.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── REST API ────────────────────────────────────────────────────────────────
+  rest:
+    build:
+      context: .          # build context is project root (needs all modules)
+      dockerfile: rest/Dockerfile
+    container_name: chess-rest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - JVM_OPTS=-Xmx512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ── Vue / nginx WebUI ────────────────────────────────────────────────────────
+  webui:
+    build:
+      context: webui
+      dockerfile: Dockerfile
+    container_name: chess-webui
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      rest:
+        condition: service_healthy
+
+  # ── Lichess Bot ──────────────────────────────────────────────────────────────
+  lichess:
+    build:
+      context: .
+      dockerfile: lichess/Dockerfile
+    container_name: chess-lichess
+    restart: unless-stopped
+    environment:
+      - LICHESS_TOKEN=${LICHESS_TOKEN:-}   # set in .env or environment
+    depends_on:
+      rest:
+        condition: service_healthy
+    profiles:
+      - lichess   # opt-in: docker compose --profile lichess up

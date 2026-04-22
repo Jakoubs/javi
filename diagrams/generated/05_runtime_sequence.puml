@@ -1,0 +1,84 @@
+@startuml 05_runtime_communication
+title Runtime-Kommunikation — Sequenzdiagramm (Zug ausführen via WebUI)
+
+skinparam sequence {
+  ParticipantBackgroundColor #dfe6e9
+  ParticipantBorderColor #2d3436
+  ActorBackgroundColor #74b9ff
+  LifeLineBorderColor #636e72
+  ArrowColor #2d3436
+  NoteBackgroundColor #fdcb6e
+  NoteBorderColor #e17055
+}
+
+actor "Browser\n(WebUI)" as Browser #74b9ff
+participant "Http4sRestApi\n:8080" as REST #55efc4
+participant "GameController\n(Singleton)" as GC #fd79a8
+participant "CommandParser" as CP #a29bfe
+participant "MoveGenerator\n/ GameRules" as Model #dff9fb
+participant "PassiveTrainer\n(AI Lernmodul)" as PT #dfe6e9
+participant "Tui\n(Observer)" as TUI #ffeaa7
+
+== Zug ausführen ==
+
+Browser -> REST : POST /api/command\n{"command": "e2e4"}
+activate REST
+
+REST -> CP : parse("e2e4", appState)
+activate CP
+CP --> REST : Command.ApplyMove(Move(e2, e4))
+deactivate CP
+
+REST -> GC : eval(ApplyMove(Move(e2,e4)))
+activate GC
+
+GC -> GC : handleCommand(appState, cmd)
+GC -> Model : MoveGenerator.legalMoves(state)
+activate Model
+Model --> GC : List[Move]
+deactivate Model
+
+GC -> Model : GameRules.applyMove(state, move)
+activate Model
+Model --> GC : newGameState
+deactivate Model
+
+GC -> Model : GameRules.computeStatus(newState)
+activate Model
+Model --> GC : GameStatus.Playing
+deactivate Model
+
+note right of GC
+  appState wird atomar
+  auf newAppState gesetzt
+end note
+
+GC -> GC : notifyObservers(newAppState)
+
+GC ->> PT : PassiveTrainer.train(game, status)\n[nur bei Spielende, async]
+
+GC -> REST : Observer.update(newAppState)
+activate REST #f0f0f0
+REST -> REST : currentState.set(newAppState)
+deactivate REST
+
+GC -> TUI : Observer.update(newAppState)
+activate TUI
+TUI -> TUI : renderFull() im Terminal
+deactivate TUI
+
+GC --> REST : newAppState
+deactivate GC
+
+REST --> Browser : HTTP 200 "Command dispatched"
+deactivate REST
+
+== Nächster Poll: State lesen ==
+
+Browser -> REST : GET /api/state\n(alle 200ms)
+activate REST
+REST -> REST : currentState.get()
+REST --> Browser : HTTP 200 GameStateResponse JSON\n{fen, status, highlights, ...}
+deactivate REST
+
+@enduml

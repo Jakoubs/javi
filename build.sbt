@@ -56,6 +56,9 @@ lazy val view = (project in file("view"))
   .settings(
     commonSettings,
     name := "chess-view",
+    // Standalone GUI client: sbt "view/run"  (REST server must be running on :8080)
+    // Note: Not containerised – run locally with `sbt view/run`
+    Compile / mainClass := Some("chess.view.Gui"),
     libraryDependencies ++= Seq(
       "org.scalafx" %% "scalafx" % "20.0.0-R31"
     ),
@@ -63,17 +66,26 @@ lazy val view = (project in file("view"))
   )
 
 lazy val rest = (project in file("rest"))
-  .dependsOn(controller, model, util)
+  .dependsOn(controller, model, util, ai) // ai needed for Evaluator.loadWeights()
   .settings(
     commonSettings,
     name := "chess-rest",
+    // Standalone microservice entry point: sbt "rest/run"
+    Compile / mainClass := Some("chess.RestMain"),
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-ember-server" % http4sVersion,
-      "org.http4s" %% "http4s-dsl"          % http4sVersion,
-      "org.http4s" %% "http4s-circe"        % http4sVersion,
-      "ch.qos.logback" % "logback-classic"  % "1.4.11" // Added for Http4s logging
+      "org.http4s"     %% "http4s-ember-server" % http4sVersion,
+      "org.http4s"     %% "http4s-dsl"          % http4sVersion,
+      "org.http4s"     %% "http4s-circe"        % http4sVersion,
+      "org.typelevel"  %% "cats-effect"         % "3.5.4",
+      "ch.qos.logback" %  "logback-classic"     % "1.4.11"
     ),
-    coverageExcludedPackages := "chess\\.rest.*"
+    coverageExcludedPackages := "chess\\.rest.*",
+    assembly / mainClass := Some("chess.RestMain"),
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case PathList("reference.conf")    => MergeStrategy.concat
+      case x                             => MergeStrategy.first
+    }
   )
 
 lazy val root = (project in file("."))
@@ -94,5 +106,10 @@ lazy val lichess = (project in file("lichess"))
       "org.apache.pekko" %% "pekko-http" % "1.0.1",
       "org.apache.pekko" %% "pekko-stream" % "1.0.1",
       "org.apache.pekko" %% "pekko-actor-typed" % "1.0.1"
-    )
+    ),
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case PathList("reference.conf")    => MergeStrategy.concat
+      case x                             => MergeStrategy.first
+    }
   )

@@ -1,0 +1,83 @@
+@startuml 04_util_parser
+title Klassendiagramm — chess.util + chess.util.parser
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #00b894
+  BorderColor #00635a
+  FontColor white
+  FontSize 12
+}
+skinparam interface {
+  BackgroundColor #ffeaa7
+  BorderColor #fdcb6e
+  FontColor black
+  FontSize 12
+}
+
+package "chess.util" {
+  class Pgn <<object>> {
+    + exportPgn(state: GameState): String
+    + exportHistorySan(state: GameState): List[String]
+    + importPgn(pgn: String): Try[GameState]
+  }
+
+  class Result <<object>> {
+    ' Shared utility result type helpers
+  }
+}
+
+package "chess.util.parser" {
+
+  interface PgnParser {
+    + parse(pgn: String): Try[GameState]
+    --
+    {static} var default: PgnParser
+  }
+
+  class RegexPgnParser <<object>> {
+    + parse(pgn: String): Try[GameState]
+  }
+
+  class FastPgnParser <<object>> {
+    + parse(pgn: String): Try[GameState]
+    ' Uses com.lihaoyi fastparse
+  }
+
+  class CombinatorPgnParser <<object>> {
+    + parse(pgn: String): Try[GameState]
+    ' Uses scala-parser-combinators
+  }
+
+  class DelegatingPgnParser {
+    - delegate: PgnParser
+    + parse(pgn: String): Try[GameState]
+  }
+
+  class ParserRegistry <<object>> {
+    + pgnParsers: Map[String, PgnParser]
+    + moveParsers: Map[String, String]
+  }
+}
+
+' ─── Relationships ───────────────────────────────────────
+PgnParser <|.. RegexPgnParser      : implements
+PgnParser <|.. FastPgnParser       : implements
+PgnParser <|.. CombinatorPgnParser : implements
+PgnParser <|.. DelegatingPgnParser : implements
+DelegatingPgnParser o--> PgnParser : delegates to
+
+ParserRegistry ..> PgnParser : registry of
+ParserRegistry ..> RegexPgnParser
+ParserRegistry ..> FastPgnParser
+ParserRegistry ..> CombinatorPgnParser
+
+Pgn ..> PgnParser : uses default
+
+note right of PgnParser
+  PgnParser.default ist zur Laufzeit
+  austauschbar (regex/fast/combinator).
+  Wird über "parser pgn <variant>" gesetzt.
+end note
+
+@enduml

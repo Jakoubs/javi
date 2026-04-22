@@ -1,0 +1,15 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide members
+
+package diagrams {
+class "diagrams.ParsedClass" as diagrams_ParsedClass << (C,#FFDDDD) case >>
+object "diagrams.PumlGenerator" as diagrams_PumlGenerator
+}
+
+
+' Inheritance
+
+' Dependencies
+@enduml

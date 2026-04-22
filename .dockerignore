@@ -1,0 +1,35 @@
+# ── Scala build artefacts ──────────────────────────────────────────────────
+target/
+project/target/
+project/project/
+.scala-build/
+out/
+
+# ── IDE & tooling ──────────────────────────────────────────────────────────
+.idea/
+.bsp/
+.metals/
+.vscode/
+
+# ── Node / WebUI ───────────────────────────────────────────────────────────
+webui/node_modules/
+webui/.vite/
+webui/dist/
+
+# ── Git & CI ───────────────────────────────────────────────────────────────
+.git/
+.github/
+.gitignore
+
+# ── Logs & temp files ──────────────────────────────────────────────────────
+*.log
+current_test_run.log
+test_run.log
+test_output.log
+sbt_*.log
+output.txt
+
+# ── diagrams & docs (not needed in build context) ─────────────────────────
+diagrams/
+scripts/
+android/
