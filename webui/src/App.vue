@@ -13,6 +13,14 @@ const serverUrl = ref(localStorage.getItem('chessServerUrl') || DEFAULT_SERVER)
 const serverInput = ref(serverUrl.value)
 const serverConnected = ref(true)
 
+// ── Player Role (White / Black / Spectator) ──────────────────────────────
+const clientRole = ref(localStorage.getItem('chessClientRole') || 'spectator')
+
+const setRole = (role) => {
+  clientRole.value = role
+  localStorage.setItem('chessClientRole', role)
+}
+
 const applyServer = () => {
   const url = serverInput.value.trim().replace(/\/$/, '')
   if (!url) return
@@ -50,6 +58,17 @@ const state = ref({
   whiteLiveMillis: 0,
   blackLiveMillis: 0,
   activePgnParser: 'regex'
+})
+
+// Watch for messages and clear them automatically after a timeout
+watch(() => state.value.message, (newMsg) => {
+  if (newMsg) {
+    setTimeout(() => {
+      if (state.value.message === newMsg) {
+        state.value.message = ''
+      }
+    }, 4000)
+  }
 })
 
 const showGameOver = ref(false)
@@ -118,6 +137,23 @@ const fetchState = async () => {
 }
 
 const sendCommand = async (cmd) => {
+  // Move enforcement: only allow moves if it's our turn
+  const isBoardInteraction = /^[a-h][1-8]$/.test(cmd) || /^[a-h][1-8][a-h][1-8]/.test(cmd)
+  const isGameAction = ['undo', 'resign'].includes(cmd)
+  
+  if (isBoardInteraction || isGameAction) {
+    if (clientRole.value === 'spectator') {
+      state.value.message = "You are spectating. Please select a role to play."
+      return
+    }
+    const myTurn = (clientRole.value === 'white' && state.value.activeColor === 'White') ||
+                   (clientRole.value === 'black' && state.value.activeColor === 'Black')
+    if (!myTurn) {
+      state.value.message = `It's not your turn! Waiting for ${state.value.activeColor}.`
+      return
+    }
+  }
+
   try {
     await fetch(`${serverUrl.value}/api/command`, {
       method: 'POST',
@@ -204,6 +240,12 @@ const isViewingHistory = computed(() => {
   const i = state.value.viewIndex
   return h && h.length > 0 && i < h.length - 1
 })
+
+const effectiveFlipped = computed(() => {
+  if (clientRole.value === 'white') return false
+  if (clientRole.value === 'black') return true
+  return state.value.flipped
+})
 </script>
 
 <template>
@@ -236,7 +278,22 @@ const isViewingHistory = computed(() => {
         <button class="server-reset-btn" @click="resetServer" title="Reset to localhost">↺</button>
       </div>
 
-      <div v-if="state.message" class="status-msg">{{ state.message }}</div>
+      <!-- Player Role Selector -->
+      <div class="role-selector glass-pill">
+        <button 
+          v-for="role in ['white', 'black', 'spectator']" 
+          :key="role"
+          :class="['role-btn', role, { active: clientRole === role }]"
+          @click="setRole(role)"
+        >
+          {{ role === 'spectator' ? '👁' : (role === 'white' ? '♔' : '♚') }}
+          <span class="role-label">{{ role.charAt(0).toUpperCase() + role.slice(1) }}</span>
+        </button>
+      </div>
+
+      <Transition name="slide-down">
+        <div v-if="state.message" class="status-msg shadow-lg">{{ state.message }}</div>
+      </Transition>
     </header>
 
     <main>
@@ -267,7 +324,7 @@ const isViewingHistory = computed(() => {
 
         <ChessBoard 
           :fen="state.displayFen" 
-          :flipped="state.flipped"
+          :flipped="effectiveFlipped"
           :highlights="isViewingHistory ? [] : state.highlights"
           :selectedPos="isViewingHistory ? null : state.selectedPos"
           @square-click="(pos) => sendCommand(pos)"
@@ -355,6 +412,8 @@ header {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  position: relative; /* For absolute status-msg */
+  z-index: 100;
 }
 
 header h1 {
@@ -365,11 +424,37 @@ header h1 {
 }
 
 .status-msg {
-  background: rgba(240, 165, 0, 0.2);
-  color: #f0a500;
-  padding: 4px 12px;
-  border-radius: 20px;
+  position: absolute;
+  top: calc(100% - 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(240, 165, 0, 0.95);
+  backdrop-filter: blur(5px);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 30px;
   font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(240, 165, 0, 0.3);
+  z-index: 1001;
+}
+
+/* ── Transitions ──────────────────────────────────────────────────────── */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px) scale(0.9);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px) scale(0.95);
 }
 
 .header-left {
@@ -643,5 +728,58 @@ main {
   color: var(--primary);
   border-color: var(--primary);
   transform: rotate(-30deg);
+}
+
+/* ── Role Selector ────────────────────────────────────────────────────── */
+.role-selector {
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 30px;
+}
+
+.role-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.role-btn .role-label {
+  display: none;
+}
+
+.role-btn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.role-btn.active {
+  color: #1a1a2e;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.role-btn.active.white { background: #fff; color: #1a1a2e; }
+.role-btn.active.black { background: #333; color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.role-btn.active.spectator { background: var(--accent); color: #1a1a2e; }
+
+@media (min-width: 1200px) {
+  .role-btn .role-label {
+    display: inline;
+  }
 }
 </style>

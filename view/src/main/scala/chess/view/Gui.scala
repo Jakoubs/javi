@@ -26,6 +26,7 @@ object Gui extends JFXApp3:
 
   private var client = JaviClient(defaultServer)
   private var currentServerUrl: String = defaultServer
+  private var clientRole: String = "Spectator"
   private var lastState: Option[GameStateResponse] = None
 
   private val tileSize = 80.0
@@ -74,6 +75,12 @@ object Gui extends JFXApp3:
     val mn = totalSec / 60
     val sc = totalSec % 60
     f"$mn%02d:$sc%02d"
+
+  private def isFlipped(res: GameStateResponse): Boolean =
+    clientRole match
+      case "White" => false
+      case "Black" => true
+      case _       => res.flipped
 
   private def refresh(): Unit = 
     client.fetchState().foreach {
@@ -178,6 +185,13 @@ object Gui extends JFXApp3:
             }
           )
         },
+        new Menu("Role") {
+          items = Seq(
+            new MenuItem("Play as White") { onAction = _ => { clientRole = "White"; refresh() } },
+            new MenuItem("Play as Black") { onAction = _ => { clientRole = "Black"; refresh() } },
+            new MenuItem("Spectator")     { onAction = _ => { clientRole = "Spectator"; refresh() } }
+          )
+        },
         new Menu("Zeit") {
           items = Seq(
             new MenuItem("Unlimited") { onAction = _ => client.sendCommand("start").foreach(_ => refresh()) },
@@ -216,8 +230,17 @@ object Gui extends JFXApp3:
           )
           onMouseClicked = _ => {
             lastState.foreach { state =>
-              val pos = if state.flipped then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
-              client.sendCommand(pos.toAlgebraic).foreach(_ => refresh())
+              val isMyTurn = (clientRole == "White" && state.activeColor == "White") ||
+                             (clientRole == "Black" && state.activeColor == "Black")
+              
+              if (clientRole == "Spectator") {
+                statusLabel.text = "You are spectating. Select a Role to play."
+              } else if (!isMyTurn) {
+                statusLabel.text = s"It's not your turn! Waiting for ${state.activeColor}."
+              } else {
+                val pos = if isFlipped(state) then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
+                client.sendCommand(pos.toAlgebraic).foreach(_ => refresh())
+              }
             }
           }
         }
@@ -240,8 +263,18 @@ object Gui extends JFXApp3:
       children = Seq(
         new Text { text = "CHESS MENU"; fill = Color.White; font = Font.font("Arial", scalafx.scene.text.FontWeight.Bold, 20) },
         new Button("Flip Board") { onAction = _ => client.sendCommand("flip").foreach(_ => refresh()) },
-        new Button("Undo Move") { onAction = _ => client.sendCommand("undo").foreach(_ => refresh()) },
-        new Button("Resign") { onAction = _ => client.sendCommand("resign").foreach(_ => refresh()) },
+        new Button("Undo Move") { onAction = _ => {
+          lastState.foreach { state =>
+            val isMyTurn = (clientRole == "White" && state.activeColor == "White") ||
+                           (clientRole == "Black" && state.activeColor == "Black")
+            if (clientRole != "Spectator" && isMyTurn) client.sendCommand("undo").foreach(_ => refresh())
+          }
+        }},
+        new Button("Resign") { onAction = _ => {
+          lastState.foreach { state =>
+            if (clientRole != "Spectator") client.sendCommand("resign").foreach(_ => refresh())
+          }
+        }},
         new Button("New Game") { onAction = _ => client.sendCommand("new").foreach(_ => refresh()) },
         new Button("Quit") { onAction = _ => client.sendCommand("quit").foreach(_ => refresh()) }
       )
@@ -333,7 +366,7 @@ object Gui extends JFXApp3:
         val stack = squares(row)(col)
         val bgRect = stack.children(0).asInstanceOf[javafx.scene.shape.Rectangle]
         val textNode = stack.children(1).asInstanceOf[javafx.scene.text.Text]
-        val pos = if res.flipped then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
+        val pos = if isFlipped(res) then chess.model.Pos(7 - col, row) else chess.model.Pos(col, 7 - row)
         val posStr = pos.toAlgebraic
         val isLight = (pos.col + pos.row) % 2 == 1
         
