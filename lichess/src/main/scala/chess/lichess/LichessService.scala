@@ -37,7 +37,6 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
         case GameFinishEvent(game) =>
           println(s"Spiel beendet Event: ${game.id}")
           activeGames.remove(game.id)
-        case _ => // Ignore others
       }
       .onComplete {
         case Success(_) => println("Event stream closed.")

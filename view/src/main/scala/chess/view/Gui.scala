@@ -145,7 +145,7 @@ object Gui extends JFXApp3:
     }
 
   override def start(): Unit =
-    val menuBar = new MenuBar {
+    val menuBar: MenuBar = new MenuBar { self =>
       menus = Seq(
         new Menu("Server") {
           items = Seq(
@@ -165,7 +165,7 @@ object Gui extends JFXApp3:
                     currentServerUrl = trimmed
                     client = JaviClient(trimmed)
                     // Update the label text
-                    menuBar.menus.head.items.head.text = s"Connected to: $trimmed"
+                    self.menus.head.items.head.text = s"Connected to: $trimmed"
                 }
               }
             },
@@ -173,7 +173,7 @@ object Gui extends JFXApp3:
               onAction = _ => Platform.runLater {
                 currentServerUrl = "http://localhost:8080"
                 client = JaviClient(currentServerUrl)
-                menuBar.menus.head.items.head.text = s"Connected to: $currentServerUrl"
+                self.menus.head.items.head.text = s"Connected to: $currentServerUrl"
               }
             }
           )
