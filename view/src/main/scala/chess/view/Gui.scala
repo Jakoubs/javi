@@ -21,7 +21,11 @@ object Gui extends JFXApp3:
   import scala.concurrent.Await
   import scala.concurrent.duration.*
 
-  private lazy val client = JaviClient()
+  private val defaultServer: String =
+    sys.props.getOrElse("chess.server", "http://localhost:8080")
+
+  private var client = JaviClient(defaultServer)
+  private var currentServerUrl: String = defaultServer
   private var lastState: Option[GameStateResponse] = None
 
   private val tileSize = 80.0
@@ -143,6 +147,37 @@ object Gui extends JFXApp3:
   override def start(): Unit =
     val menuBar = new MenuBar {
       menus = Seq(
+        new Menu("Server") {
+          items = Seq(
+            new MenuItem(s"Connected to: $currentServerUrl") {
+              disable = true
+              id = "server-url-label"
+            },
+            new MenuItem("Connect to...") {
+              onAction = _ => Platform.runLater {
+                val dialog = new TextInputDialog(currentServerUrl) {
+                  title     = "Server"
+                  headerText = "REST-Server URL (z.B. http://192.168.1.x:8080)"
+                }
+                dialog.showAndWait().foreach { url =>
+                  val trimmed = url.trim.stripSuffix("/")
+                  if trimmed.nonEmpty then
+                    currentServerUrl = trimmed
+                    client = JaviClient(trimmed)
+                    // Update the label text
+                    menuBar.menus.head.items.head.text = s"Connected to: $trimmed"
+                }
+              }
+            },
+            new MenuItem("Reset to localhost") {
+              onAction = _ => Platform.runLater {
+                currentServerUrl = "http://localhost:8080"
+                client = JaviClient(currentServerUrl)
+                menuBar.menus.head.items.head.text = s"Connected to: $currentServerUrl"
+              }
+            }
+          )
+        },
         new Menu("Zeit") {
           items = Seq(
             new MenuItem("Unlimited") { onAction = _ => client.sendCommand("start").foreach(_ => refresh()) },
@@ -162,8 +197,8 @@ object Gui extends JFXApp3:
         },
         new Menu("Parser") {
           items = Seq(
-            new MenuItem("Regex") { onAction = _ => client.sendCommand("parser pgn regex").foreach(_ => refresh()) },
-            new MenuItem("Fastparse") { onAction = _ => client.sendCommand("parser pgn fast").foreach(_ => refresh()) },
+            new MenuItem("Regex")      { onAction = _ => client.sendCommand("parser pgn regex").foreach(_ => refresh()) },
+            new MenuItem("Fastparse")  { onAction = _ => client.sendCommand("parser pgn fast").foreach(_ => refresh()) },
             new MenuItem("Combinator") { onAction = _ => client.sendCommand("parser pgn combinator").foreach(_ => refresh()) }
           )
         }

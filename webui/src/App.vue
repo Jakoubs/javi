@@ -7,6 +7,25 @@ import ImportExport from './components/ImportExport.vue'
 import TimeSettings from './components/TimeSettings.vue'
 import MoveHistory from './components/MoveHistory.vue'
 
+// ── Server URL (persisted in localStorage) ────────────────────────────────
+const DEFAULT_SERVER = 'http://localhost:8080'
+const serverUrl = ref(localStorage.getItem('chessServerUrl') || DEFAULT_SERVER)
+const serverInput = ref(serverUrl.value)
+const serverConnected = ref(true)
+
+const applyServer = () => {
+  const url = serverInput.value.trim().replace(/\/$/, '')
+  if (!url) return
+  serverUrl.value = url
+  serverInput.value = url
+  localStorage.setItem('chessServerUrl', url)
+  fetchState()
+}
+const resetServer = () => {
+  serverInput.value = DEFAULT_SERVER
+  applyServer()
+}
+
 const state = ref({
   fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   pgn: '',
@@ -78,8 +97,9 @@ const handleQuitModal = () => {
 
 const fetchState = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/state?t=${Date.now()}`)
+    const response = await fetch(`${serverUrl.value}/api/state?t=${Date.now()}`)
     if (response.ok) {
+      serverConnected.value = true
       const data = await response.json()
       state.value = data
       
@@ -92,13 +112,14 @@ const fetchState = async () => {
       }
     }
   } catch (e) {
+    serverConnected.value = false
     console.error('Failed to fetch state', e)
   }
 }
 
 const sendCommand = async (cmd) => {
   try {
-    await fetch('http://localhost:8080/api/command', {
+    await fetch(`${serverUrl.value}/api/command`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command: cmd })
@@ -199,6 +220,22 @@ const isViewingHistory = computed(() => {
           </select>
         </div>
       </div>
+
+      <!-- Server URL switcher -->
+      <div class="server-switcher">
+        <span class="server-dot" :class="{ connected: serverConnected, disconnected: !serverConnected }" :title="serverConnected ? 'Connected' : 'Disconnected'"></span>
+        <input
+          id="server-url-input"
+          v-model="serverInput"
+          class="server-input glass-input"
+          placeholder="http://host:8080"
+          @keyup.enter="applyServer"
+          @blur="applyServer"
+          spellcheck="false"
+        />
+        <button class="server-reset-btn" @click="resetServer" title="Reset to localhost">↺</button>
+      </div>
+
       <div v-if="state.message" class="status-msg">{{ state.message }}</div>
     </header>
 
@@ -317,6 +354,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 header h1 {
@@ -546,5 +584,64 @@ main {
 .btn.primary:hover {
   background: #3eb88f;
   box-shadow: 0 4px 12px rgba(78, 204, 163, 0.3);
+}
+
+/* ── Server Switcher ──────────────────────────────────────────────────── */
+.server-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.server-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.server-dot.connected    { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
+.server-dot.disconnected { background: #e74c3c; box-shadow: 0 0 6px #e74c3c; animation: pulse-red 1s infinite; }
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.glass-input {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: white;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  width: 200px;
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+  transition: border-color 0.2s, background 0.2s;
+}
+.glass-input:focus {
+  border-color: var(--primary);
+  background: rgba(78, 204, 163, 0.08);
+}
+
+.server-reset-btn {
+  background: none;
+  border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.5);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.server-reset-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  transform: rotate(-30deg);
 }
 </style>
