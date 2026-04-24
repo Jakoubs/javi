@@ -4,7 +4,7 @@ import cats.effect.IO
 import slick.jdbc.PostgresProfile
 
 import chess.persistence.config.PersistenceConfig
-import chess.persistence.dao.{GameDao, MoveEventDao}
+import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao}
 import chess.persistence.mongo.MongoPersistence
 import chess.persistence.slickimpl.SlickPersistence
 
@@ -24,6 +24,7 @@ import chess.persistence.slickimpl.SlickPersistence
 final class PersistenceModule private (
   val gameDao:      GameDao,
   val moveEventDao: MoveEventDao,
+  val openingDao:   OpeningDao,
   private val closeF: IO[Unit]
 ):
   /** Release all resources (connection pool / MongoClient). */
@@ -66,12 +67,12 @@ object PersistenceModule:
         poolSize = cfg.slick.poolSize
       )
       .map { slick =>
-        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick.close())
+        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick.openingDao, slick.close())
       }
 
   private def buildMongo(cfg: PersistenceConfig): IO[PersistenceModule] =
     MongoPersistence
       .make(cfg.mongo.uri, cfg.mongo.database)
       .map { mongo =>
-        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, mongo.close())
+        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, mongo.openingDao, mongo.close())
       }

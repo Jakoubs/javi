@@ -14,9 +14,10 @@ COPY ai/      ai/
 COPY lichess/ lichess/
 
 # Build fat JAR – reuse ivy/sbt cache via BuildKit cache mount
+# Increase memory and disable supershell to prevent hangs and provide better logs
 RUN --mount=type=cache,target=/root/.ivy2/cache \
     --mount=type=cache,target=/root/.sbt \
-    sbt lichess/assembly
+    SBT_OPTS="-Xmx2G -Xss2M -Dsbt.supershell=false" sbt lichess/assembly
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy

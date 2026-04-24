@@ -35,7 +35,8 @@ case class GameStateResponse(
   whiteLiveMillis: Long,
   blackLiveMillis: Long,
   activePgnParser: String,
-  activeMoveParser: String
+  activeMoveParser: String,
+  opening: Option[String]
 )
 object GameStateResponse:
   implicit val codec: Codec[GameStateResponse] = deriveCodec[GameStateResponse]

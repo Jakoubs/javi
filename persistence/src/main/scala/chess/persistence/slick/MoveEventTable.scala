@@ -29,6 +29,11 @@ class MoveEventTable(val profile: JdbcProfile):
 
   val moveEvents = TableQuery[MoveEvents]
 
+  import slick.jdbc.meta.MTable
+  import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `move_events` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
-    moveEvents.schema.createIfNotExists
+    MTable.getTables("move_events").flatMap { tables =>
+      if tables.isEmpty then moveEvents.schema.create
+      else DBIO.successful(())
+    }

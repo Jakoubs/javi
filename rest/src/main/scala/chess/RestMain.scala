@@ -5,6 +5,7 @@ import org.http4s.ember.server.EmberServerBuilder
 import com.comcast.ip4s.*
 import chess.controller.GameController
 import chess.rest.Http4sRestApi
+import chess.persistence.PersistenceModule
 import chess.ai.Evaluator
 
 /**
@@ -30,7 +31,9 @@ object RestMain extends IOApp:
       _   <- IO(println("==========================================="))
       _   <- IO(Evaluator.loadWeights())
       _   <- IO(println("[AI]   Weights loaded."))
-      api <- IO(new Http4sRestApi())
+      persistence <- PersistenceModule.build()
+      _   <- IO(println(s"[DB]   Persistence initialized (${persistence.gameDao.getClass.getSimpleName})"))
+      api <- IO(new Http4sRestApi(persistence))
       _   <- IO(GameController.addObserver(api))
       _   <- IO(println("[REST] Starting Http4s Ember server..."))
       res <- EmberServerBuilder.default[IO]
@@ -42,5 +45,6 @@ object RestMain extends IOApp:
                  IO(println(s"[REST] Server online → http://localhost:${server.address.getPort}/api/state")) *>
                  IO.never
                }
+               .guarantee(persistence.close())
                .as(ExitCode.Success)
     yield res

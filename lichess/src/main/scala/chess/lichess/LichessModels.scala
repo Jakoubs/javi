@@ -51,6 +51,30 @@ case class LichessClock(limit: Int, increment: Int)
 case class LichessPlayer(id: Option[String], name: Option[String], title: Option[String], rating: Option[Int])
 case class LichessGameState(moves: String, wtime: Long, btime: Long, winc: Long, binc: Long, status: String)
 
+// --- Opening Explorer Models ---
+
+case class LichessOpeningResponse(
+  white: Int,
+  draws: Int,
+  black: Int,
+  moves: List[LichessOpeningMove],
+  opening: Option[LichessOpeningInfo]
+)
+
+case class LichessOpeningMove(
+  uci: String,
+  san: String,
+  averageRating: Int,
+  white: Int,
+  draws: Int,
+  black: Int
+)
+
+case class LichessOpeningInfo(
+  eco: String,
+  name: String
+)
+
 object LichessModels:
   // Custom decoders to handle Lichess "type" field
   implicit val decodeLichessEvent: Decoder[LichessEvent] = (c: HCursor) =>
@@ -84,3 +108,7 @@ object LichessModels:
   implicit val decodeLichessClock: Decoder[LichessClock] = deriveDecoder
   implicit val decodeLichessPlayer: Decoder[LichessPlayer] = deriveDecoder
   implicit val decodeLichessGameState: Decoder[LichessGameState] = deriveDecoder
+  
+  implicit val decodeLichessOpeningResponse: Decoder[LichessOpeningResponse] = deriveDecoder
+  implicit val decodeLichessOpeningMove: Decoder[LichessOpeningMove] = deriveDecoder
+  implicit val decodeLichessOpeningInfo: Decoder[LichessOpeningInfo] = deriveDecoder

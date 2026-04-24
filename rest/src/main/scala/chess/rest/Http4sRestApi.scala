@@ -12,10 +12,10 @@ import io.circe.parser.*
 import io.circe.generic.semiauto.*
 import org.http4s.circe.*
 
-import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
-import chess.controller.{liveMillis, displayFen, historyFen}
-import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo}
-import chess.model.{capturedPieces, materialInfo}
+import chess.model.*
+import chess.controller.*
+import chess.persistence.PersistenceModule
+import chess.util.parser.CoordinateMoveParser
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
@@ -27,7 +27,7 @@ case class SessionState(
   message: Option[String] = None
 )
 
-class Http4sRestApi extends Observer[AppState]:
+class Http4sRestApi(persistence: PersistenceModule) extends Observer[AppState]:
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
   private val currentState = new AtomicReference[AppState](GameController.appState)
   private val sessions = TrieMap.empty[String, SessionState]
@@ -67,7 +67,8 @@ class Http4sRestApi extends Observer[AppState]:
       whiteLiveMillis = state.liveMillis(chess.model.Color.White),
       blackLiveMillis = state.liveMillis(chess.model.Color.Black),
       activePgnParser = state.activePgnParser,
-      activeMoveParser = state.activeMoveParser
+      activeMoveParser = state.activeMoveParser,
+      opening = state.opening
     )
 
   private def normalizeCommandJson(jsonString: String): (String, String) =
@@ -128,6 +129,8 @@ class Http4sRestApi extends Observer[AppState]:
                   sessions.put(sessionId, updated)
                   Ok("Square selected")
                 }
+              case Command.AiMove | Command.AiSuggest =>
+                handleAiWithOpening(cmd, sessionId, session)
               case _ =>
                 val newState = GameController.eval(cmd)
                 // Clear highlights on move
@@ -165,6 +168,42 @@ class Http4sRestApi extends Observer[AppState]:
           BadRequest(s"Invalid square: $squareStr")
       }
   }
+
+  private def handleAiWithOpening(cmd: Command, sessionId: String, session: SessionState): IO[Response[IO]] =
+    val app = currentState.get()
+    val fen = app.game.toFen
+    
+    persistence.openingDao.findByFen(fen).flatMap {
+      case Nil =>
+        // No opening found, fallback to standard AI
+        val newState = GameController.eval(cmd)
+        if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
+        else Ok("AI moved (search)")
+      case openings =>
+        // Pick one opening move randomly (or by weight)
+        val chosen = openings(scala.util.Random.nextInt(openings.size))
+        CoordinateMoveParser.parse(chosen.move, app.game).toOption match {
+          case Some(move) =>
+            if (cmd == Command.AiMove) {
+              val _ = GameController.eval(Command.ApplyMove(move))
+              val msg = s"AI played opening: ${chosen.name.getOrElse("Book Move")} (${chosen.move})"
+              val _ = GameController.eval(Command.SetOpening(chosen.name))
+              val _ = GameController.eval(Command.Unknown(msg))
+              sessions.put(sessionId, session.copy(selectedPos = None, highlights = Set.empty, message = Some(msg)))
+              Ok(msg)
+            } else {
+              val msg = s"Opening Book suggests: ${chosen.move} (${chosen.name.getOrElse("Book Move")})"
+              val _ = GameController.eval(Command.SetOpening(chosen.name))
+              val _ = GameController.eval(Command.Unknown(msg))
+              sessions.put(sessionId, session.copy(selectedPos = Some(move.from), highlights = Set(move.to), message = Some(msg)))
+              Ok(msg)
+            }
+          case None =>
+            // Fallback if parsing fails
+            val newState = GameController.eval(cmd)
+            Ok("AI moved (fallback)")
+        }
+    }
 
   object SquareParam extends QueryParamDecoderMatcher[String]("square")
   object SessionIdParam extends OptionalQueryParamDecoderMatcher[String]("sessionId")

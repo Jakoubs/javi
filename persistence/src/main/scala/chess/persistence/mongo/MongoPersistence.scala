@@ -7,8 +7,8 @@ import com.mongodb.client.model.{Filters, Sorts, ReplaceOptions}
 import org.bson.Document
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
-import chess.persistence.dao.{GameDao, MoveEventDao}
-import chess.persistence.model.{MoveEvent, PersistedGame}
+import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening}
 
 import java.util.concurrent.CompletableFuture
 
@@ -29,8 +29,9 @@ import java.util.concurrent.CompletableFuture
 final class MongoPersistence private (
   private val client:    MongoClient,
   private val gamesCol:  MongoCollection[PersistedGame],
-  private val movesCol:  MongoCollection[MoveEvent]
-) extends GameDao with MoveEventDao:
+  private val movesCol:  MongoCollection[MoveEvent],
+  private val openCol:   MongoCollection[Opening]
+) extends GameDao with MoveEventDao with OpeningDao:
 
   // ─── Reactive-Streams → IO bridge ─────────────────────────────────────────
 
@@ -85,11 +86,28 @@ final class MongoPersistence private (
   override def deleteByGameId(gameId: String): IO[Unit] =
     publisherToUnit(movesCol.deleteMany(Filters.eq("gameId", gameId)))
 
+  // ─── OpeningDao ───────────────────────────────────────────────────────────
+
+  override def findByFen(fen: String): IO[List[Opening]] =
+    publisherToIO(openCol.find(Filters.eq("fen", fen)))
+
+  override def save(opening: Opening): IO[Unit] =
+    val filter = Filters.and(Filters.eq("fen", opening.fen), Filters.eq("move", opening.move))
+    val opts   = new ReplaceOptions().upsert(true)
+    publisherToUnit(openCol.replaceOne(filter, opening, opts))
+
+  override def count(): IO[Long] =
+    publisherToIO(openCol.countDocuments()).map(_.headOption.map(_.toLong).getOrElse(0L))
+
+  override def deleteAll(): IO[Unit] =
+    publisherToUnit(openCol.deleteMany(new Document()))
+
   /** Close the underlying MongoClient. */
   def close(): IO[Unit] = IO(client.close())
 
   def gameDao:      GameDao      = this
   def moveEventDao: MoveEventDao = this
+  def openingDao:   OpeningDao   = this
 
 object MongoPersistence:
 
@@ -108,5 +126,7 @@ object MongoPersistence:
         .withCodecRegistry(MongoCodecs.registry)
       val movesCol = db.getCollection(classOf[MoveEvent].getName, classOf[MoveEvent])
         .withCodecRegistry(MongoCodecs.registry)
-      new MongoPersistence(client, gamesCol, movesCol)
+      val openCol = db.getCollection(classOf[Opening].getName, classOf[Opening])
+        .withCodecRegistry(MongoCodecs.registry)
+      new MongoPersistence(client, gamesCol, movesCol, openCol)
     }
