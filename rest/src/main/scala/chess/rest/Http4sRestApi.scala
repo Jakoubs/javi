@@ -9,14 +9,15 @@ import org.http4s.server.middleware.CORS
 import io.circe.*
 import io.circe.syntax.*
 import io.circe.parser.*
+import io.circe.generic.auto.*
 import io.circe.generic.semiauto.*
 import org.http4s.circe.*
 
 import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
 import chess.controller.{liveMillis, displayFen, historyFen}
 import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, materialInfo, capturedPieces}
+import chess.persistence.dao.FriendshipDao
 import scala.collection.concurrent.TrieMap
-
 import scala.concurrent.duration.*
 
 case class SessionState(
@@ -27,8 +28,18 @@ case class SessionState(
   message: Option[String] = None
 )
 
-class Http4sRestApi(kafkaService: KafkaService):
+case class ChallengeRequest(friendId: Long)
+case class ChallengeResponse(partyCode: String)
+
+class Http4sRestApi(
+  kafkaService: KafkaService,
+  authService: AuthService,
+  friendshipDao: FriendshipDao
+):
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
+  implicit val authReqDecoder: EntityDecoder[IO, AuthRequest] = jsonOf[IO, AuthRequest]
+  implicit val challengeReqDecoder: EntityDecoder[IO, ChallengeRequest] = jsonOf[IO, ChallengeRequest]
+
   private val sessions = TrieMap.empty[String, SessionState]
 
   private def getSession(sid: Option[String]): (String, SessionState) =
@@ -87,17 +98,14 @@ class Http4sRestApi(kafkaService: KafkaService):
       (id, session) = sessionData
       newState      <- IO(GameController.handleCommand(session.appState, cmd))
       
-      // Update session state
       _ <- IO(sessions.put(id, session.copy(appState = newState)))
       
-      // ♟ Kafka Integration: Publish every successful move
       _ <- (cmd, newState) match {
         case (Command.ApplyMove(move), s) if s.messageType != MessageType.Error =>
           kafkaService.publishMove(id, move, s.game.toFen)
         case _ => IO.unit
       }
       
-      // Auto AI trigger
       activeCol = newState.game.activeColor
       isAiTurn = (activeCol == Color.White && newState.aiWhite) || 
                  (activeCol == Color.Black && newState.aiBlack)
@@ -109,6 +117,30 @@ class Http4sRestApi(kafkaService: KafkaService):
     } yield newState
 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    // ── Auth Routes ────────────────────────────────────────────────────────
+    case req @ POST -> Root / "api" / "auth" / "register" =>
+      req.as[AuthRequest].flatMap(authService.register).flatMap {
+        case Right(resp) => Ok(resp.asJson)
+        case Left(err) => BadRequest(err.asJson)
+      }
+
+    case req @ POST -> Root / "api" / "auth" / "login" =>
+      req.as[AuthRequest].flatMap(authService.login).flatMap {
+        case Right(resp) => Ok(resp.asJson)
+        case Left(err) => BadRequest(err.asJson)
+      }
+
+    // ── Social Routes ───────────────────────────────────────────────────────
+    case GET -> Root / "api" / "social" / "friends" :? UserIdParam(uid) =>
+      friendshipDao.getFriends(uid).flatMap(friends => Ok(friends.asJson))
+
+    case req @ POST -> Root / "api" / "social" / "challenge" =>
+      req.as[ChallengeRequest].flatMap { _ =>
+        val partyCode = java.util.UUID.randomUUID().toString.substring(0, 6).toUpperCase()
+        Ok(ChallengeResponse(partyCode).asJson)
+      }
+
+    // ── Game API ────────────────────────────────────────────────────────────
     case GET -> Root / "api" / "state" :? SessionIdParam(sid) =>
       val (id, session) = getSession(sid)
       val response = buildStateResponse(session)
@@ -194,6 +226,7 @@ class Http4sRestApi(kafkaService: KafkaService):
 
   object SquareParam extends QueryParamDecoderMatcher[String]("square")
   object SessionIdParam extends OptionalQueryParamDecoderMatcher[String]("sessionId")
+  object UserIdParam extends QueryParamDecoderMatcher[Long]("userId")
 
   private def handleSelectSquare(app: AppState, session: SessionState, optPos: Option[Pos]): SessionState =
     optPos match
@@ -206,8 +239,6 @@ class Http4sRestApi(kafkaService: KafkaService):
           app.game.board.get(pos) match
             case None =>
               session.copy(selectedPos = None, highlights = Set.empty, message = Some(s"No piece on ${pos.toAlgebraic}"))
-            case Some(piece) if piece.color != Color.White && piece.color != Color.Black => // Should not happen with activeColor check
-              session.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None)
             case Some(piece) if piece.color != app.game.activeColor =>
               session.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None)
             case Some(_) =>

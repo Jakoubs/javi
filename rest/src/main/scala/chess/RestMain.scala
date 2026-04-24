@@ -33,13 +33,18 @@ object RestMain extends IOApp:
       _ <- Resource.eval(IO(Evaluator.loadWeights()))
       _ <- Resource.eval(IO(println("[AI]   Weights loaded.")))
       
+      // Initialize Persistence
+      persistence <- Resource.make(chess.persistence.PersistenceModule.build())(_.close())
+      _           <- Resource.eval(IO(println("[DB]   Persistence initialized.")))
+      
       // Initialize Kafka
-      kafka <- chess.rest.KafkaService.make(kafkaBootstrap)
-      _     <- Resource.eval(IO(println(s"[KAFKA] Connected to $kafkaBootstrap")))
+      kafka       <- chess.rest.KafkaService.make(kafkaBootstrap)
+      _           <- Resource.eval(IO(println(s"[KAFKA] Connected to $kafkaBootstrap")))
       
-      api   <- Resource.eval(IO(new Http4sRestApi(kafka)))
+      authService = new chess.rest.AuthService(persistence.userDao)
+      api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao)))
       
-      _     <- Resource.eval(IO(println("[REST] Starting Http4s Ember server...")))
+      _           <- Resource.eval(IO(println("[REST] Starting Http4s Ember server...")))
       
       server <- EmberServerBuilder.default[IO]
                  .withHost(ipv4"0.0.0.0")
@@ -48,7 +53,7 @@ object RestMain extends IOApp:
                  .build
     } yield server
 
-    program.use { server =>
+    program.use { (server: org.http4s.server.Server) =>
       IO(println(s"[REST] Server online → http://localhost:${server.address.getPort}/api/state")) *>
       IO.never
     }.as(ExitCode.Success)

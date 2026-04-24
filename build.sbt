@@ -68,7 +68,7 @@ lazy val view = (project in file("view"))
   )
 
 lazy val rest = (project in file("rest"))
-  .dependsOn(controller, model, util, ai) // ai needed for Evaluator.loadWeights()
+  .dependsOn(controller, model, util, ai, persistence) // ai needed for Evaluator.loadWeights()
   .settings(
     commonSettings,
     name := "chess-rest",
@@ -80,7 +80,8 @@ lazy val rest = (project in file("rest"))
       "org.http4s"     %% "http4s-circe"        % http4sVersion,
       "org.typelevel"  %% "cats-effect"         % "3.5.4",
       "ch.qos.logback" %  "logback-classic"     % "1.4.11",
-      "com.github.fd4s" %% "fs2-kafka"          % "3.5.0"
+      "com.github.fd4s" %% "fs2-kafka"          % "3.5.0",
+      "org.mindrot"    %  "jbcrypt"             % "0.4"
     ),
     coverageExcludedPackages := "chess\\.rest.*",
     assembly / mainClass := Some("chess.RestMain"),

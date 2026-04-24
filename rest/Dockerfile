@@ -13,6 +13,7 @@ COPY model/      model/
 COPY util/       util/
 COPY ai/         ai/
 COPY controller/ controller/
+COPY persistence/ persistence/
 COPY rest/       rest/
 
 # Build fat JAR – reuse ivy/sbt cache via BuildKit cache mount

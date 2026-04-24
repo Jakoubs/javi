@@ -4,7 +4,7 @@ import cats.effect.IO
 import slick.jdbc.PostgresProfile
 
 import chess.persistence.config.PersistenceConfig
-import chess.persistence.dao.{GameDao, MoveEventDao}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao}
 import chess.persistence.mongo.MongoPersistence
 import chess.persistence.slickimpl.SlickPersistence
 
@@ -22,8 +22,10 @@ import chess.persistence.slickimpl.SlickPersistence
  * }}}
  */
 final class PersistenceModule private (
-  val gameDao:      GameDao,
-  val moveEventDao: MoveEventDao,
+  val gameDao:       GameDao,
+  val moveEventDao:  MoveEventDao,
+  val userDao:       UserDao,
+  val friendshipDao: FriendshipDao,
   private val closeF: IO[Unit]
 ):
   /** Release all resources (connection pool / MongoClient). */
@@ -66,12 +68,16 @@ object PersistenceModule:
         poolSize = cfg.slick.poolSize
       )
       .map { slick =>
-        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick.close())
+        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick, slick, slick.close())
       }
 
   private def buildMongo(cfg: PersistenceConfig): IO[PersistenceModule] =
     MongoPersistence
       .make(cfg.mongo.uri, cfg.mongo.database)
       .map { mongo =>
-        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, mongo.close())
+        // Mongo social logic not implemented yet, so we pass null/mock if needed
+        // For now, let's assume we use Slick for users.
+        val dummyUserDao = null.asInstanceOf[UserDao]
+        val dummyFriendDao = null.asInstanceOf[FriendshipDao]
+        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, dummyUserDao, dummyFriendDao, mongo.close())
       }

@@ -28,6 +28,69 @@ const setRole = (role) => {
   localStorage.setItem('chessClientRole', role)
 }
 
+// ── User / Social State ──────────────────────────────────────────────────
+const currentUser = ref(JSON.parse(localStorage.getItem('chessUser')))
+const friends = ref([])
+const authMode = ref('login') // 'login' or 'register'
+const showAuthModal = ref(false)
+const authForm = ref({ username: '', password: '' })
+const authError = ref('')
+
+const handleAuth = async () => {
+  authError.value = ''
+  const endpoint = authMode.value === 'login' ? 'login' : 'register'
+  try {
+    const response = await fetch(`${serverUrl.value}/api/auth/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authForm.value)
+    })
+    
+    if (response.ok) {
+      const user = await response.json()
+      currentUser.value = user
+      localStorage.setItem('chessUser', JSON.stringify(user))
+      showAuthModal.value = false
+      fetchFriends()
+    } else {
+      authError.value = await response.text()
+    }
+  } catch (e) {
+    authError.value = 'Server connection failed'
+  }
+}
+
+const logout = () => {
+  currentUser.value = null
+  localStorage.removeItem('chessUser')
+  friends.value = []
+}
+
+const fetchFriends = async () => {
+  if (!currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends?userId=${currentUser.value.id}`)
+    if (response.ok) {
+      friends.value = await response.json()
+    }
+  } catch (e) {}
+}
+
+const challengeFriend = async (friendId) => {
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId })
+    })
+    if (response.ok) {
+      const { partyCode } = await response.json()
+      partyCodeInput.value = partyCode
+      joinParty()
+    }
+  } catch (e) {}
+}
+
 // ── Party Code Logic ─────────────────────────────────────────────────────
 const partyCodeInput = ref('')
 const currentParty = ref(localStorage.getItem('chessPartyCode') || '')
@@ -211,6 +274,7 @@ let tickerInterval
 
 onMounted(() => {
   fetchState()
+  fetchFriends()
   pollInterval = setInterval(fetchState, 500)
   
   tickerInterval = setInterval(() => {
@@ -279,7 +343,10 @@ const effectiveFlipped = computed(() => {
   <div class="app-container">
     <header class="glass">
       <div class="header-left">
-        <h1>JAVI CHESS</h1>
+        <div class="brand-group">
+          <h1>JAVI CHESS</h1>
+          <div class="premium-tag">Premium Chess Experience</div>
+        </div>
         <div class="parser-switcher">
           <label for="parser-select">PGN Parser:</label>
           <select id="parser-select" :value="state.activePgnParser" @change="handleSwitchParser" class="glass-select">
@@ -337,12 +404,40 @@ const effectiveFlipped = computed(() => {
         </button>
       </div>
 
+      <!-- User Account -->
+      <div class="user-account">
+        <div v-if="!currentUser" class="auth-trigger" @click="showAuthModal = true">
+          <span class="user-icon">👤</span>
+          <span class="auth-label">Login / Register</span>
+        </div>
+        <div v-else class="user-profile glass-pill">
+          <span class="username">{{ currentUser.username }}</span>
+          <button @click="logout" class="logout-btn">Logout</button>
+        </div>
+      </div>
+
       <Transition name="slide-down">
         <div v-if="state.message" class="status-msg shadow-lg">{{ state.message }}</div>
       </Transition>
     </header>
 
     <main>
+      <!-- Friends Sidebar -->
+      <aside class="social-sidebar glass" v-if="currentUser">
+        <div class="sidebar-header">
+          <h3>Friends</h3>
+        </div>
+        <div class="friends-list">
+          <div v-for="friend in friends" :key="friend.id" class="friend-item glass-pill">
+            <span class="friend-name">{{ friend.username }}</span>
+            <button @click="challengeFriend(friend.id)" class="challenge-btn">Challenge</button>
+          </div>
+          <div v-if="friends.length === 0" class="no-friends">
+            <p>No friends yet.</p>
+          </div>
+        </div>
+      </aside>
+
       <div class="left-panel">
         <GameStatus :state="state" />
         <MoveHistory 
@@ -421,6 +516,28 @@ const effectiveFlipped = computed(() => {
       </div>
     </div>
   </div>
+
+  <!-- Auth Modal -->
+  <div v-if="showAuthModal" class="modal-overlay" @click.self="showAuthModal = false">
+    <div class="modal-content glass">
+      <h2>{{ authMode === 'login' ? 'Welcome Back' : 'Join Javi Chess' }}</h2>
+      <div class="auth-tabs">
+        <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
+        <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
+      </div>
+      
+      <form @submit.prevent="handleAuth" class="auth-form">
+        <div class="form-group">
+          <input v-model="authForm.username" placeholder="Username" required class="glass-input">
+        </div>
+        <div class="form-group">
+          <input v-model="authForm.password" type="password" placeholder="Password" required class="glass-input">
+        </div>
+        <p v-if="authError" class="auth-error">{{ authError }}</p>
+        <button type="submit" class="auth-submit-btn">{{ authMode === 'login' ? 'Login' : 'Sign Up' }}</button>
+      </form>
+    </div>
+  </div>
 </template>
 
 <style>
@@ -464,9 +581,27 @@ header {
 
 header h1 {
   margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: 2px;
+  font-size: 1.8rem;
+  letter-spacing: 3px;
   color: var(--primary);
+  line-height: 1;
+  font-family: 'Playfair Display', serif;
+}
+
+.brand-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.premium-tag {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  opacity: 0.8;
+  font-weight: 400;
+  margin-left: 2px;
 }
 
 .status-msg {
@@ -548,13 +683,14 @@ header h1 {
 main {
   flex: 1;
   display: flex;
-  padding: 1.5rem;
-  gap: 1.5rem;
+  padding: 1rem;
+  gap: 1rem;
   overflow: hidden;
 }
 
 .left-panel, .right-panel {
   width: 320px;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -571,7 +707,8 @@ main {
 }
 
 .player-info {
-  width: 500px;
+  width: 100%;
+  max-width: 650px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -619,21 +756,21 @@ main {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-content {
-  position: relative;
-  width: 400px;
-  padding: 2rem;
-  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem;
+  border-radius: 30px;
   text-align: center;
   box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   animation: modal-in 0.3s ease-out;
@@ -881,6 +1018,122 @@ main {
 .leave-btn:hover {
   color: #ff1a1a;
   transform: scale(1.2);
+}
+
+/* Social & Auth Styles */
+.user-account {
+  margin-left: 2rem;
+}
+
+.auth-trigger {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-trigger:hover {
+  background: rgba(var(--primary-rgb), 0.1);
+  border-color: rgba(var(--primary-rgb), 0.3);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 1.2rem;
+}
+
+.logout-btn {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Sidebar */
+.social-sidebar {
+  width: 240px;
+  min-width: 240px;
+  padding: 1.5rem;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: fit-content;
+}
+
+.sidebar-header h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  opacity: 0.6;
+  margin: 0;
+}
+
+.friend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.challenge-btn {
+  font-size: 0.7rem;
+  background: var(--primary);
+  color: black;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.challenge-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.auth-submit-btn {
+  background: var(--primary);
+  color: black;
+  border: none;
+  padding: 1rem;
+  border-radius: 14px;
+  font-weight: 700;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.3);
+}
+
+.no-friends {
+  text-align: center;
+  opacity: 0.4;
+  font-size: 0.8rem;
+  padding: 2rem 0;
 }
 
 </style>

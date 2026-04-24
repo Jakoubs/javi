@@ -4,8 +4,8 @@ import cats.effect.IO
 import slick.jdbc.JdbcProfile
 import slick.jdbc.JdbcBackend.Database
 
-import chess.persistence.dao.{GameDao, MoveEventDao}
-import chess.persistence.model.{MoveEvent, PersistedGame}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship}
 
 /**
  * Unified Slick implementation of both [[GameDao]] and [[MoveEventDao]].
@@ -25,8 +25,9 @@ final class SlickPersistence private (
   val profile:      JdbcProfile,
   private val db:   Database,
   private val gTbl: GameTable,
-  private val mTbl: MoveEventTable
-) extends GameDao with MoveEventDao:
+  private val mTbl: MoveEventTable,
+  private val uTbl: UserTable
+) extends GameDao with MoveEventDao with UserDao with FriendshipDao:
 
   import profile.api.*
 
@@ -75,6 +76,33 @@ final class SlickPersistence private (
   override def deleteByGameId(gameId: String): IO[Unit] =
     run(mTbl.moveEvents.filter(_.gameId === gameId).delete).void
 
+  // ─── UserDao ──────────────────────────────────────────────────────────────
+
+  override def save(user: User): IO[Long] =
+    run((uTbl.users returning uTbl.users.map(_.id)) += user)
+
+  override def findByUsername(username: String): IO[Option[User]] =
+    run(uTbl.users.filter(_.username === username).result.headOption)
+
+  override def findById(id: Long): IO[Option[User]] =
+    run(uTbl.users.filter(_.id === id).result.headOption)
+
+  // ─── FriendshipDao ────────────────────────────────────────────────────────
+
+  override def addFriend(userId: Long, friendId: Long): IO[Unit] =
+    run(uTbl.friendships += Friendship(userId, friendId, "accepted")).void
+
+  override def getFriends(userId: Long): IO[List[User]] =
+    val q = uTbl.friendships
+      .filter(_.userId === userId)
+      .join(uTbl.users)
+      .on(_.friendId === _.id)
+      .map(_._2)
+    run(q.result).map(_.toList)
+
+  override def acceptFriend(userId: Long, friendId: Long): IO[Unit] =
+    run(uTbl.friendships.filter(_.userId === userId).filter(_.friendId === friendId).map(_.status).update("accepted")).void
+
   /** Release the underlying HikariCP connection pool. */
   def close(): IO[Unit] = IO(db.close())
 
@@ -94,9 +122,10 @@ object SlickPersistence:
   def make(profile: JdbcProfile, db: Database): IO[SlickPersistence] =
     val gTbl = GameTable(profile)
     val mTbl = MoveEventTable(profile)
-    val instance = new SlickPersistence(profile, db, gTbl, mTbl)
+    val uTbl = UserTable(profile)
+    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl)
     import profile.api.*
-    val ddl = gTbl.createSchema >> mTbl.createSchema
+    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema
     IO.fromFuture(IO(db.run(ddl))).as(instance)
 
   /**
