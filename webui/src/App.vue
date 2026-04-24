@@ -13,6 +13,13 @@ const serverUrl = ref(localStorage.getItem('chessServerUrl') || DEFAULT_SERVER)
 const serverInput = ref(serverUrl.value)
 const serverConnected = ref(true)
 
+// ── Session ID (persisted in localStorage) ────────────────────────────────
+const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+const sessionId = ref(localStorage.getItem('chessSessionId') || generateId())
+if (!localStorage.getItem('chessSessionId')) {
+  localStorage.setItem('chessSessionId', sessionId.value)
+}
+
 // ── Player Role (White / Black / Spectator) ──────────────────────────────
 const clientRole = ref(localStorage.getItem('chessClientRole') || 'spectator')
 
@@ -116,7 +123,7 @@ const handleQuitModal = () => {
 
 const fetchState = async () => {
   try {
-    const response = await fetch(`${serverUrl.value}/api/state?t=${Date.now()}`)
+    const response = await fetch(`${serverUrl.value}/api/state?sessionId=${sessionId.value}&t=${Date.now()}`)
     if (response.ok) {
       serverConnected.value = true
       const data = await response.json()
@@ -155,7 +162,7 @@ const sendCommand = async (cmd) => {
   }
 
   try {
-    await fetch(`${serverUrl.value}/api/command`, {
+    await fetch(`${serverUrl.value}/api/command?sessionId=${sessionId.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command: cmd })

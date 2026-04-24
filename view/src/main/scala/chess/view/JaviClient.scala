@@ -12,10 +12,11 @@ import chess.controller.{CommandRequest, GameStateResponse}
 class JaviClient(baseUrl: String = "http://localhost:8080"):
   private val ec = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
   private val httpClient = HttpClient.newBuilder().executor(ec).build()
+  private val sessionId = java.util.UUID.randomUUID().toString()
 
   def fetchState(): Future[Either[String, GameStateResponse]] =
     val request = HttpRequest.newBuilder()
-      .uri(URI.create(s"$baseUrl/api/state"))
+      .uri(URI.create(s"$baseUrl/api/state?sessionId=$sessionId"))
       .GET()
       .build()
       
@@ -31,7 +32,7 @@ class JaviClient(baseUrl: String = "http://localhost:8080"):
   def sendCommand(cmd: String): Future[Either[String, String]] =
     val jsonBody = CommandRequest(cmd).asJson.noSpaces
     val request = HttpRequest.newBuilder()
-      .uri(URI.create(s"$baseUrl/api/command"))
+      .uri(URI.create(s"$baseUrl/api/command?sessionId=$sessionId"))
       .header("Content-Type", "application/json")
       .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
       .build()

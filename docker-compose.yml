@@ -2,17 +2,61 @@
 # Chess Application – Docker Compose
 #
 # Services:
-#   rest    – Scala/http4s REST API (port 8080)
-#   webui   – Vue 3 / Vite frontend served by nginx (port 3000)
-#   lichess – Lichess bot client (outbound only)
+#   postgres – PostgreSQL 16  (port 5432)  ← Slick backend
+#   mongo    – MongoDB 7      (port 27017) ← MongoDB backend
+#   rest     – Scala/http4s REST API (port 8080)
+#   webui    – Vue 3 / Vite frontend served by nginx (port 3000)
+#   lichess  – Lichess bot client (outbound only, opt-in profile)
 #
-# The `view` service (ScalaFX GUI) is intentionally omitted from docker-compose
-# because a GUI needs direct display access. Run it locally with `sbt view/run`.
+# Quick start:
+#   docker compose up -d            # starts postgres + mongo + rest + webui
+#   docker compose --profile lichess up -d   # also starts the bot
+#
+# The `view` service (ScalaFX GUI) is intentionally omitted – run locally with
+#   sbt view/run
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
 
-  # ── REST API ────────────────────────────────────────────────────────────────
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: chess-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB:       ${CHESS_DB_NAME:-chess}
+      POSTGRES_USER:     ${CHESS_DB_USER:-chess}
+      POSTGRES_PASSWORD: ${CHESS_DB_PASSWORD:-chess}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CHESS_DB_USER:-chess} -d ${CHESS_DB_NAME:-chess}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── MongoDB ──────────────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: chess-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${CHESS_MONGO_DATABASE:-chess}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── REST API ─────────────────────────────────────────────────────────────────
   rest:
     build:
       context: .          # build context is project root (needs all modules)
@@ -23,6 +67,20 @@ services:
       - "8080:8080"
     environment:
       - JVM_OPTS=-Xmx512m
+      # Persistence backend – override to "mongo" to use MongoDB instead
+      - CHESS_PERSISTENCE_BACKEND=${CHESS_PERSISTENCE_BACKEND:-slick}
+      # Slick / PostgreSQL
+      - CHESS_DB_URL=jdbc:postgresql://postgres:5432/${CHESS_DB_NAME:-chess}
+      - CHESS_DB_USER=${CHESS_DB_USER:-chess}
+      - CHESS_DB_PASSWORD=${CHESS_DB_PASSWORD:-chess}
+      # MongoDB
+      - CHESS_MONGO_URI=mongodb://mongo:27017
+      - CHESS_MONGO_DATABASE=${CHESS_MONGO_DATABASE:-chess}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 15s
@@ -43,7 +101,7 @@ services:
       rest:
         condition: service_healthy
 
-  # ── Lichess Bot ──────────────────────────────────────────────────────────────
+  # ── Lichess Bot (opt-in) ─────────────────────────────────────────────────────
   lichess:
     build:
       context: .
@@ -57,3 +115,8 @@ services:
         condition: service_healthy
     profiles:
       - lichess   # opt-in: docker compose --profile lichess up
+
+# ── Named volumes (data survives container restarts) ─────────────────────────
+volumes:
+  postgres_data:
+  mongo_data:

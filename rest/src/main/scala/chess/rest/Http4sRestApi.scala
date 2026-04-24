@@ -18,34 +18,47 @@ import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo}
 import chess.model.{capturedPieces, materialInfo}
 import chess.util.Observer
 import java.util.concurrent.atomic.AtomicReference
+import scala.collection.concurrent.TrieMap
+
+case class SessionState(
+  flipped: Boolean = false,
+  selectedPos: Option[Pos] = None,
+  highlights: Set[Pos] = Set.empty,
+  message: Option[String] = None
+)
 
 class Http4sRestApi extends Observer[AppState]:
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
   private val currentState = new AtomicReference[AppState](GameController.appState)
+  private val sessions = TrieMap.empty[String, SessionState]
+
+  private def getSession(sid: Option[String]): (String, SessionState) =
+    val id = sid.getOrElse("default")
+    (id, sessions.getOrElseUpdate(id, SessionState()))
   
   override def update(state: AppState): Unit =
     currentState.set(state)
 
-  private def buildStateResponse(state: AppState): GameStateResponse =
+  private def buildStateResponse(state: AppState, session: SessionState): GameStateResponse =
     GameStateResponse(
       fen = state.game.toFen,
       displayFen = state.displayFen,
       pgn = chess.util.Pgn.exportPgn(state.game),
       status = state.status.toString,
       activeColor = state.game.activeColor.toString,
-      highlights = state.highlights.map(_.toAlgebraic).toList,
-      selectedPos = state.selectedPos.map(_.toAlgebraic),
+      highlights = session.highlights.map(_.toAlgebraic).toList,
+      selectedPos = session.selectedPos.map(_.toAlgebraic),
       lastMove = state.lastMove.map(_.toInputString),
       aiWhite = state.aiWhite,
       aiBlack = state.aiBlack,
-      flipped = state.flipped,
+      flipped = session.flipped,
       viewIndex = state.viewIndex,
       historyFen = state.historyFen,
       historyMoves = chess.util.Pgn.exportHistorySan(state.game),
       clock = state.clock,
       capturedWhite = state.game.capturedPieces(chess.model.Color.White).map(_.toString),
       capturedBlack = state.game.capturedPieces(chess.model.Color.Black).map(_.toString),
-      message = state.message,
+      message = session.message.orElse(state.message),
       training = state.training,
       trainingProgress = state.trainingProgress,
       running = state.running,
@@ -72,39 +85,53 @@ class Http4sRestApi extends Observer[AppState]:
     (cleaned, finalJson)
 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "api" / "state" =>
+    case GET -> Root / "api" / "state" :? SessionIdParam(sid) =>
       val state = currentState.get()
-      Ok(buildStateResponse(state).asJson)
+      val (_, session) = getSession(sid)
+      Ok(buildStateResponse(state, session).asJson)
 
-    case req @ POST -> Root / "api" / "command" =>
+    case req @ POST -> Root / "api" / "command" :? SessionIdParam(sid) =>
       req.as[String].flatMap { jsonString =>
         val (cleaned, finalJson) = normalizeCommandJson(jsonString)
+        val (sessionId, session) = getSession(sid)
 
         decode[CommandRequest](finalJson) match {
           case Right(cmdReq) =>
             val app = currentState.get()
             val cmd = CommandParser.parse(cmdReq.command, app)
-            val newState = GameController.eval(cmd)
-
-            if (newState.messageType == MessageType.Error) {
-              BadRequest(newState.message.getOrElse("Error"))
-            } else {
-              val status = cmd match {
-                case Command.NewGame | Command.StartGame(_) => Created("Command dispatched")
-                case _ => Ok("Command dispatched")
-              }
-              status
+            
+            cmd match {
+              case Command.Flip =>
+                sessions.put(sessionId, session.copy(flipped = !session.flipped))
+                Ok("View flipped")
+              case Command.SelectSquare(pos) =>
+                val updated = handleSelectSquare(app, session, pos)
+                sessions.put(sessionId, updated)
+                Ok("Square selected")
+              case _ =>
+                val newState = GameController.eval(cmd)
+                // Clear highlights on move
+                if (cmd.isInstanceOf[Command.ApplyMove]) {
+                  sessions.put(sessionId, session.copy(selectedPos = None, highlights = Set.empty, message = None))
+                }
+                
+                if (newState.messageType == MessageType.Error) {
+                  BadRequest(newState.message.getOrElse("Error"))
+                } else {
+                  val status = cmd match {
+                    case Command.NewGame | Command.StartGame(_) => Created("Command dispatched")
+                    case _ => Ok("Command dispatched")
+                  }
+                  status
+                }
             }
           case Left(_) =>
+            // Legacy handling for raw strings
             val app = currentState.get()
             val cmd = CommandParser.parse(cleaned, app)
             val newState = GameController.eval(cmd)
-
-            if (newState.messageType == MessageType.Error) {
-              BadRequest(newState.message.getOrElse("Error"))
-            } else {
-              Ok("Command dispatched via raw string")
-            }
+            if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
+            else Ok("Command dispatched via raw string")
         }
       }
 
@@ -120,6 +147,29 @@ class Http4sRestApi extends Observer[AppState]:
   }
 
   object SquareParam extends QueryParamDecoderMatcher[String]("square")
+  object SessionIdParam extends OptionalQueryParamDecoderMatcher[String]("sessionId")
+
+  private def handleSelectSquare(app: AppState, session: SessionState, optPos: Option[Pos]): SessionState =
+    optPos match
+      case None =>
+        session.copy(selectedPos = None, highlights = Set.empty, message = None)
+      case Some(pos) =>
+        if (session.highlights.contains(pos) && session.selectedPos.isDefined) then
+          // This is a move attempt - we don't handle moves here, so we return current session state
+          // and let the command handler forward the move to GameController.
+          session
+        else
+          app.game.board.get(pos) match
+            case None =>
+              session.copy(selectedPos = None, highlights = Set.empty, message = Some(s"No piece on ${pos.toAlgebraic}"))
+            case Some(piece) if piece.color != app.game.activeColor =>
+              session.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None)
+            case Some(_) =>
+              val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
+              if targets.isEmpty then
+                session.copy(message = Some("No legal moves for that piece."), highlights = Set.empty, selectedPos = Some(pos))
+              else
+                session.copy(highlights = targets, selectedPos = Some(pos), message = None)
 
   val app: HttpApp[IO] = CORS.policy.withAllowOriginAll
     .withAllowMethodsIn(Set(Method.GET, Method.POST, Method.OPTIONS))

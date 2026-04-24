@@ -1,8 +1,10 @@
 ThisBuild / scalaVersion := "3.3.4"
 ThisBuild / version      := "1.0.0"
 
-lazy val circeVersion = "0.14.10"
-lazy val http4sVersion = "0.23.23"
+lazy val circeVersion   = "0.14.10"
+lazy val http4sVersion  = "0.23.23"
+lazy val slickVersion   = "3.5.1"
+lazy val mongoVersion   = "5.1.0"
 
 lazy val commonSettings = Seq(
   Test / parallelExecution := false,
@@ -88,8 +90,30 @@ lazy val rest = (project in file("rest"))
     }
   )
 
+lazy val persistence = (project in file("persistence"))
+  .dependsOn(model)
+  .settings(
+    commonSettings,
+    name := "chess-persistence",
+    libraryDependencies ++= Seq(
+      // Slick + HikariCP connection pool
+      "com.typesafe.slick" %% "slick"                         % slickVersion,
+      "com.typesafe.slick" %% "slick-hikaricp"                % slickVersion,
+      // PostgreSQL driver (runtime)
+      "org.postgresql"      % "postgresql"                     % "42.7.3",
+      // H2 for in-memory integration tests
+      "com.h2database"      % "h2"                             % "2.2.224"  % Test,
+      // MongoDB Reactive Streams driver (pure Java – no Scala wrapper artifact needed)
+      "org.mongodb" % "mongodb-driver-reactivestreams" % mongoVersion,
+      // Cats Effect – unified IO for both DAOs
+      "org.typelevel"      %% "cats-effect"                    % "3.5.4",
+      // Typesafe Config (HOCON application.conf)
+      "com.typesafe"        % "config"                         % "1.4.3"
+    )
+  )
+
 lazy val root = (project in file("."))
-  .aggregate(util, model, ai, controller, view, rest, lichess)
+  .aggregate(util, model, ai, controller, view, rest, lichess, persistence)
   .dependsOn(view, rest, lichess)
   .settings(
     commonSettings,
