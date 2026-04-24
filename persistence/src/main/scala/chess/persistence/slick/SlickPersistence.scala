@@ -4,8 +4,8 @@ import cats.effect.IO
 import slick.jdbc.JdbcProfile
 import slick.jdbc.JdbcBackend.Database
 
-import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao}
-import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening}
 
 /**
  * Unified Slick implementation of both [[GameDao]] and [[MoveEventDao]].
@@ -26,8 +26,9 @@ final class SlickPersistence private (
   private val db:   Database,
   private val gTbl: GameTable,
   private val mTbl: MoveEventTable,
-  private val uTbl: UserTable
-) extends GameDao with MoveEventDao with UserDao with FriendshipDao:
+  private val uTbl: UserTable,
+  private val oTbl: OpeningTable
+) extends GameDao with MoveEventDao with UserDao with FriendshipDao with OpeningDao:
 
   import profile.api.*
 
@@ -103,12 +104,27 @@ final class SlickPersistence private (
   override def acceptFriend(userId: Long, friendId: Long): IO[Unit] =
     run(uTbl.friendships.filter(_.userId === userId).filter(_.friendId === friendId).map(_.status).update("accepted")).void
 
+  // ─── OpeningDao ───────────────────────────────────────────────────────────
+
+  override def findByFen(fen: String): IO[List[Opening]] =
+    run(oTbl.openings.filter(_.fen === fen).result).map(_.toList)
+
+  override def save(opening: Opening): IO[Unit] =
+    run(oTbl.openings.insertOrUpdate(opening)).void
+
+  override def count(): IO[Long] =
+    run(oTbl.openings.length.result).map(_.toLong)
+
+  override def deleteAll(): IO[Unit] =
+    run(oTbl.openings.delete).void
+
   /** Release the underlying HikariCP connection pool. */
   def close(): IO[Unit] = IO(db.close())
 
   /** Convenience: expose both DAO interfaces individually */
   def gameDao:      GameDao      = this
   def moveEventDao: MoveEventDao = this
+  def openingDao:   OpeningDao   = this
 
 object SlickPersistence:
 
@@ -123,9 +139,10 @@ object SlickPersistence:
     val gTbl = GameTable(profile)
     val mTbl = MoveEventTable(profile)
     val uTbl = UserTable(profile)
-    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl)
+    val oTbl = OpeningTable(profile)
+    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl)
     import profile.api.*
-    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema
+    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema
     IO.fromFuture(IO(db.run(ddl))).as(instance)
 
   /**

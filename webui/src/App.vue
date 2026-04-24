@@ -147,7 +147,8 @@ const state = ref({
   trainingProgress: null,
   whiteLiveMillis: 0,
   blackLiveMillis: 0,
-  activePgnParser: 'regex'
+  activePgnParser: 'regex',
+  opening: null
 })
 
 // Watch for messages and clear them automatically after a timeout
@@ -354,6 +355,10 @@ const effectiveFlipped = computed(() => {
             <option value="fast">Fastparse</option>
             <option value="combinator">Combinator</option>
           </select>
+        </div>
+        <div v-if="state.opening" class="opening-badge shadow-sm">
+          <span class="label">OPENING:</span>
+          <span class="name">{{ state.opening }}</span>
         </div>
       </div>
 
@@ -658,7 +663,25 @@ header h1 {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-
+.opening-badge {
+  background: rgba(78, 204, 163, 0.1);
+  border: 1px solid rgba(78, 204, 163, 0.3);
+  padding: 4px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.opening-badge .label {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+.opening-badge .name {
+  color: white;
+  font-weight: 600;
+}
 .glass-select {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid var(--glass-border);

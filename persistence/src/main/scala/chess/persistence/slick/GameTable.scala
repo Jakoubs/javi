@@ -26,6 +26,11 @@ class GameTable(val profile: JdbcProfile):
 
   val games = TableQuery[Games]
 
+  import slick.jdbc.meta.MTable
+  import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `games` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
-    games.schema.createIfNotExists
+    MTable.getTables("games").flatMap { tables =>
+      if tables.isEmpty then games.schema.create
+      else DBIO.successful(())
+    }

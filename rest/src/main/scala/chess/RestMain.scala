@@ -5,6 +5,7 @@ import org.http4s.ember.server.EmberServerBuilder
 import com.comcast.ip4s.*
 import chess.controller.GameController
 import chess.rest.Http4sRestApi
+import chess.persistence.PersistenceModule
 import chess.ai.Evaluator
 
 /**
@@ -42,7 +43,7 @@ object RestMain extends IOApp:
       _           <- Resource.eval(IO(println(s"[KAFKA] Connected to $kafkaBootstrap")))
       
       authService = new chess.rest.AuthService(persistence.userDao)
-      api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao)))
+      api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao, persistence.openingDao)))
       
       _           <- Resource.eval(IO(println("[REST] Starting Http4s Ember server...")))
       

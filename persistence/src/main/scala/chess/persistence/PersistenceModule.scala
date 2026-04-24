@@ -4,7 +4,7 @@ import cats.effect.IO
 import slick.jdbc.PostgresProfile
 
 import chess.persistence.config.PersistenceConfig
-import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao}
 import chess.persistence.mongo.MongoPersistence
 import chess.persistence.slickimpl.SlickPersistence
 
@@ -26,6 +26,7 @@ final class PersistenceModule private (
   val moveEventDao:  MoveEventDao,
   val userDao:       UserDao,
   val friendshipDao: FriendshipDao,
+  val openingDao:    OpeningDao,
   private val closeF: IO[Unit]
 ):
   /** Release all resources (connection pool / MongoClient). */
@@ -68,7 +69,7 @@ object PersistenceModule:
         poolSize = cfg.slick.poolSize
       )
       .map { slick =>
-        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick, slick, slick.close())
+        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick, slick, slick.openingDao, slick.close())
       }
 
   private def buildMongo(cfg: PersistenceConfig): IO[PersistenceModule] =
@@ -79,5 +80,5 @@ object PersistenceModule:
         // For now, let's assume we use Slick for users.
         val dummyUserDao = null.asInstanceOf[UserDao]
         val dummyFriendDao = null.asInstanceOf[FriendshipDao]
-        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, dummyUserDao, dummyFriendDao, mongo.close())
+        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, dummyUserDao, dummyFriendDao, mongo.openingDao, mongo.close())
       }

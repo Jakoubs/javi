@@ -7,6 +7,7 @@ lazy val slickVersion   = "3.5.1"
 lazy val mongoVersion   = "5.1.0"
 
 lazy val commonSettings = Seq(
+  scalacOptions ++= Seq("-Xmax-inlines", "64"),
   Test / parallelExecution := false,
   Test / logBuffered := false,
   coverageMinimumStmtTotal := 85,
@@ -68,7 +69,7 @@ lazy val view = (project in file("view"))
   )
 
 lazy val rest = (project in file("rest"))
-  .dependsOn(controller, model, util, ai, persistence) // ai needed for Evaluator.loadWeights()
+  .dependsOn(controller, model, util, ai, persistence, lichess) // ai needed for Evaluator.loadWeights(), persistence for OpeningBook, lichess for Seeder
   .settings(
     commonSettings,
     name := "chess-rest",

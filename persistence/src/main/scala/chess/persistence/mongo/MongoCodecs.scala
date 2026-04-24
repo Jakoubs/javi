@@ -4,7 +4,7 @@ import org.bson.{BsonReader, BsonWriter, Document}
 import org.bson.codecs.{Codec, DecoderContext, EncoderContext, DocumentCodec}
 import org.bson.codecs.configuration.{CodecProvider, CodecRegistries, CodecRegistry}
 
-import chess.persistence.model.{MoveEvent, PersistedGame}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening}
 
 /**
  * BSON codec helpers for [[PersistedGame]] and [[MoveEvent]].
@@ -95,12 +95,44 @@ object MongoCodecs:
         timestamp  = doc.getLong("timestamp")
       )
 
+  // ─── Opening codec ────────────────────────────────────────────────────────
+
+  private val openingCodec: Codec[Opening] = new Codec[Opening]:
+    private val docCodec = new DocumentCodec()
+
+    override def getEncoderClass: Class[Opening] = classOf[Opening]
+
+    override def encode(
+      writer: BsonWriter,
+      value:  Opening,
+      ctx:    EncoderContext
+    ): Unit =
+      val doc = new Document()
+        .append("fen",    value.fen)
+        .append("move",   value.move)
+        .append("name",   value.name.orNull)
+        .append("weight", value.weight)
+      docCodec.encode(writer, doc, ctx)
+
+    override def decode(
+      reader: BsonReader,
+      ctx:    DecoderContext
+    ): Opening =
+      val doc = docCodec.decode(reader, ctx)
+      Opening(
+        fen    = doc.getString("fen"),
+        move   = doc.getString("move"),
+        name   = Option(doc.getString("name")),
+        weight = doc.getInteger("weight")
+      )
+
   // ─── CodecProvider & composite registry ───────────────────────────────────
 
   private object ChessCodecProvider extends CodecProvider:
     override def get[T](clazz: Class[T], r: CodecRegistry): Codec[T] | Null =
       if clazz == classOf[PersistedGame] then gameCodec.asInstanceOf[Codec[T]]
       else if clazz == classOf[MoveEvent] then moveEventCodec.asInstanceOf[Codec[T]]
+      else if clazz == classOf[Opening] then openingCodec.asInstanceOf[Codec[T]]
       else null
 
   /**

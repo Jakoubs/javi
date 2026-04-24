@@ -36,6 +36,7 @@ enum Command:
   case ShowFen
   case AiProgress(msg: String)
   case SetAiBot(bot: String)
+  case SetOpening(name: Option[String])
   case Unknown(input: String)
 
 // AppState ─────────────────────────────────────────────────────────────────
@@ -61,7 +62,8 @@ case class AppState(
   activePgnParser: String    = "regex",
   activeMoveParser: String   = "coordinate",
   aiBot:       String          = "alphabeta",
-  aiThinkingTime: Int          = 2000
+  aiThinkingTime: Int          = 2000,
+  opening:     Option[String]  = None
 )
 
 extension (s: AppState)
@@ -219,6 +221,7 @@ object GameController extends Observable[AppState]:
       case ShowFen        => 
         val fen = app.game.toFen
         app.copy(message = Some(s"FEN: $fen"), messageType = MessageType.Info)
+      case SetOpening(name) => app.copy(opening = name, messageType = MessageType.Info)
       case Unknown(msg)   => app.copy(message = Some(msg), highlights = Set.empty, messageType = MessageType.Error)
 
   // ── Move handler ───────────────────────────────────────────────────────────
