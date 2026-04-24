@@ -79,7 +79,8 @@ lazy val rest = (project in file("rest"))
       "org.http4s"     %% "http4s-dsl"          % http4sVersion,
       "org.http4s"     %% "http4s-circe"        % http4sVersion,
       "org.typelevel"  %% "cats-effect"         % "3.5.4",
-      "ch.qos.logback" %  "logback-classic"     % "1.4.11"
+      "ch.qos.logback" %  "logback-classic"     % "1.4.11",
+      "com.github.fd4s" %% "fs2-kafka"          % "3.5.0"
     ),
     coverageExcludedPackages := "chess\\.rest.*",
     assembly / mainClass := Some("chess.RestMain"),

@@ -14,32 +14,29 @@ import org.http4s.circe.*
 
 import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
 import chess.controller.{liveMillis, displayFen, historyFen}
-import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo}
-import chess.model.{capturedPieces, materialInfo}
-import chess.util.Observer
-import java.util.concurrent.atomic.AtomicReference
+import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, materialInfo, capturedPieces}
 import scala.collection.concurrent.TrieMap
 
+import scala.concurrent.duration.*
+
 case class SessionState(
+  appState: AppState = AppState.initial,
   flipped: Boolean = false,
-  selectedPos: Option[Pos] = None,
   highlights: Set[Pos] = Set.empty,
+  selectedPos: Option[Pos] = None,
   message: Option[String] = None
 )
 
-class Http4sRestApi extends Observer[AppState]:
+class Http4sRestApi(kafkaService: KafkaService):
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
-  private val currentState = new AtomicReference[AppState](GameController.appState)
   private val sessions = TrieMap.empty[String, SessionState]
 
   private def getSession(sid: Option[String]): (String, SessionState) =
     val id = sid.getOrElse("default")
     (id, sessions.getOrElseUpdate(id, SessionState()))
   
-  override def update(state: AppState): Unit =
-    currentState.set(state)
-
-  private def buildStateResponse(state: AppState, session: SessionState): GameStateResponse =
+  private def buildStateResponse(session: SessionState): GameStateResponse =
+    val state = session.appState
     GameStateResponse(
       fen = state.game.toFen,
       displayFen = state.displayFen,
@@ -56,16 +53,16 @@ class Http4sRestApi extends Observer[AppState]:
       historyFen = state.historyFen,
       historyMoves = chess.util.Pgn.exportHistorySan(state.game),
       clock = state.clock,
-      capturedWhite = state.game.capturedPieces(chess.model.Color.White).map(_.toString),
-      capturedBlack = state.game.capturedPieces(chess.model.Color.Black).map(_.toString),
+      capturedWhite = state.game.capturedPieces(Color.White).map(_.toString),
+      capturedBlack = state.game.capturedPieces(Color.Black).map(_.toString),
       message = session.message.orElse(state.message),
       training = state.training,
       trainingProgress = state.trainingProgress,
       running = state.running,
       messageIsError = state.messageType == MessageType.Error,
       materialInfo = state.game.materialInfo,
-      whiteLiveMillis = state.liveMillis(chess.model.Color.White),
-      blackLiveMillis = state.liveMillis(chess.model.Color.Black),
+      whiteLiveMillis = state.liveMillis(Color.White),
+      blackLiveMillis = state.liveMillis(Color.Black),
       activePgnParser = state.activePgnParser,
       activeMoveParser = state.activeMoveParser
     )
@@ -84,17 +81,40 @@ class Http4sRestApi extends Observer[AppState]:
     }
     (cleaned, finalJson)
 
+  private def dispatch(sessionId: String, cmd: Command): IO[AppState] = 
+    for {
+      sessionData <- IO(getSession(Some(sessionId)))
+      (id, session) = sessionData
+      newState      <- IO(GameController.handleCommand(session.appState, cmd))
+      
+      // Update session state
+      _ <- IO(sessions.put(id, session.copy(appState = newState)))
+      
+      // ♟ Kafka Integration: Publish every successful move
+      _ <- (cmd, newState) match {
+        case (Command.ApplyMove(move), s) if s.messageType != MessageType.Error =>
+          kafkaService.publishMove(id, move, s.game.toFen)
+        case _ => IO.unit
+      }
+      
+      // Auto AI trigger
+      activeCol = newState.game.activeColor
+      isAiTurn = (activeCol == Color.White && newState.aiWhite) || 
+                 (activeCol == Color.Black && newState.aiBlack)
+                   
+      _ <- if (isAiTurn && newState.status == chess.model.GameStatus.Playing) {
+        (IO.sleep(500.millis) >> dispatch(sessionId, Command.AiMove)).start.void
+      } else IO.unit
+      
+    } yield newState
+
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "api" / "state" :? SessionIdParam(sid) =>
-      val state = currentState.get()
       val (id, session) = getSession(sid)
-      val response = buildStateResponse(state, session)
-      
-      // Clear message after it has been served once
+      val response = buildStateResponse(session)
       if (session.message.isDefined) {
         sessions.put(id, session.copy(message = None))
       }
-      
       Ok(response.asJson)
 
     case req @ POST -> Root / "api" / "command" :? SessionIdParam(sid) =>
@@ -104,72 +124,71 @@ class Http4sRestApi extends Observer[AppState]:
 
         decode[CommandRequest](finalJson) match {
           case Right(cmdReq) =>
-            val app = currentState.get()
-            val cmd = CommandParser.parse(cmdReq.command, app)
+            val cmd = CommandParser.parse(cmdReq.command, session.appState)
             
             cmd match {
               case Command.Flip =>
-                sessions.put(sessionId, session.copy(flipped = !session.flipped))
+                IO(sessions.put(sessionId, session.copy(flipped = !session.flipped))) >>
                 Ok("View flipped")
+                
               case Command.SelectSquare(optPos) =>
                 val isMoveAttempt = optPos.exists(pos => session.highlights.contains(pos) && session.selectedPos.isDefined)
                 
                 if (isMoveAttempt && optPos.isDefined) {
-                  // Execute the move
                   val from = session.selectedPos.get
                   val to = optPos.get
-                  val moveCmd = Command.ApplyMove(chess.model.Move(from, to))
-                  val newState = GameController.eval(moveCmd)
-                  
-                  // Clear session state for next move
-                  sessions.put(sessionId, session.copy(selectedPos = None, highlights = Set.empty, message = None))
-                  
-                  if (newState.messageType == MessageType.Error) {
-                    BadRequest(newState.message.getOrElse("Error"))
-                  } else {
-                    Ok("Move executed")
+                  val move = chess.model.Move(from, to)
+                  dispatch(sessionId, Command.ApplyMove(move)).flatMap { newState =>
+                    IO(sessions.get(sessionId).foreach { s =>
+                      sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None))
+                    }) >> (
+                      if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
+                      else Ok("Move executed")
+                    )
                   }
                 } else {
-                  // Normal selection
-                  val updated = handleSelectSquare(app, session, optPos)
-                  sessions.put(sessionId, updated)
-                  Ok("Square selected")
-                }
-              case _ =>
-                val newState = GameController.eval(cmd)
-                // Clear highlights on move
-                if (cmd.isInstanceOf[Command.ApplyMove]) {
-                  sessions.put(sessionId, session.copy(selectedPos = None, highlights = Set.empty, message = None))
+                  IO(handleSelectSquare(session.appState, session, optPos)).flatMap { updated =>
+                    IO(sessions.put(sessionId, updated)) >>
+                    Ok("Square selected")
+                  }
                 }
                 
-                if (newState.messageType == MessageType.Error) {
-                  BadRequest(newState.message.getOrElse("Error"))
-                } else {
-                  val status = cmd match {
-                    case Command.NewGame | Command.StartGame(_) => Created("Command dispatched")
-                    case _ => Ok("Command dispatched")
-                  }
-                  status
+              case _ =>
+                dispatch(sessionId, cmd).flatMap { newState =>
+                  val cleanup = if (cmd.isInstanceOf[Command.ApplyMove]) {
+                    IO(sessions.get(sessionId).foreach { s =>
+                      sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None))
+                    })
+                  } else IO.unit
+                  
+                  cleanup >> (
+                    if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
+                    else {
+                      cmd match {
+                        case Command.NewGame | Command.StartGame(_) => Created("Started")
+                        case _ => Ok("Executed")
+                      }
+                    }
+                  )
                 }
             }
           case Left(_) =>
-            // Legacy handling for raw strings
-            val app = currentState.get()
-            val cmd = CommandParser.parse(cleaned, app)
-            val newState = GameController.eval(cmd)
-            if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
-            else Ok("Command dispatched via raw string")
+            val cmd = CommandParser.parse(cleaned, session.appState)
+            dispatch(sessionId, cmd).flatMap { newState =>
+              if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
+              else Ok("Dispatched")
+            }
         }
       }
 
-    case GET -> Root / "api" / "legal-moves" :? SquareParam(squareStr) =>
-      val state = currentState.get()
+    case GET -> Root / "api" / "legal-moves" :? SquareParam(squareStr) :? SessionIdParam(sid) =>
+      val (_, session) = getSession(sid)
       Pos.fromAlgebraic(squareStr) match {
         case Some(pos) =>
-          val moves = MoveGenerator.legalMovesFrom(state.game, pos).map(_.to.toAlgebraic).toList
+          val moves = MoveGenerator.legalMovesFrom(session.appState.game, pos).map(_.to.toAlgebraic).toList
           Ok(moves.asJson)
         case None =>
-          BadRequest(s"Invalid square: $squareStr")
+          BadRequest(s"Invalid square")
       }
   }
 
@@ -182,13 +201,13 @@ class Http4sRestApi extends Observer[AppState]:
         session.copy(selectedPos = None, highlights = Set.empty, message = None)
       case Some(pos) =>
         if (session.highlights.contains(pos) && session.selectedPos.isDefined) then
-          // This is a move attempt - we don't handle moves here, so we return current session state
-          // and let the command handler forward the move to GameController.
           session
         else
           app.game.board.get(pos) match
             case None =>
               session.copy(selectedPos = None, highlights = Set.empty, message = Some(s"No piece on ${pos.toAlgebraic}"))
+            case Some(piece) if piece.color != Color.White && piece.color != Color.Black => // Should not happen with activeColor check
+              session.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None)
             case Some(piece) if piece.color != app.game.activeColor =>
               session.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None)
             case Some(_) =>

@@ -24,23 +24,31 @@ import chess.ai.Evaluator
 object RestMain extends IOApp:
 
   def run(args: List[String]): IO[ExitCode] =
-    for
-      _   <- IO(println("==========================================="))
-      _   <- IO(println("  ♟  Chess REST Service  |  Port 8080"))
-      _   <- IO(println("==========================================="))
-      _   <- IO(Evaluator.loadWeights())
-      _   <- IO(println("[AI]   Weights loaded."))
-      api <- IO(new Http4sRestApi())
-      _   <- IO(GameController.addObserver(api))
-      _   <- IO(println("[REST] Starting Http4s Ember server..."))
-      res <- EmberServerBuilder.default[IO]
-               .withHost(ipv4"0.0.0.0")
-               .withPort(port"8080")
-               .withHttpApp(api.app)
-               .build
-               .use { server =>
-                 IO(println(s"[REST] Server online → http://localhost:${server.address.getPort}/api/state")) *>
-                 IO.never
-               }
-               .as(ExitCode.Success)
-    yield res
+    val kafkaBootstrap = sys.env.getOrElse("KAFKA_BOOTSTRAP", "localhost:9092")
+
+    val program = for {
+      _ <- Resource.eval(IO(println("===========================================")))
+      _ <- Resource.eval(IO(println("  ♟  Chess REST Service  |  Port 8080")))
+      _ <- Resource.eval(IO(println("===========================================")))
+      _ <- Resource.eval(IO(Evaluator.loadWeights()))
+      _ <- Resource.eval(IO(println("[AI]   Weights loaded.")))
+      
+      // Initialize Kafka
+      kafka <- chess.rest.KafkaService.make(kafkaBootstrap)
+      _     <- Resource.eval(IO(println(s"[KAFKA] Connected to $kafkaBootstrap")))
+      
+      api   <- Resource.eval(IO(new Http4sRestApi(kafka)))
+      
+      _     <- Resource.eval(IO(println("[REST] Starting Http4s Ember server...")))
+      
+      server <- EmberServerBuilder.default[IO]
+                 .withHost(ipv4"0.0.0.0")
+                 .withPort(port"8080")
+                 .withHttpApp(api.app)
+                 .build
+    } yield server
+
+    program.use { server =>
+      IO(println(s"[REST] Server online → http://localhost:${server.address.getPort}/api/state")) *>
+      IO.never
+    }.as(ExitCode.Success)

@@ -28,6 +28,27 @@ const setRole = (role) => {
   localStorage.setItem('chessClientRole', role)
 }
 
+// ── Party Code Logic ─────────────────────────────────────────────────────
+const partyCodeInput = ref('')
+const currentParty = ref(localStorage.getItem('chessPartyCode') || '')
+
+const effectiveSessionId = computed(() => currentParty.value || sessionId.value)
+
+const joinParty = () => {
+  if (partyCodeInput.value.trim()) {
+    currentParty.value = partyCodeInput.value.trim().toUpperCase()
+    localStorage.setItem('chessPartyCode', currentParty.value)
+    fetchState()
+    partyCodeInput.value = ''
+  }
+}
+
+const leaveParty = () => {
+  currentParty.value = ''
+  localStorage.removeItem('chessPartyCode')
+  fetchState()
+}
+
 const applyServer = () => {
   const url = serverInput.value.trim().replace(/\/$/, '')
   serverUrl.value = url
@@ -122,7 +143,7 @@ const handleQuitModal = () => {
 
 const fetchState = async () => {
   try {
-    const response = await fetch(`${serverUrl.value}/api/state?sessionId=${sessionId.value}&t=${Date.now()}`)
+    const response = await fetch(`${serverUrl.value}/api/state?sessionId=${effectiveSessionId.value}&t=${Date.now()}`)
     if (response.ok) {
       serverConnected.value = true
       const data = await response.json()
@@ -161,7 +182,7 @@ const sendCommand = async (cmd) => {
   }
 
   try {
-    await fetch(`${serverUrl.value}/api/command?sessionId=${sessionId.value}`, {
+    await fetch(`${serverUrl.value}/api/command?sessionId=${effectiveSessionId.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command: cmd })
@@ -266,6 +287,25 @@ const effectiveFlipped = computed(() => {
             <option value="fast">Fastparse</option>
             <option value="combinator">Combinator</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Party Mode UI -->
+      <div class="server-switcher party-mode">
+        <div v-if="!currentParty" class="party-input-group">
+          <input 
+            v-model="partyCodeInput" 
+            placeholder="Party Code (e.g. ABCD)" 
+            class="config-input party-input glass-input"
+            @keyup.enter="joinParty"
+            spellcheck="false"
+          >
+          <button @click="joinParty" class="server-reset-btn" title="Join Party">Join</button>
+        </div>
+        <div v-else class="party-active glass-pill">
+          <span class="active-label">Party:</span>
+          <span class="active-code">{{ currentParty }}</span>
+          <button @click="leaveParty" class="server-reset-btn leave-btn" title="Leave Party">✕</button>
         </div>
       </div>
 
@@ -788,4 +828,59 @@ main {
     display: inline;
   }
 }
+.party-mode {
+  flex: 0 1 auto;
+}
+
+.party-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.party-input {
+  width: 150px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.party-active {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 1rem;
+  background: rgba(var(--primary-rgb), 0.15) !important;
+  border: 1px solid rgba(var(--primary-rgb), 0.3) !important;
+}
+
+.active-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.active-code {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+}
+
+.leave-btn {
+  color: #ff4d4d;
+  font-size: 1.2rem;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.leave-btn:hover {
+  color: #ff1a1a;
+  transform: scale(1.2);
+}
+
 </style>
