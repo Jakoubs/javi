@@ -104,10 +104,30 @@ class Http4sRestApi extends Observer[AppState]:
               case Command.Flip =>
                 sessions.put(sessionId, session.copy(flipped = !session.flipped))
                 Ok("View flipped")
-              case Command.SelectSquare(pos) =>
-                val updated = handleSelectSquare(app, session, pos)
-                sessions.put(sessionId, updated)
-                Ok("Square selected")
+              case Command.SelectSquare(optPos) =>
+                val isMoveAttempt = optPos.exists(pos => session.highlights.contains(pos) && session.selectedPos.isDefined)
+                
+                if (isMoveAttempt && optPos.isDefined) {
+                  // Execute the move
+                  val from = session.selectedPos.get
+                  val to = optPos.get
+                  val moveCmd = Command.ApplyMove(chess.model.Move(from, to))
+                  val newState = GameController.eval(moveCmd)
+                  
+                  // Clear session state for next move
+                  sessions.put(sessionId, session.copy(selectedPos = None, highlights = Set.empty, message = None))
+                  
+                  if (newState.messageType == MessageType.Error) {
+                    BadRequest(newState.message.getOrElse("Error"))
+                  } else {
+                    Ok("Move executed")
+                  }
+                } else {
+                  // Normal selection
+                  val updated = handleSelectSquare(app, session, optPos)
+                  sessions.put(sessionId, updated)
+                  Ok("Square selected")
+                }
               case _ =>
                 val newState = GameController.eval(cmd)
                 // Clear highlights on move

@@ -8,7 +8,7 @@ import TimeSettings from './components/TimeSettings.vue'
 import MoveHistory from './components/MoveHistory.vue'
 
 // ── Server URL (persisted in localStorage) ────────────────────────────────
-const DEFAULT_SERVER = 'http://localhost:8080'
+const DEFAULT_SERVER = ''
 const serverUrl = ref(localStorage.getItem('chessServerUrl') || DEFAULT_SERVER)
 const serverInput = ref(serverUrl.value)
 const serverConnected = ref(true)
@@ -21,7 +21,7 @@ if (!localStorage.getItem('chessSessionId')) {
 }
 
 // ── Player Role (White / Black / Spectator) ──────────────────────────────
-const clientRole = ref(localStorage.getItem('chessClientRole') || 'spectator')
+const clientRole = ref(localStorage.getItem('chessClientRole') || 'white')
 
 const setRole = (role) => {
   clientRole.value = role
@@ -30,7 +30,6 @@ const setRole = (role) => {
 
 const applyServer = () => {
   const url = serverInput.value.trim().replace(/\/$/, '')
-  if (!url) return
   serverUrl.value = url
   serverInput.value = url
   localStorage.setItem('chessServerUrl', url)
@@ -277,7 +276,7 @@ const effectiveFlipped = computed(() => {
           id="server-url-input"
           v-model="serverInput"
           class="server-input glass-input"
-          placeholder="http://host:8080"
+          placeholder="Relative (default) or http://host:8080"
           @keyup.enter="applyServer"
           @blur="applyServer"
           spellcheck="false"

@@ -24,7 +24,7 @@ services:
     container_name: chess-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB:       ${CHESS_DB_NAME:-chess}
       POSTGRES_USER:     ${CHESS_DB_USER:-chess}
@@ -82,7 +82,7 @@ services:
       mongo:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/state"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -96,7 +96,7 @@ services:
     container_name: chess-webui
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3000:8080"
     depends_on:
       rest:
         condition: service_healthy

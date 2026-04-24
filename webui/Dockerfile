@@ -15,9 +15,12 @@ RUN npm run build
 # ─── Stage 2: Runtime (nginx) ─────────────────────────────────────────────────
 FROM nginx:stable-alpine
 
-# Run nginx as non-root user (nginx user already exists in the image)
-RUN sed -i 's/listen\s*80/listen 8080/g' /etc/nginx/conf.d/default.conf 2>/dev/null; \
-    mkdir -p /var/cache/nginx /var/run && \
+# Fix nginx config for non-root execution (user must be commented out, pid moved to /tmp)
+RUN sed -i 's/^user/#user/' /etc/nginx/nginx.conf && \
+    sed -i 's|^pid.*|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf
+
+# Ensure dirs are writable by nginx user
+RUN mkdir -p /var/cache/nginx /var/run && \
     chown -R nginx:nginx /var/cache/nginx /var/run /usr/share/nginx/html /etc/nginx/conf.d
 
 # Copy built assets and config
@@ -26,9 +29,9 @@ COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
 
 USER nginx
 
-EXPOSE 80
+EXPOSE 8080
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost/ || exit 1
+    CMD wget -qO- http://127.0.0.1:8080/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
