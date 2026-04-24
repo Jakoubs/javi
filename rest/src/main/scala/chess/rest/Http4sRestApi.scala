@@ -87,8 +87,15 @@ class Http4sRestApi extends Observer[AppState]:
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "api" / "state" :? SessionIdParam(sid) =>
       val state = currentState.get()
-      val (_, session) = getSession(sid)
-      Ok(buildStateResponse(state, session).asJson)
+      val (id, session) = getSession(sid)
+      val response = buildStateResponse(state, session)
+      
+      // Clear message after it has been served once
+      if (session.message.isDefined) {
+        sessions.put(id, session.copy(message = None))
+      }
+      
+      Ok(response.asJson)
 
     case req @ POST -> Root / "api" / "command" :? SessionIdParam(sid) =>
       req.as[String].flatMap { jsonString =>
