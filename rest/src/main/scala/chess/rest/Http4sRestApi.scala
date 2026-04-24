@@ -190,7 +190,6 @@ class Http4sRestApi(
               case Command.AiMove | Command.AiSuggest =>
                 handleAiWithOpening(cmd, sessionId, session)
               case _ =>
-              case _ =>
                 dispatch(sessionId, cmd).flatMap { newState =>
                   val cleanup = if (cmd.isInstanceOf[Command.ApplyMove]) {
                     IO(sessions.get(sessionId).foreach { s =>
