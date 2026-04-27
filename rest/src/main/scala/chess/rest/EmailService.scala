@@ -62,7 +62,6 @@ class EmailService(
     props.put("mail.smtp.port", port)
     props.put("mail.smtp.ssl.trust", host)
     props.put("mail.smtp.starttls.required", "true")
-    props.put("mail.debug", "true")
 
     val session = Session.getInstance(props, new Authenticator() {
       override protected def getPasswordAuthentication: PasswordAuthentication = {
@@ -86,7 +85,6 @@ class EmailService(
     } catch {
       case e: Exception =>
         println(s"[ERROR] SMTP Error: ${e.getMessage}")
-        e.printStackTrace()
         Left(s"SMTP Error: ${e.getMessage}")
     }
   }.handleErrorWith { e =>
