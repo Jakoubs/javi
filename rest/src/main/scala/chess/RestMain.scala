@@ -42,7 +42,10 @@ object RestMain extends IOApp:
       kafka       <- chess.rest.KafkaService.make(kafkaBootstrap)
       _           <- Resource.eval(IO(println(s"[KAFKA] Connected to $kafkaBootstrap")))
       
-      authService = new chess.rest.AuthService(persistence.userDao)
+      // Initialize Email
+      emailService <- Resource.eval(chess.rest.EmailService.fromEnv())
+      
+      authService = new chess.rest.AuthService(persistence.userDao, emailService)
       api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao, persistence.openingDao)))
       
       _           <- Resource.eval(IO(println("[REST] Starting Http4s Ember server...")))

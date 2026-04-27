@@ -1,18 +1,18 @@
 package chess.persistence
 
 import cats.effect.IO
-import slick.jdbc.PostgresProfile
+import _root_.slick.jdbc.PostgresProfile
 
 import chess.persistence.config.PersistenceConfig
 import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao}
 import chess.persistence.mongo.MongoPersistence
-import chess.persistence.slickimpl.SlickPersistence
+import chess.persistence.slick.SlickPersistence
 
 /**
  * Factory that constructs and wires the persistence layer from configuration.
  *
  * Callers only need to depend on the [[GameDao]] / [[MoveEventDao]] traits —
- * they never import anything from the `slickimpl` or `mongo` sub-packages directly.
+ * they never import anything from the `slick` or `mongo` sub-packages directly.
  *
  * {{{
  *   PersistenceModule.build().flatMap { module =>

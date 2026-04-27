@@ -31,9 +31,13 @@ const setRole = (role) => {
 // ── User / Social State ──────────────────────────────────────────────────
 const currentUser = ref(JSON.parse(localStorage.getItem('chessUser')))
 const friends = ref([])
+const friendRequests = ref([])
+const newFriendName = ref('')
+
+
 const authMode = ref('login') // 'login' or 'register'
 const showAuthModal = ref(false)
-const authForm = ref({ username: '', password: '' })
+const authForm = ref({ username: '', email: '', password: '' })
 const authError = ref('')
 
 const handleAuth = async () => {
@@ -48,12 +52,26 @@ const handleAuth = async () => {
     
     if (response.ok) {
       const user = await response.json()
+      
+      if (authMode.value === 'register' && !user.isVerified) {
+        authError.value = "Check your email for a verification link!"
+        authForm.value.password = ''
+        return
+      }
+
       currentUser.value = user
       localStorage.setItem('chessUser', JSON.stringify(user))
       showAuthModal.value = false
       fetchFriends()
+      fetchFriendRequests()
     } else {
-      authError.value = await response.text()
+      const errText = await response.text()
+      try {
+        const errJson = JSON.parse(errText)
+        authError.value = errJson.errorMessage || errJson.error || errJson
+      } catch (e) {
+        authError.value = errText
+      }
     }
   } catch (e) {
     authError.value = 'Server connection failed'
@@ -76,6 +94,17 @@ const fetchFriends = async () => {
   } catch (e) {}
 }
 
+const fetchFriendRequests = async () => {
+  if (!currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends/requests?userId=${currentUser.value.id}`)
+    if (response.ok) {
+      friendRequests.value = await response.json()
+    }
+  } catch (e) {}
+}
+
+
 const challengeFriend = async (friendId) => {
   try {
     const response = await fetch(`${serverUrl.value}/api/social/challenge`, {
@@ -90,6 +119,44 @@ const challengeFriend = async (friendId) => {
     }
   } catch (e) {}
 }
+
+const addFriend = async () => {
+  if (!newFriendName.value.trim() || !currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends/add?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendName: newFriendName.value.trim() })
+    })
+    if (response.ok) {
+      newFriendName.value = ''
+      fetchFriends()
+    } else {
+      state.value.message = await response.text()
+    }
+  } catch (e) {
+    state.value.message = 'Failed to add friend'
+  }
+}
+
+const acceptFriend = async (friendId) => {
+  if (!currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends/accept?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId })
+    })
+    if (response.ok) {
+      fetchFriendRequests()
+      fetchFriends()
+    }
+  } catch (e) {
+    state.value.message = 'Failed to accept friend'
+  }
+}
+
+
 
 // ── Party Code Logic ─────────────────────────────────────────────────────
 const partyCodeInput = ref('')
@@ -276,6 +343,8 @@ let tickerInterval
 onMounted(() => {
   fetchState()
   fetchFriends()
+  fetchFriendRequests()
+
   pollInterval = setInterval(fetchState, 500)
   
   tickerInterval = setInterval(() => {
@@ -431,7 +500,22 @@ const effectiveFlipped = computed(() => {
       <aside class="social-sidebar glass" v-if="currentUser">
         <div class="sidebar-header">
           <h3>Friends</h3>
+          <div class="add-friend-form">
+            <input v-model="newFriendName" placeholder="Username..." @keyup.enter="addFriend" class="glass-input small">
+            <button @click="addFriend" class="add-btn">+</button>
+          </div>
         </div>
+
+        <!-- Friend Requests -->
+        <div class="friend-requests" v-if="friendRequests.length > 0">
+          <h4>Requests</h4>
+          <div v-for="req in friendRequests" :key="req.id" class="friend-item glass-pill incoming-req">
+            <span class="friend-name">{{ req.username }}</span>
+            <button @click="acceptFriend(req.id)" class="accept-btn">Accept</button>
+          </div>
+        </div>
+
+
         <div class="friends-list">
           <div v-for="friend in friends" :key="friend.id" class="friend-item glass-pill">
             <span class="friend-name">{{ friend.username }}</span>
@@ -534,6 +618,9 @@ const effectiveFlipped = computed(() => {
       <form @submit.prevent="handleAuth" class="auth-form">
         <div class="form-group">
           <input v-model="authForm.username" placeholder="Username" required class="glass-input">
+        </div>
+        <div v-if="authMode === 'register'" class="form-group">
+          <input v-model="authForm.email" type="email" placeholder="Email Address" required class="glass-input">
         </div>
         <div class="form-group">
           <input v-model="authForm.password" type="password" placeholder="Password" required class="glass-input">
@@ -1101,6 +1188,65 @@ main {
   opacity: 0.6;
   margin: 0;
 }
+
+.add-friend-form {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-friend-form .glass-input.small {
+  flex: 1;
+  width: auto;
+  font-size: 0.75rem;
+}
+
+.add-btn {
+  background: var(--primary);
+  color: black;
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.add-btn:hover {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+.friend-requests {
+  margin-top: 1rem;
+}
+
+.friend-requests h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.4;
+  margin-bottom: 0.5rem;
+}
+
+.incoming-req {
+  border-color: rgba(78, 204, 163, 0.3);
+  background: rgba(78, 204, 163, 0.05);
+}
+
+.accept-btn {
+  font-size: 0.6rem;
+  background: var(--primary);
+  color: black;
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+
 
 .friend-item {
   display: flex;

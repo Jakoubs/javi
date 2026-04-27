@@ -28,3 +28,4 @@ webui/.vite/
 # Agent data
 .gemini/
 lichess.token
+.env

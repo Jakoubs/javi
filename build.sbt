@@ -82,7 +82,8 @@ lazy val rest = (project in file("rest"))
       "org.typelevel"  %% "cats-effect"         % "3.5.4",
       "ch.qos.logback" %  "logback-classic"     % "1.4.11",
       "com.github.fd4s" %% "fs2-kafka"          % "3.5.0",
-      "org.mindrot"    %  "jbcrypt"             % "0.4"
+      "org.mindrot"    %  "jbcrypt"             % "0.4",
+      "com.sun.mail"   %  "jakarta.mail"        % "2.0.1"
     ),
     coverageExcludedPackages := "chess\\.rest.*",
     assembly / mainClass := Some("chess.RestMain"),
@@ -91,7 +92,7 @@ lazy val rest = (project in file("rest"))
       case PathList("reference.conf")    => MergeStrategy.concat
       case x                             => MergeStrategy.first
     }
-  )
+  ).settings(Revolver.settings)
 
 lazy val persistence = (project in file("persistence"))
   .dependsOn(model)

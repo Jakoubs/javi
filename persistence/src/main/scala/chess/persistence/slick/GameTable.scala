@@ -1,6 +1,6 @@
-package chess.persistence.slickimpl
+package chess.persistence.slick
 
-import slick.jdbc.JdbcProfile
+import _root_.slick.jdbc.JdbcProfile
 import chess.persistence.model.PersistedGame
 
 /**
@@ -26,7 +26,7 @@ class GameTable(val profile: JdbcProfile):
 
   val games = TableQuery[Games]
 
-  import slick.jdbc.meta.MTable
+  import _root_.slick.jdbc.meta.MTable
   import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `games` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =

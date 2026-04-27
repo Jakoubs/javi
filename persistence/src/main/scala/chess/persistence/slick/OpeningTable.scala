@@ -1,6 +1,6 @@
-package chess.persistence.slickimpl
+package chess.persistence.slick
 
-import slick.jdbc.JdbcProfile
+import _root_.slick.jdbc.JdbcProfile
 import chess.persistence.model.Opening
 
 /**
@@ -22,7 +22,7 @@ class OpeningTable(val profile: JdbcProfile):
 
   val openings = TableQuery[Openings]
 
-  import slick.jdbc.meta.MTable
+  import _root_.slick.jdbc.meta.MTable
   import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `openings` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =

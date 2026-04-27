@@ -79,6 +79,11 @@ services:
       - CHESS_DB_PASSWORD=${CHESS_DB_PASSWORD:-chess}
       - CHESS_MONGO_URI=mongodb://mongo:27017
       - CHESS_MONGO_DATABASE=${CHESS_MONGO_DATABASE:-chess}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
     depends_on:
       postgres:
         condition: service_healthy

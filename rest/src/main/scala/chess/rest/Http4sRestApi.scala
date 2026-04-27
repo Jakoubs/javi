@@ -12,6 +12,8 @@ import io.circe.parser.*
 import io.circe.generic.auto.*
 import io.circe.generic.semiauto.*
 import org.http4s.circe.*
+import cats.data.Kleisli
+import org.http4s.server.middleware.ErrorHandling
 
 import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
 import chess.controller.{liveMillis, displayFen, historyFen}
@@ -31,6 +33,8 @@ case class SessionState(
 
 case class ChallengeRequest(friendId: Long)
 case class ChallengeResponse(partyCode: String)
+case class AddFriendRequest(friendName: String)
+case class AcceptFriendRequest(friendId: Long)
 
 class Http4sRestApi(
   kafkaService: KafkaService,
@@ -41,13 +45,15 @@ class Http4sRestApi(
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
   implicit val authReqDecoder: EntityDecoder[IO, AuthRequest] = jsonOf[IO, AuthRequest]
   implicit val challengeReqDecoder: EntityDecoder[IO, ChallengeRequest] = jsonOf[IO, ChallengeRequest]
+  implicit val addFriendReqDecoder: EntityDecoder[IO, AddFriendRequest] = jsonOf[IO, AddFriendRequest]
+  implicit val acceptFriendReqDecoder: EntityDecoder[IO, AcceptFriendRequest] = jsonOf[IO, AcceptFriendRequest]
 
   private val sessions = TrieMap.empty[String, SessionState]
 
   private def getSession(sid: Option[String]): (String, SessionState) =
     val id = sid.getOrElse("default")
     (id, sessions.getOrElseUpdate(id, SessionState()))
-  
+
   private def buildStateResponse(session: SessionState): GameStateResponse =
     val state = session.appState
     GameStateResponse(
@@ -112,7 +118,7 @@ class Http4sRestApi(
       activeCol = newState.game.activeColor
       isAiTurn = (activeCol == Color.White && newState.aiWhite) || 
                  (activeCol == Color.Black && newState.aiBlack)
-                   
+                    
       _ <- if (isAiTurn && newState.status == chess.model.GameStatus.Playing) {
         (IO.sleep(500.millis) >> dispatch(sessionId, Command.AiMove)).start.void
       } else IO.unit
@@ -120,7 +126,8 @@ class Http4sRestApi(
     } yield newState
 
   val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    // ── Auth Routes ────────────────────────────────────────────────────────
+    case GET -> Root / "ping" => Ok("pong")
+
     case req @ POST -> Root / "api" / "auth" / "register" =>
       req.as[AuthRequest].flatMap(authService.register).flatMap {
         case Right(resp) => Ok(resp.asJson)
@@ -133,9 +140,32 @@ class Http4sRestApi(
         case Left(err) => BadRequest(err.asJson)
       }
 
-    // ── Social Routes ───────────────────────────────────────────────────────
+    case GET -> Root / "api" / "auth" / "verify" :? TokenParam(token) =>
+      authService.verify(token).flatMap {
+        case Right(msg) => Ok(msg)
+        case Left(err) => BadRequest(err)
+      }
+
     case GET -> Root / "api" / "social" / "friends" :? UserIdParam(uid) =>
       friendshipDao.getFriends(uid).flatMap(friends => Ok(friends.asJson))
+
+    case req @ POST -> Root / "api" / "social" / "friends" / "add" :? UserIdParam(uid) =>
+      req.as[AddFriendRequest].flatMap { addReq =>
+        authService.userDao.findByUsername(addReq.friendName).flatMap {
+          case Some(friend) =>
+            friendshipDao.addFriend(uid, friend.id) >> Ok(s"Friend added")
+          case None =>
+            NotFound(s"User not found")
+        }
+      }
+
+    case GET -> Root / "api" / "social" / "friends" / "requests" :? UserIdParam(uid) =>
+      friendshipDao.getPendingRequests(uid).flatMap(requests => Ok(requests.asJson))
+
+    case req @ POST -> Root / "api" / "social" / "friends" / "accept" :? UserIdParam(uid) =>
+      req.as[AcceptFriendRequest].flatMap { accReq =>
+        friendshipDao.acceptFriend(uid, accReq.friendId) >> Ok(s"Request accepted")
+      }
 
     case req @ POST -> Root / "api" / "social" / "challenge" =>
       req.as[ChallengeRequest].flatMap { _ =>
@@ -143,7 +173,6 @@ class Http4sRestApi(
         Ok(ChallengeResponse(partyCode).asJson)
       }
 
-    // ── Game API ────────────────────────────────────────────────────────────
     case GET -> Root / "api" / "state" :? SessionIdParam(sid) =>
       val (id, session) = getSession(sid)
       val response = buildStateResponse(session)
@@ -156,91 +185,51 @@ class Http4sRestApi(
       req.as[String].flatMap { jsonString =>
         val (cleaned, finalJson) = normalizeCommandJson(jsonString)
         val (sessionId, session) = getSession(sid)
-
         decode[CommandRequest](finalJson) match {
           case Right(cmdReq) =>
             val cmd = CommandParser.parse(cmdReq.command, session.appState)
-            
             cmd match {
               case Command.Flip =>
-                IO(sessions.put(sessionId, session.copy(flipped = !session.flipped))) >>
-                Ok("View flipped")
-                
+                IO(sessions.put(sessionId, session.copy(flipped = !session.flipped))) >> Ok("View flipped")
               case Command.SelectSquare(optPos) =>
                 val isMoveAttempt = optPos.exists(pos => session.highlights.contains(pos) && session.selectedPos.isDefined)
-                
                 if (isMoveAttempt && optPos.isDefined) {
-                  val from = session.selectedPos.get
-                  val to = optPos.get
-                  val move = chess.model.Move(from, to)
-                  dispatch(sessionId, Command.ApplyMove(move)).flatMap { newState =>
-                    IO(sessions.get(sessionId).foreach { s =>
-                      sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None))
-                    }) >> (
-                      if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
-                      else Ok("Move executed")
-                    )
+                  dispatch(sessionId, Command.ApplyMove(chess.model.Move(session.selectedPos.get, optPos.get))).flatMap { newState =>
+                    IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None)))) >>
+                    (if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error")) else Ok("Move executed"))
                   }
                 } else {
-                  IO(handleSelectSquare(session.appState, session, optPos)).flatMap { updated =>
-                    IO(sessions.put(sessionId, updated)) >>
-                    Ok("Square selected")
-                  }
+                  IO(handleSelectSquare(session.appState, session, optPos)).flatMap(updated => IO(sessions.put(sessionId, updated)) >> Ok("Square selected"))
                 }
               case Command.AiMove | Command.AiSuggest =>
                 handleAiWithOpening(cmd, sessionId, session)
               case _ =>
                 dispatch(sessionId, cmd).flatMap { newState =>
-                  val cleanup = if (cmd.isInstanceOf[Command.ApplyMove]) {
-                    IO(sessions.get(sessionId).foreach { s =>
-                      sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None))
-                    })
-                  } else IO.unit
-                  
-                  cleanup >> (
-                    if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
-                    else {
-                      cmd match {
-                        case Command.NewGame | Command.StartGame(_) => Created("Started")
-                        case _ => Ok("Executed")
-                      }
-                    }
-                  )
+                  val cleanup = if (cmd.isInstanceOf[Command.ApplyMove]) IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None)))) else IO.unit
+                  cleanup >> (if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error")) else Ok("Executed"))
                 }
             }
           case Left(_) =>
-            val cmd = CommandParser.parse(cleaned, session.appState)
-            dispatch(sessionId, cmd).flatMap { newState =>
-              if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
-              else Ok("Dispatched")
-            }
+            dispatch(sessionId, CommandParser.parse(cleaned, session.appState)).flatMap(ns => if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("Dispatched"))
         }
       }
 
     case GET -> Root / "api" / "legal-moves" :? SquareParam(squareStr) :? SessionIdParam(sid) =>
       val (_, session) = getSession(sid)
       Pos.fromAlgebraic(squareStr) match {
-        case Some(pos) =>
-          val moves = MoveGenerator.legalMovesFrom(session.appState.game, pos).map(_.to.toAlgebraic).toList
-          Ok(moves.asJson)
-        case None =>
-          BadRequest(s"Invalid square")
+        case Some(pos) => Ok(MoveGenerator.legalMovesFrom(session.appState.game, pos).map(_.to.toAlgebraic).toList.asJson)
+        case None => BadRequest("Invalid square")
       }
+
+    case req =>
+      IO(println(s"[REST DEBUG] Unmatched request: ${req.method} ${req.uri}")) >> NotFound(s"Route not found: ${req.uri}")
   }
 
   private def handleAiWithOpening(cmd: Command, sessionId: String, session: SessionState): IO[Response[IO]] =
     val app = session.appState
-    val fen = app.game.toFen
-    
-    openingDao.findByFen(fen).flatMap {
-      case Nil =>
-        // No opening found, fallback to standard AI
-        dispatch(sessionId, cmd).flatMap { newState =>
-          if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error"))
-          else Ok("AI moved (search)")
-        }
+    openingDao.findByFen(app.game.toFen).flatMap {
+      case Nil => dispatch(sessionId, cmd).flatMap(ns => if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("AI moved"))
       case openings =>
-        // Pick one opening move randomly (or by weight)
         val chosen = openings(scala.util.Random.nextInt(openings.size))
         CoordinateMoveParser.parse(chosen.move, app.game).toOption match {
           case Some(move) =>
@@ -248,54 +237,49 @@ class Http4sRestApi(
               dispatch(sessionId, Command.ApplyMove(move)).flatMap { _ =>
                 val msg = s"AI played opening: ${chosen.name.getOrElse("Book Move")} (${chosen.move})"
                 dispatch(sessionId, Command.SetOpening(chosen.name)).flatMap { _ =>
-                  dispatch(sessionId, Command.Unknown(msg)).flatMap { _ =>
-                    IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = Some(msg))))) >>
-                    Ok(msg)
-                  }
+                  IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = Some(msg))))) >> Ok(msg)
                 }
               }
             } else {
-              val msg = s"Opening Book suggests: ${chosen.move} (${chosen.name.getOrElse("Book Move")})"
-              dispatch(sessionId, Command.SetOpening(chosen.name)).flatMap { _ =>
-                dispatch(sessionId, Command.Unknown(msg)).flatMap { _ =>
-                  IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = Some(move.from), highlights = Set(move.to), message = Some(msg))))) >>
-                  Ok(msg)
-                }
-              }
+              val msg = s"Opening suggests: ${chosen.move}"
+              IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = Some(move.from), highlights = Set(move.to), message = Some(msg))))) >> Ok(msg)
             }
-          case None =>
-            // Fallback if parsing fails
-            dispatch(sessionId, cmd).flatMap { _ =>
-              Ok("AI moved (fallback)")
-            }
+          case None => dispatch(sessionId, cmd).flatMap(_ => Ok("AI moved (fallback)"))
         }
     }
+
+  private def handleSelectSquare(app: AppState, session: SessionState, optPos: Option[Pos]): SessionState =
+    optPos match
+      case None => session.copy(selectedPos = None, highlights = Set.empty, message = None)
+      case Some(pos) =>
+        if (session.highlights.contains(pos) && session.selectedPos.isDefined) then session
+        else
+          app.game.board.get(pos) match
+            case None => session.copy(selectedPos = None, highlights = Set.empty, message = Some(s"No piece on ${pos.toAlgebraic}"))
+            case Some(piece) if piece.color != app.game.activeColor => session.copy(message = Some("Not your piece"), highlights = Set.empty, selectedPos = None)
+            case Some(_) =>
+              val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
+              if (targets.isEmpty) session.copy(message = Some("No legal moves"), highlights = Set.empty, selectedPos = Some(pos))
+              else session.copy(highlights = targets, selectedPos = Some(pos), message = None)
 
   object SquareParam extends QueryParamDecoderMatcher[String]("square")
   object SessionIdParam extends OptionalQueryParamDecoderMatcher[String]("sessionId")
   object UserIdParam extends QueryParamDecoderMatcher[Long]("userId")
+  object TokenParam extends QueryParamDecoderMatcher[String]("token")
 
-  private def handleSelectSquare(app: AppState, session: SessionState, optPos: Option[Pos]): SessionState =
-    optPos match
-      case None =>
-        session.copy(selectedPos = None, highlights = Set.empty, message = None)
-      case Some(pos) =>
-        if (session.highlights.contains(pos) && session.selectedPos.isDefined) then
-          session
-        else
-          app.game.board.get(pos) match
-            case None =>
-              session.copy(selectedPos = None, highlights = Set.empty, message = Some(s"No piece on ${pos.toAlgebraic}"))
-            case Some(piece) if piece.color != app.game.activeColor =>
-              session.copy(message = Some("That is not your piece."), highlights = Set.empty, selectedPos = None)
-            case Some(_) =>
-              val targets = MoveGenerator.legalMovesFrom(app.game, pos).map(_.to).toSet
-              if targets.isEmpty then
-                session.copy(message = Some("No legal moves for that piece."), highlights = Set.empty, selectedPos = Some(pos))
-              else
-                session.copy(highlights = targets, selectedPos = Some(pos), message = None)
+  val app: HttpApp[IO] = CORS.policy
+    .withAllowOriginAll
+    .withAllowMethodsAll
+    .withAllowHeadersAll
+    .apply(
+      ErrorHandling.Recover.total(
+        Kleisli { (req: Request[IO]) =>
+          routes.orNotFound.run(req).handleErrorWith { e =>
+            IO.println(s"[REST ERROR] Unhandled exception: ${e.getMessage}") *>
+            IO(e.printStackTrace()) *>
+            InternalServerError("Internal Server Error")
+          }
+        }
+      )
+    )
 
-  val app: HttpApp[IO] = CORS.policy.withAllowOriginAll
-    .withAllowMethodsIn(Set(Method.GET, Method.POST, Method.OPTIONS))
-    .apply(routes)
-    .orNotFound

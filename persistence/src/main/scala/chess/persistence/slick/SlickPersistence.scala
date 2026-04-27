@@ -1,8 +1,8 @@
-package chess.persistence.slickimpl
+package chess.persistence.slick
 
 import cats.effect.IO
-import slick.jdbc.JdbcProfile
-import slick.jdbc.JdbcBackend.Database
+import _root_.slick.jdbc.JdbcProfile
+import _root_.slick.jdbc.JdbcBackend.Database
 
 import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao}
 import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening}
@@ -85,24 +85,47 @@ final class SlickPersistence private (
   override def findByUsername(username: String): IO[Option[User]] =
     run(uTbl.users.filter(_.username === username).result.headOption)
 
+  override def findByEmail(email: String): IO[Option[User]] =
+    run(uTbl.users.filter(_.email === email).result.headOption)
+
+  override def findByVerificationToken(token: String): IO[Option[User]] =
+    run(uTbl.users.filter(_.verificationToken === token).result.headOption)
+
+  override def verifyUser(token: String): IO[Boolean] =
+    run(uTbl.users.filter(_.verificationToken === token).map(_.isVerified).update(true)).map(_ > 0)
+
   override def findById(id: Long): IO[Option[User]] =
     run(uTbl.users.filter(_.id === id).result.headOption)
 
   // ─── FriendshipDao ────────────────────────────────────────────────────────
 
   override def addFriend(userId: Long, friendId: Long): IO[Unit] =
-    run(uTbl.friendships += Friendship(userId, friendId, "accepted")).void
+    val q = uTbl.friendships.filter(f => f.userId === userId && f.friendId === friendId)
+    run(q.result.headOption).flatMap {
+      case Some(_) => IO.unit
+      case None    => run(uTbl.friendships += Friendship(userId, friendId, "pending")).void
+    }
+
 
   override def getFriends(userId: Long): IO[List[User]] =
+    val q1 = uTbl.friendships.filter(f => f.userId === userId && f.status === "accepted")
+      .join(uTbl.users).on(_.friendId === _.id).map(_._2)
+    val q2 = uTbl.friendships.filter(f => f.friendId === userId && f.status === "accepted")
+      .join(uTbl.users).on(_.userId === _.id).map(_._2)
+    run((q1 ++ q2).result).map(_.toList)
+
+  override def acceptFriend(userId: Long, friendId: Long): IO[Unit] =
+    // userId is the one accepting (was the target), friendId is the requester (was the initiator)
+    run(uTbl.friendships.filter(f => f.userId === friendId && f.friendId === userId).map(_.status).update("accepted")).void
+
+  override def getPendingRequests(userId: Long): IO[List[User]] =
     val q = uTbl.friendships
-      .filter(_.userId === userId)
+      .filter(f => f.friendId === userId && f.status === "pending")
       .join(uTbl.users)
-      .on(_.friendId === _.id)
+      .on(_.userId === _.id)
       .map(_._2)
     run(q.result).map(_.toList)
 
-  override def acceptFriend(userId: Long, friendId: Long): IO[Unit] =
-    run(uTbl.friendships.filter(_.userId === userId).filter(_.friendId === friendId).map(_.status).update("accepted")).void
 
   // ─── OpeningDao ───────────────────────────────────────────────────────────
 

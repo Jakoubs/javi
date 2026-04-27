@@ -1,6 +1,6 @@
-package chess.persistence.slickimpl
+package chess.persistence.slick
 
-import slick.jdbc.JdbcProfile
+import _root_.slick.jdbc.JdbcProfile
 import chess.persistence.model.MoveEvent
 
 /**
@@ -29,7 +29,7 @@ class MoveEventTable(val profile: JdbcProfile):
 
   val moveEvents = TableQuery[MoveEvents]
 
-  import slick.jdbc.meta.MTable
+  import _root_.slick.jdbc.meta.MTable
   import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `move_events` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
