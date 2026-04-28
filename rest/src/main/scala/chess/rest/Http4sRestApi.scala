@@ -18,7 +18,7 @@ import org.http4s.server.middleware.ErrorHandling
 import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
 import chess.controller.{liveMillis, displayFen, historyFen}
 import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, materialInfo, capturedPieces}
-import chess.persistence.dao.{FriendshipDao, OpeningDao}
+import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao}
 import chess.util.parser.CoordinateMoveParser
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.*
@@ -40,7 +40,8 @@ class Http4sRestApi(
   kafkaService: KafkaService,
   authService: AuthService,
   friendshipDao: FriendshipDao,
-  openingDao: OpeningDao
+  openingDao: OpeningDao,
+  puzzleDao: PuzzleDao
 ):
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
   implicit val authReqDecoder: EntityDecoder[IO, AuthRequest] = jsonOf[IO, AuthRequest]
@@ -221,6 +222,35 @@ class Http4sRestApi(
         case None => BadRequest("Invalid square")
       }
 
+    case GET -> Root / "api" / "puzzles" / "themes" =>
+      puzzleDao.findAllThemes().flatMap(themes => Ok(themes.asJson))
+
+    case GET -> Root / "api" / "puzzles" / "random" :? ThemeParam(theme) =>
+      puzzleDao.getRandom(theme).flatMap {
+        case Some(puzzle) => Ok(puzzle.asJson)
+        case None         => NotFound("No puzzles found")
+      }
+
+    case GET -> Root / "api" / "puzzles" :? ThemeParam(theme) :? OrderParam(order) :? LimitParam(limit) :? OffsetParam(offset) =>
+      theme match
+        case Some(t) =>
+          val desc = order.contains("desc")
+          val lim  = limit.getOrElse(20)
+          val off  = offset.getOrElse(0)
+          puzzleDao.findByTheme(t, desc, lim, off).flatMap(puzzles => Ok(puzzles.asJson))
+        case None =>
+          BadRequest("Missing required 'theme' query parameter")
+
+    case GET -> Root / "api" / "puzzles" / "legal-moves" :? FenParam(fen) :? SquareParam(squareStr) =>
+      chess.model.GameState.fromFen(fen) match {
+        case Right(state) =>
+          Pos.fromAlgebraic(squareStr) match {
+            case Some(pos) => Ok(MoveGenerator.legalMovesFrom(state, pos).map(_.to.toAlgebraic).toList.asJson)
+            case None      => BadRequest("Invalid square")
+          }
+        case Left(_) => BadRequest("Invalid FEN string")
+      }
+
     case req =>
       IO(println(s"[REST DEBUG] Unmatched request: ${req.method} ${req.uri}")) >> NotFound(s"Route not found: ${req.uri}")
   }
@@ -266,6 +296,11 @@ class Http4sRestApi(
   object SessionIdParam extends OptionalQueryParamDecoderMatcher[String]("sessionId")
   object UserIdParam extends QueryParamDecoderMatcher[Long]("userId")
   object TokenParam extends QueryParamDecoderMatcher[String]("token")
+  object ThemeParam extends OptionalQueryParamDecoderMatcher[String]("theme")
+  object OrderParam extends OptionalQueryParamDecoderMatcher[String]("order")
+  object LimitParam extends OptionalQueryParamDecoderMatcher[Int]("limit")
+  object OffsetParam extends OptionalQueryParamDecoderMatcher[Int]("offset")
+  object FenParam extends QueryParamDecoderMatcher[String]("fen")
 
   val app: HttpApp[IO] = CORS.policy
     .withAllowOriginAll

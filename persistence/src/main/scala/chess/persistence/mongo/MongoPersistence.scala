@@ -7,8 +7,8 @@ import com.mongodb.client.model.{Filters, Sorts, ReplaceOptions}
 import org.bson.Document
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
-import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao}
-import chess.persistence.model.{MoveEvent, PersistedGame, Opening}
+import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao, PuzzleDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme}
 
 import java.util.concurrent.CompletableFuture
 
@@ -27,11 +27,13 @@ import java.util.concurrent.CompletableFuture
  * }}}
  */
 final class MongoPersistence private (
-  private val client:    MongoClient,
-  private val gamesCol:  MongoCollection[PersistedGame],
-  private val movesCol:  MongoCollection[MoveEvent],
-  private val openCol:   MongoCollection[Opening]
-) extends GameDao with MoveEventDao with OpeningDao:
+  private val client:     MongoClient,
+  private val gamesCol:   MongoCollection[PersistedGame],
+  private val movesCol:   MongoCollection[MoveEvent],
+  private val openCol:    MongoCollection[Opening],
+  private val puzzleCol:  MongoCollection[Puzzle],
+  private val themeCol:   MongoCollection[PuzzleTheme]
+) extends GameDao with MoveEventDao with OpeningDao with PuzzleDao:
 
   // ─── Reactive-Streams → IO bridge ─────────────────────────────────────────
 
@@ -108,6 +110,43 @@ final class MongoPersistence private (
   def gameDao:      GameDao      = this
   def moveEventDao: MoveEventDao = this
   def openingDao:   OpeningDao   = this
+  def puzzleDao:    PuzzleDao    = this
+
+  // ─── PuzzleDao ─────────────────────────────────────────────────────────────
+
+  override def save(puzzle: Puzzle): IO[Unit] =
+    val filter = Filters.eq("_id", puzzle.id)
+    val opts   = new ReplaceOptions().upsert(true)
+    publisherToUnit(puzzleCol.replaceOne(filter, puzzle, opts))
+
+  override def saveBatch(puzzles: List[Puzzle]): IO[Unit] =
+    import cats.implicits.*
+    puzzles.traverse(save).void
+
+  override def getRandom(theme: Option[String]): IO[Option[Puzzle]] =
+    import java.util
+    val pipeline = new util.ArrayList[Document]()
+    theme.foreach { t =>
+      pipeline.add(new Document("$match", new Document("themes", t)))
+    }
+    pipeline.add(new Document("$sample", new Document("size", 1)))
+    publisherToIO(puzzleCol.aggregate(pipeline)).map(_.headOption)
+
+  override def findByTheme(theme: String, desc: Boolean, limit: Int, offset: Int): IO[List[Puzzle]] =
+    val filter = Filters.eq("themes", theme)
+    val sort   = if desc then Sorts.descending("rating") else Sorts.ascending("rating")
+    publisherToIO(puzzleCol.find(filter).sort(sort).skip(offset).limit(limit))
+
+  override def countPuzzles(): IO[Long] =
+    publisherToIO(puzzleCol.countDocuments()).map(_.headOption.map(_.toLong).getOrElse(0L))
+
+  override def saveTheme(theme: PuzzleTheme): IO[Unit] =
+    val filter = Filters.eq("_id", theme.key)
+    val opts   = new ReplaceOptions().upsert(true)
+    publisherToUnit(themeCol.replaceOne(filter, theme, opts))
+
+  override def findAllThemes(): IO[List[PuzzleTheme]] =
+    publisherToIO(themeCol.find().sort(Sorts.ascending("name")))
 
 object MongoPersistence:
 
@@ -128,5 +167,9 @@ object MongoPersistence:
         .withCodecRegistry(MongoCodecs.registry)
       val openCol = db.getCollection(classOf[Opening].getName, classOf[Opening])
         .withCodecRegistry(MongoCodecs.registry)
-      new MongoPersistence(client, gamesCol, movesCol, openCol)
+      val puzzleCol = db.getCollection("puzzles", classOf[Puzzle])
+        .withCodecRegistry(MongoCodecs.registry)
+      val themeCol = db.getCollection("puzzle_themes", classOf[PuzzleTheme])
+        .withCodecRegistry(MongoCodecs.registry)
+      new MongoPersistence(client, gamesCol, movesCol, openCol, puzzleCol, themeCol)
     }

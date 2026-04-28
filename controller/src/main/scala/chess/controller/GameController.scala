@@ -273,7 +273,7 @@ object GameController extends Observable[AppState]:
 
     // Game already over?
     val isGameOver = app.status match
-      case GameStatus.Checkmate(_) | GameStatus.Stalemate | GameStatus.Draw(_) | GameStatus.Timeout(_) => true
+      case GameStatus.Checkmate(_) | GameStatus.Stalemate | GameStatus.Draw(_) | GameStatus.Timeout(_) | GameStatus.Resigned(_) => true
       case _ => false
 
     if isGameOver then

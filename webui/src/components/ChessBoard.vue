@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 
-const props = defineProps(['fen', 'flipped', 'highlights', 'selectedPos'])
+const props = defineProps(['fen', 'flipped', 'highlights', 'selectedPos', 'hintHighlights'])
 const emit = defineEmits(['square-click'])
 
 const showPromotion = ref(false)
@@ -99,7 +99,8 @@ const squareColor = (pos) => {
         class="square" 
         :class="[squareColor(square.pos), { 
           selected: props.selectedPos === square.pos,
-          'is-highlight': props.highlights?.includes(square.pos)
+          'is-highlight': props.highlights?.includes(square.pos),
+          'is-hint': props.hintHighlights?.includes(square.pos)
         }]"
         @click="handleSquareClick(square)"
       >
@@ -146,7 +147,7 @@ const squareColor = (pos) => {
 
 .chessboard {
   display: grid;
-  --square-size: min(80px, 10vmin);
+  --square-size: var(--board-square-size, min(80px, 10vmin));
   grid-template-columns: repeat(8, var(--square-size));
   grid-template-rows: repeat(8, var(--square-size));
   border: 4px solid #2d3748;
@@ -183,6 +184,11 @@ const squareColor = (pos) => {
 
 .square.is-highlight:hover {
   filter: brightness(1.1);
+}
+
+.square.is-hint {
+  background-color: rgba(78, 204, 163, 0.6) !important;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
 }
 
 .move-indicator {

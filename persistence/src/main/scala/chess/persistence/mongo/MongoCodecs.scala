@@ -4,7 +4,7 @@ import org.bson.{BsonReader, BsonWriter, Document}
 import org.bson.codecs.{Codec, DecoderContext, EncoderContext, DocumentCodec}
 import org.bson.codecs.configuration.{CodecProvider, CodecRegistries, CodecRegistry}
 
-import chess.persistence.model.{MoveEvent, PersistedGame, Opening}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme}
 
 /**
  * BSON codec helpers for [[PersistedGame]] and [[MoveEvent]].
@@ -126,6 +126,70 @@ object MongoCodecs:
         weight = doc.getInteger("weight")
       )
 
+  // ─── Puzzle codec ─────────────────────────────────────────────────────────
+
+  private val puzzleCodec: Codec[Puzzle] = new Codec[Puzzle]:
+    private val docCodec = new DocumentCodec()
+
+    override def getEncoderClass: Class[Puzzle] = classOf[Puzzle]
+
+    override def encode(
+      writer: BsonWriter,
+      value:  Puzzle,
+      ctx:    EncoderContext
+    ): Unit =
+      import scala.jdk.CollectionConverters.*
+      val doc = new Document()
+        .append("_id",      value.id)
+        .append("fen",      value.fen)
+        .append("solution", value.solution.asJava)
+        .append("rating",   value.rating)
+        .append("themes",   value.themes.asJava)
+      docCodec.encode(writer, doc, ctx)
+
+    override def decode(
+      reader: BsonReader,
+      ctx:    DecoderContext
+    ): Puzzle =
+      import scala.jdk.CollectionConverters.*
+      val doc = docCodec.decode(reader, ctx)
+      Puzzle(
+        id       = doc.getString("_id"),
+        fen      = doc.getString("fen"),
+        solution = doc.getList("solution", classOf[String]).asScala.toList,
+        rating   = doc.getInteger("rating"),
+        themes   = doc.getList("themes", classOf[String]).asScala.toList
+      )
+
+  // ─── PuzzleTheme codec ────────────────────────────────────────────────────
+
+  private val puzzleThemeCodec: Codec[PuzzleTheme] = new Codec[PuzzleTheme]:
+    private val docCodec = new DocumentCodec()
+
+    override def getEncoderClass: Class[PuzzleTheme] = classOf[PuzzleTheme]
+
+    override def encode(
+      writer: BsonWriter,
+      value:  PuzzleTheme,
+      ctx:    EncoderContext
+    ): Unit =
+      val doc = new Document()
+        .append("_id",         value.key)
+        .append("name",        value.name)
+        .append("description", value.description)
+      docCodec.encode(writer, doc, ctx)
+
+    override def decode(
+      reader: BsonReader,
+      ctx:    DecoderContext
+    ): PuzzleTheme =
+      val doc = docCodec.decode(reader, ctx)
+      PuzzleTheme(
+        key         = doc.getString("_id"),
+        name        = doc.getString("name"),
+        description = doc.getString("description")
+      )
+
   // ─── CodecProvider & composite registry ───────────────────────────────────
 
   private object ChessCodecProvider extends CodecProvider:
@@ -133,6 +197,8 @@ object MongoCodecs:
       if clazz == classOf[PersistedGame] then gameCodec.asInstanceOf[Codec[T]]
       else if clazz == classOf[MoveEvent] then moveEventCodec.asInstanceOf[Codec[T]]
       else if clazz == classOf[Opening] then openingCodec.asInstanceOf[Codec[T]]
+      else if clazz == classOf[Puzzle] then puzzleCodec.asInstanceOf[Codec[T]]
+      else if clazz == classOf[PuzzleTheme] then puzzleThemeCodec.asInstanceOf[Codec[T]]
       else null
 
   /**

@@ -6,6 +6,20 @@ import GameStatus from './components/GameStatus.vue'
 import ImportExport from './components/ImportExport.vue'
 import TimeSettings from './components/TimeSettings.vue'
 import MoveHistory from './components/MoveHistory.vue'
+import PuzzleView from './components/PuzzleView.vue'
+import HomeView from './components/HomeView.vue'
+
+const activeView = ref('home') // 'home', 'game', or 'puzzles'
+const showNewGameModal = ref(false)
+const showCustomInModal = ref(false)
+const customMin = ref(0)
+const customInc = ref(0)
+
+const timePresets = [
+  { name: '1|0 Bullet', time: 60000, inc: 0 },
+  { name: '3|2 Blitz', time: 180000, inc: 2000 },
+  { name: '10|0 Rapid', time: 600000, inc: 0 }
+]
 
 // ── Server URL (persisted in localStorage) ────────────────────────────────
 const DEFAULT_SERVER = ''
@@ -179,6 +193,7 @@ const leaveParty = () => {
   fetchState()
 }
 
+
 const applyServer = () => {
   const url = serverInput.value.trim().replace(/\/$/, '')
   serverUrl.value = url
@@ -216,17 +231,6 @@ const state = ref({
   blackLiveMillis: 0,
   activePgnParser: 'regex',
   opening: null
-})
-
-// Watch for messages and clear them automatically after a timeout
-watch(() => state.value.message, (newMsg) => {
-  if (newMsg) {
-    setTimeout(() => {
-      if (state.value.message === newMsg) {
-        state.value.message = ''
-      }
-    }, 4000)
-  }
 })
 
 const showGameOver = ref(false)
@@ -295,19 +299,24 @@ const fetchState = async () => {
 }
 
 const sendCommand = async (cmd) => {
-  // Move enforcement: only allow moves if it's our turn
+  if (cmd === 'new') {
+    showNewGameModal.value = true
+    return
+  }
+  
   const isBoardInteraction = /^[a-h][1-8]$/.test(cmd) || /^[a-h][1-8][a-h][1-8]/.test(cmd)
   const isGameAction = ['undo', 'resign'].includes(cmd)
   
   if (isBoardInteraction || isGameAction) {
+    if (isGameOver.value && cmd !== 'undo') {
+      return
+    }
     if (clientRole.value === 'spectator') {
-      state.value.message = "You are spectating. Please select a role to play."
       return
     }
     const myTurn = (clientRole.value === 'white' && state.value.activeColor === 'White') ||
                    (clientRole.value === 'black' && state.value.activeColor === 'Black')
     if (!myTurn) {
-      state.value.message = `It's not your turn! Waiting for ${state.value.activeColor}.`
       return
     }
   }
@@ -329,6 +338,12 @@ const handleLoadPgn = (pgn) => sendCommand(`load pgn ${pgn}`)
 const handleStartWithTime = (time, inc) => {
   if (time === null) sendCommand('start none')
   else sendCommand(`start ${time} ${inc}`)
+}
+
+const handleStartGameFromHome = (timeMs, incMs) => {
+  handleStartWithTime(timeMs, incMs)
+  activeView.value = 'game'
+  showNewGameModal.value = false
 }
 
 const handleSwitchParser = (event) => {
@@ -413,11 +428,12 @@ const effectiveFlipped = computed(() => {
   <div class="app-container">
     <header class="glass">
       <div class="header-left">
-        <div class="brand-group">
+        <div class="brand-group clickable-brand" @click="activeView = 'home'">
           <h1>JAVI CHESS</h1>
           <div class="premium-tag">Premium Chess Experience</div>
         </div>
-        <div class="parser-switcher">
+
+        <div class="parser-switcher" v-show="activeView === 'game'">
           <label for="parser-select">PGN Parser:</label>
           <select id="parser-select" :value="state.activePgnParser" @change="handleSwitchParser" class="glass-select">
             <option value="regex">Regex</option>
@@ -425,14 +441,14 @@ const effectiveFlipped = computed(() => {
             <option value="combinator">Combinator</option>
           </select>
         </div>
-        <div v-if="state.opening" class="opening-badge shadow-sm">
+        <div v-if="state.opening && activeView === 'game'" class="opening-badge shadow-sm">
           <span class="label">OPENING:</span>
           <span class="name">{{ state.opening }}</span>
         </div>
       </div>
 
       <!-- Party Mode UI -->
-      <div class="server-switcher party-mode">
+      <div class="server-switcher party-mode" v-show="activeView === 'game'">
         <div v-if="!currentParty" class="party-input-group">
           <input 
             v-model="partyCodeInput" 
@@ -451,7 +467,7 @@ const effectiveFlipped = computed(() => {
       </div>
 
       <!-- Server URL switcher -->
-      <div class="server-switcher">
+      <div class="server-switcher" v-show="activeView === 'game'">
         <span class="server-dot" :class="{ connected: serverConnected, disconnected: !serverConnected }" :title="serverConnected ? 'Connected' : 'Disconnected'"></span>
         <input
           id="server-url-input"
@@ -466,7 +482,7 @@ const effectiveFlipped = computed(() => {
       </div>
 
       <!-- Player Role Selector -->
-      <div class="role-selector glass-pill">
+      <div class="role-selector glass-pill" v-show="activeView === 'game'">
         <button 
           v-for="role in ['white', 'black', 'spectator']" 
           :key="role"
@@ -489,13 +505,23 @@ const effectiveFlipped = computed(() => {
           <button @click="logout" class="logout-btn">Logout</button>
         </div>
       </div>
-
-      <Transition name="slide-down">
-        <div v-if="state.message" class="status-msg shadow-lg">{{ state.message }}</div>
-      </Transition>
     </header>
 
-    <main>
+    <!-- Home View -->
+    <main v-if="activeView === 'home'">
+      <HomeView 
+        @start-game="handleStartGameFromHome" 
+        @goto-puzzles="activeView = 'puzzles'" 
+      />
+    </main>
+
+    <!-- Puzzle View -->
+    <main v-else-if="activeView === 'puzzles'">
+      <PuzzleView :serverUrl="serverUrl" />
+    </main>
+
+    <!-- Game View -->
+    <main v-else>
       <!-- Friends Sidebar -->
       <aside class="social-sidebar glass" v-if="currentUser">
         <div class="sidebar-header">
@@ -576,7 +602,7 @@ const effectiveFlipped = computed(() => {
       </div>
 
       <div class="right-panel">
-        <TimeSettings @startWithTime="handleStartWithTime" />
+
         <ImportExport 
           :fen="state.fen" 
           :pgn="state.pgn" 
@@ -630,6 +656,49 @@ const effectiveFlipped = computed(() => {
       </form>
     </div>
   </div>
+
+  <!-- New Game Modal -->
+  <div v-if="showNewGameModal" class="modal-overlay" @click.self="showNewGameModal = false">
+    <div class="modal-content glass time-modal">
+      <button class="close-x" @click="showNewGameModal = false">&times;</button>
+      <div class="modal-header">
+        <h2>New Game</h2>
+        <p>Select your time control</p>
+      </div>
+
+      <div class="modal-body">
+        <div class="time-grid-modal">
+          <button 
+            v-for="p in timePresets" 
+            :key="p.name"
+            @click="handleStartGameFromHome(p.time, p.inc)"
+            class="preset-btn-modal primary"
+          >
+            {{ p.name }}
+          </button>
+          <button @click="showCustomInModal = !showCustomInModal" class="preset-btn-modal primary">
+            Custom
+          </button>
+        </div>
+
+        <div v-if="showCustomInModal" class="custom-settings-modal glass-card">
+          <div class="modal-custom-row">
+            <div class="modal-custom-field">
+              <label>Time(min)</label>
+              <input type="number" v-model="customMin" min="0" max="180" class="glass-input compact">
+            </div>
+            <div class="modal-custom-field">
+              <label>inc(sec)</label>
+              <input type="number" v-model="customInc" min="0" max="60" class="glass-input compact">
+            </div>
+          </div>
+          <button @click="handleStartGameFromHome(customMin > 0 ? customMin * 60000 : null, customInc * 1000)" class="preset-btn-modal primary full-width">
+            Start {{ customMin === 0 ? '(Unlimited)' : `(${customMin}m | ${customInc}s)` }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style>
@@ -676,7 +745,7 @@ header h1 {
   font-size: 1.8rem;
   letter-spacing: 3px;
   color: var(--primary);
-  line-height: 1;
+  line-height: 1.2;
   font-family: 'Playfair Display', serif;
 }
 
@@ -696,40 +765,43 @@ header h1 {
   margin-left: 2px;
 }
 
-.status-msg {
-  position: absolute;
-  top: calc(100% - 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(240, 165, 0, 0.95);
-  backdrop-filter: blur(5px);
-  color: #fff;
-  padding: 8px 20px;
-  border-radius: 30px;
-  font-size: 0.9rem;
+.clickable-brand {
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.clickable-brand:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.nav-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255,255,255,0.5);
   font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(240, 165, 0, 0.3);
-  z-index: 1001;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-btn:hover { color: white; background: rgba(255,255,255,0.06); }
+.nav-btn.active {
+  background: rgba(78,204,163,0.2);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(78,204,163,0.15);
 }
 
-/* ── Transitions ──────────────────────────────────────────────────────── */
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-}
 
-.slide-down-enter-from {
-  opacity: 0;
-  transform: translateX(-50%) translateY(-20px) scale(0.9);
-}
-
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(-10px) scale(0.95);
-}
-
+/* ── Layout ───────────────────────────────────────────────────────────── */
 .header-left {
   display: flex;
   align-items: center;
@@ -987,20 +1059,26 @@ main {
 }
 
 .glass-input {
-  background: rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: white;
-  padding: 5px 10px;
-  font-size: 0.82rem;
-  width: 200px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
   outline: none;
-  font-family: 'JetBrains Mono', monospace;
-  transition: border-color 0.2s, background 0.2s;
+  box-sizing: border-box;
 }
+
+.glass-input.compact {
+  padding: 6px 4px;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
 .glass-input:focus {
   border-color: var(--primary);
-  background: rgba(78, 204, 163, 0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .server-reset-btn {
@@ -1305,4 +1383,70 @@ main {
   padding: 2rem 0;
 }
 
+.time-modal {
+  max-width: 400px !important;
+}
+
+.time-grid-modal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.preset-btn-modal {
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(78, 204, 163, 0.3);
+  background: rgba(78, 204, 163, 0.1);
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn-modal:hover {
+  background: rgba(78, 204, 163, 0.25);
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.custom-settings-modal {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-custom-row {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-custom-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  text-align: left;
+}
+
+.modal-custom-field label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.full-width {
+  width: 100%;
+}
 </style>

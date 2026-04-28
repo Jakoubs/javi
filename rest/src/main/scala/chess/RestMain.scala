@@ -46,7 +46,7 @@ object RestMain extends IOApp:
       emailService <- Resource.eval(chess.rest.EmailService.fromEnv())
       
       authService = new chess.rest.AuthService(persistence.userDao, emailService)
-      api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao, persistence.openingDao)))
+      api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao)))
       
       _           <- Resource.eval(IO(println("[REST] Starting Http4s Ember server...")))
       

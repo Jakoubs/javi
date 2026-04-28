@@ -4,8 +4,8 @@ import cats.effect.IO
 import _root_.slick.jdbc.JdbcProfile
 import _root_.slick.jdbc.JdbcBackend.Database
 
-import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao}
-import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao, PuzzleDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening, Puzzle, PuzzleTheme}
 
 /**
  * Unified Slick implementation of both [[GameDao]] and [[MoveEventDao]].
@@ -27,8 +27,10 @@ final class SlickPersistence private (
   private val gTbl: GameTable,
   private val mTbl: MoveEventTable,
   private val uTbl: UserTable,
-  private val oTbl: OpeningTable
-) extends GameDao with MoveEventDao with UserDao with FriendshipDao with OpeningDao:
+  private val oTbl: OpeningTable,
+  private val pTbl: PuzzleTable,
+  private val ptTbl: PuzzleThemeTable
+) extends GameDao with MoveEventDao with UserDao with FriendshipDao with OpeningDao with PuzzleDao:
 
   import profile.api.*
 
@@ -141,13 +143,45 @@ final class SlickPersistence private (
   override def deleteAll(): IO[Unit] =
     run(oTbl.openings.delete).void
 
+  // ─── PuzzleDao ─────────────────────────────────────────────────────────────
+
+  override def save(puzzle: Puzzle): IO[Unit] =
+    run(pTbl.puzzles.insertOrUpdate(puzzle)).void
+
+  override def saveBatch(puzzles: List[Puzzle]): IO[Unit] =
+    run(DBIO.sequence(puzzles.map(p => pTbl.puzzles.insertOrUpdate(p)))).void
+
+  override def getRandom(theme: Option[String]): IO[Option[Puzzle]] =
+    val q = theme match
+      case Some(t) =>
+        pTbl.puzzles.filter(_.themes like s"%$t%")
+      case None =>
+        pTbl.puzzles
+    // Take a random sample by sorting randomly (RANDOM() in PostgreSQL)
+    run(q.sortBy(_ => SimpleFunction.nullary[Double]("random")).take(1).result.headOption)
+
+  override def findByTheme(theme: String, desc: Boolean, limit: Int, offset: Int): IO[List[Puzzle]] =
+    val q = pTbl.puzzles.filter(_.themes like s"%$theme%")
+    val sorted = if desc then q.sortBy(_.rating.desc) else q.sortBy(_.rating.asc)
+    run(sorted.drop(offset).take(limit).result).map(_.toList)
+
+  override def countPuzzles(): IO[Long] =
+    run(pTbl.puzzles.length.result).map(_.toLong)
+
+  override def saveTheme(theme: PuzzleTheme): IO[Unit] =
+    run(ptTbl.puzzleThemes.insertOrUpdate(theme)).void
+
+  override def findAllThemes(): IO[List[PuzzleTheme]] =
+    run(ptTbl.puzzleThemes.sortBy(_.name.asc).result).map(_.toList)
+
   /** Release the underlying HikariCP connection pool. */
   def close(): IO[Unit] = IO(db.close())
 
-  /** Convenience: expose both DAO interfaces individually */
+  /** Convenience: expose DAO interfaces individually */
   def gameDao:      GameDao      = this
   def moveEventDao: MoveEventDao = this
   def openingDao:   OpeningDao   = this
+  def puzzleDao:    PuzzleDao    = this
 
 object SlickPersistence:
 
@@ -159,13 +193,15 @@ object SlickPersistence:
    * @param db      An already-opened Slick [[Database]].
    */
   def make(profile: JdbcProfile, db: Database): IO[SlickPersistence] =
-    val gTbl = GameTable(profile)
-    val mTbl = MoveEventTable(profile)
-    val uTbl = UserTable(profile)
-    val oTbl = OpeningTable(profile)
-    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl)
+    val gTbl  = GameTable(profile)
+    val mTbl  = MoveEventTable(profile)
+    val uTbl  = UserTable(profile)
+    val oTbl  = OpeningTable(profile)
+    val pTbl  = PuzzleTable(profile)
+    val ptTbl = PuzzleThemeTable(profile)
+    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl, pTbl, ptTbl)
     import profile.api.*
-    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema
+    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema >> pTbl.createSchema >> ptTbl.createSchema
     IO.fromFuture(IO(db.run(ddl))).as(instance)
 
   /**
