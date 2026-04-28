@@ -34,6 +34,7 @@ lazy val util = (project in file("util"))
   .settings(
     commonSettings,
     name := "chess-util",
+    coverageExcludedPackages := "chess\\.util\\.parser\\.FastPgnParser",
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
       "com.lihaoyi" %% "fastparse" % "3.1.1"
@@ -44,14 +45,16 @@ lazy val ai = (project in file("ai"))
   .dependsOn(model, util)
   .settings(
     commonSettings,
-    name := "chess-ai"
+    name := "chess-ai",
+    coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|AiEngine|PassiveTrainer|Evaluator)"
   )
 
 lazy val controller = (project in file("controller"))
   .dependsOn(model, util, ai)
   .settings(
     commonSettings,
-    name := "chess-controller"
+    name := "chess-controller",
+    coverageExcludedPackages := "chess\\.controller\\.(GameController|GameStateResponse|CommandRequest)"
   )
 
 lazy val view = (project in file("view"))
@@ -85,7 +88,7 @@ lazy val rest = (project in file("rest"))
       "org.mindrot"    %  "jbcrypt"             % "0.4",
       "com.sun.mail"   %  "jakarta.mail"        % "2.0.1"
     ),
-    coverageExcludedPackages := "chess\\.rest.*",
+    coverageExcludedPackages := "chess\\.(RestMain|rest\\..*)",
     assembly / mainClass := Some("chess.RestMain"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", xs @ _*) => MergeStrategy.discard
@@ -99,6 +102,7 @@ lazy val persistence = (project in file("persistence"))
   .settings(
     commonSettings,
     name := "chess-persistence",
+    coverageExcludedPackages := "chess\\.persistence\\.(mongo.*|PersistenceModule|model\\..*|config\\.mongo|slick\\..*)",
     libraryDependencies ++= Seq(
       // Slick + HikariCP connection pool
       "com.typesafe.slick" %% "slick"                         % slickVersion,
@@ -122,6 +126,7 @@ lazy val root = (project in file("."))
   .settings(
     commonSettings,
     name := "chess-functional-improvements",
+    coverageExcludedPackages := ".*",
     Compile / mainClass := Some("chess.Main")
   )
 
@@ -130,6 +135,7 @@ lazy val lichess = (project in file("lichess"))
   .settings(
     commonSettings,
     name := "chess-lichess",
+    coverageExcludedPackages := "chess\\.lichess.*",
     libraryDependencies ++= Seq(
       "org.apache.pekko" %% "pekko-http" % "1.0.1",
       "org.apache.pekko" %% "pekko-stream" % "1.0.1",

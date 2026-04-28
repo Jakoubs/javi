@@ -26,3 +26,8 @@ object KafkaService:
       .withBootstrapServers(bootstrapServer)
     
     KafkaProducer.resource(settings).map(new KafkaService(_))
+
+  def noOp: KafkaService =
+    new KafkaService(null.asInstanceOf[KafkaProducer[IO, String, String]]):
+      override def publishMove(sessionId: String, move: Move, fen: String): IO[Unit] =
+        IO.unit

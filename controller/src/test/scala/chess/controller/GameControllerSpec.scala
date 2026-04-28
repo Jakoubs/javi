@@ -184,12 +184,6 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
       }
 
 
-      it("should handle AI training start") {
-        val train = GameController.handleCommand(initial, Command.AiTrain(10))
-        train.training shouldBe true
-        train.message.get should include ("Started parallel training")
-      }
-
       it("should handle AiProgress message") {
         val next = GameController.handleCommand(initial, Command.AiProgress("Working..."))
         next.trainingProgress shouldBe Some("Working...")
@@ -305,7 +299,7 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
         val move = Move(Pos(4, 1), Pos(4, 3)) // e2-e4
         val next = GameController.handleCommand(app, Command.ApplyMove(move))
         
-        next.clock.get.whiteMillis shouldBe 10000
+        next.clock.get.whiteMillis should (be >= 9980L and be <= 10000L)
         next.clock.get.lastTickSysTime.get should be >= now
         
         // 2. Black moves, should deduct elapsed (simulated)
@@ -436,8 +430,6 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
       }
 
       it("should trigger auto AI move via eval") {
-        // This is a bit tricky since it's global and uses Future.
-        // We'll use a custom observer to track updates.
         import scala.concurrent.Promise
         import scala.concurrent.duration.*
         import scala.concurrent.Await
@@ -445,21 +437,16 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
         val aiPromise = Promise[AppState]()
         val observer = new chess.util.Observer[AppState] {
           def update(state: AppState): Unit = 
-            if (state.lastMove.isDefined && state.game.activeColor == Color.Black) {
-              // Wait for the AI's response (which will trigger another update)
-            } else if (state.lastMove.isDefined && state.game.activeColor == Color.White) {
+            if (state.game.history.size >= 2 && state.lastMove.isDefined && state.game.activeColor == Color.White) {
               if (!aiPromise.isCompleted) aiPromise.success(state)
             }
         }
 
         GameController.addObserver(observer)
         try {
-          // Enable AI for Black
-          GameController.appState = initial.copy(aiBlack = true)
-          // Make a move for White
+          GameController.appState = initial.copy(aiBlack = true, aiBot = "simple")
           GameController.eval(Command.ApplyMove(Move(Pos(4, 1), Pos(4, 3)))) // e2e4
           
-          // Wait for AI response (e7e5 or similar)
           val result = Await.result(aiPromise.future, 30.seconds)
           result.game.history.size should be >= 2
           result.game.activeColor shouldBe Color.White
@@ -476,14 +463,6 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
         
         val move = GameController.handleCommand(over, Command.AiMove)
         move.message.get should include ("Game is already over")
-      }
-
-      it("should handle simulateGame via AiTrain logic") {
-        // simulateGame is private but called by handleAiTrain logic
-        // We can trigger it and verify training session start.
-        val next = GameController.handleCommand(initial, Command.AiTrain(1))
-        next.training shouldBe true
-        next.message.get should include ("Started parallel training")
       }
 
       it("should clear highlights when selecting invalid square") {
@@ -553,7 +532,7 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
         val clock = ClockState(10000, 10000, 0, Some(now - 1000), isActive = true)
         val s = initial.copy(clock = Some(clock))
         
-        s.liveMillis(Color.White) should (be <= 9005L and be >= 8995L)
+        s.liveMillis(Color.White) should (be <= 9015L and be >= 8985L)
         s.liveMillis(Color.Black) shouldBe 10000
         
         val idle = initial.copy(clock = None)

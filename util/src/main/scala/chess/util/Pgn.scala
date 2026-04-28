@@ -144,12 +144,12 @@ object Pgn:
 
     san
 
-  private def wrapText(text: String, len: Int): String =
+  private[util] def wrapText(text: String, len: Int): String =
     val words = text.split(" ")
     val sb = new StringBuilder
     var currentLineLen = 0
     for w <- words do
-      if currentLineLen + w.length + 1 > len then
+      if currentLineLen > 0 && currentLineLen + w.length + 1 > len then
         sb.append("\n")
         currentLineLen = 0
       else if currentLineLen > 0 then

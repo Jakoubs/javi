@@ -181,9 +181,9 @@ extension (s: GameState)
     val valW = capW.map(PieceType.pieceValue).sum
     val valB = capB.map(PieceType.pieceValue).sum
     
-    val pieceOrder = Map(PieceType.Queen -> 0, PieceType.Rook -> 1, PieceType.Bishop -> 2, PieceType.Knight -> 3, PieceType.Pawn -> 4)
-    val sortedW = capW.sortBy(pieceOrder.getOrElse(_, 5))
-    val sortedB = capB.sortBy(pieceOrder.getOrElse(_, 5))
+    val pieceOrder = Vector(PieceType.Queen, PieceType.Rook, PieceType.Bishop, PieceType.Knight, PieceType.Pawn)
+    val sortedW = capW.sortBy(pieceOrder.indexOf)
+    val sortedB = capB.sortBy(pieceOrder.indexOf)
 
     MaterialInfo(
       whiteCapturedSymbols = sortedW.map(pt => Piece(Color.White, pt).symbol),

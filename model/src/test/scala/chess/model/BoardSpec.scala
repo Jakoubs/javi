@@ -41,6 +41,24 @@ class BoardSpec extends AnyFunSpec with Matchers {
       board.movePiece(Pos(0, 0), Pos(0,1)) shouldBe board
     }
 
+    it("should compute material info across every piece type ordering branch") {
+      val board = Board.empty
+        .put(Pos(4, 0), Piece(Color.White, PieceType.King))
+        .put(Pos(0, 0), Piece(Color.White, PieceType.Rook))
+        .put(Pos(1, 0), Piece(Color.White, PieceType.Bishop))
+        .put(Pos(2, 0), Piece(Color.White, PieceType.Knight))
+        .put(Pos(0, 1), Piece(Color.White, PieceType.Pawn))
+        .put(Pos(0, 7), Piece(Color.Black, PieceType.Rook))
+        .put(Pos(1, 7), Piece(Color.Black, PieceType.Bishop))
+        .put(Pos(2, 7), Piece(Color.Black, PieceType.Knight))
+        .put(Pos(3, 7), Piece(Color.Black, PieceType.Queen))
+        .put(Pos(0, 6), Piece(Color.Black, PieceType.Pawn))
+
+      val info = WhiteToMove(board, CastlingRights(), None, 0, 1).materialInfo
+      info.whiteCapturedSymbols.distinct.size should be >= 5
+      info.blackCapturedSymbols.distinct.size should be >= 4
+    }
+
     describe("fromFen error handling") {
       it("should fail on invalid rank count") {
          Board.fromFenPlacement("8/8/8/8/8/8/8").isLeft shouldBe true

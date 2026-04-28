@@ -6,12 +6,12 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import slick.jdbc.H2Profile
-import slick.jdbc.JdbcBackend.Database
+import _root_.slick.jdbc.H2Profile
+import _root_.slick.jdbc.JdbcBackend.Database
 
 import chess.persistence.config.PersistenceConfig
-import chess.persistence.model.{MoveEvent, PersistedGame}
-import chess.persistence.slickimpl.SlickPersistence
+import chess.persistence.model.{MoveEvent, Opening, PersistedGame, User}
+import chess.persistence.slick.SlickPersistence
 
 /**
  * Integration tests for [[SlickPersistence]] using an in-memory H2 database.
@@ -24,7 +24,7 @@ class SlickPersistenceSpec extends AnyFunSuite with Matchers with BeforeAndAfter
   // ─── H2 in-memory DB ──────────────────────────────────────────────────────
 
   private val h2Url =
-    "jdbc:h2:mem:chess_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE"
+    "jdbc:h2:mem:chess_test;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
 
   private val db = Database.forURL(
     url    = h2Url,
@@ -126,3 +126,32 @@ class SlickPersistenceSpec extends AnyFunSuite with Matchers with BeforeAndAfter
 
   test("findByGameId returns empty list for unknown gameId"):
     slick.moveEventDao.findByGameId("unknown").unsafeRunSync() shouldBe empty
+
+  test("userDao should save, query and verify users"):
+    val user = User(username = "alice", email = "alice@example.com", passwordHash = "hash", verificationToken = Some("token-1"))
+    val id = slick.save(user).unsafeRunSync()
+
+    slick.findById(id).unsafeRunSync().get.username shouldBe "alice"
+    slick.findByUsername("alice").unsafeRunSync().get.email shouldBe "alice@example.com"
+    slick.findByEmail("alice@example.com").unsafeRunSync().get.id shouldBe id
+    slick.findByVerificationToken("token-1").unsafeRunSync().get.id shouldBe id
+    slick.verifyUser("token-1").unsafeRunSync() shouldBe true
+    slick.findByVerificationToken("missing").unsafeRunSync() shouldBe None
+
+  test("friendshipDao should add, accept and list friendships"):
+    val aliceId = slick.save(User(username = "bob", email = "bob@example.com", passwordHash = "hash")).unsafeRunSync()
+    val carolId = slick.save(User(username = "carol", email = "carol@example.com", passwordHash = "hash")).unsafeRunSync()
+
+    slick.addFriend(aliceId, carolId).unsafeRunSync()
+    slick.getPendingRequests(carolId).unsafeRunSync().map(_.username) should contain ("bob")
+    slick.acceptFriend(carolId, aliceId).unsafeRunSync()
+    slick.getFriends(aliceId).unsafeRunSync().map(_.username) should contain ("carol")
+    slick.getFriends(carolId).unsafeRunSync().map(_.username) should contain ("bob")
+
+  test("openingDao should save, query, count and delete openings"):
+    val opening = Opening(startFen, "e2e4", Some("King's Pawn"), 3)
+    slick.openingDao.save(opening).unsafeRunSync()
+    slick.openingDao.findByFen(startFen).unsafeRunSync() should contain (opening)
+    slick.openingDao.count().unsafeRunSync() should be >= 1L
+    slick.openingDao.deleteAll().unsafeRunSync()
+    slick.openingDao.findByFen(startFen).unsafeRunSync() shouldBe empty

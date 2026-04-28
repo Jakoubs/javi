@@ -70,5 +70,4 @@ object CombinatorPgnParser extends PgnParser with RegexParsers:
   def parse(pgnString: String): Try[GameState] = 
     parseAll(pgn, pgnString) match
       case Success(result, _) => Try(result)
-      case Failure(msg, _)    => scala.util.Failure(new Exception(s"Parse failure: $msg"))
-      case Error(msg, _)      => scala.util.Failure(new Exception(s"Parse error: $msg"))
+      case failure: NoSuccess => scala.util.Failure(new Exception(s"Parse error: ${failure.msg}"))

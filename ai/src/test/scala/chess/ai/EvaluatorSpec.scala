@@ -120,6 +120,29 @@ class EvaluatorSpec extends AnyFunSpec with Matchers {
         tempFile.delete()
       }
     }
+
+    it("should use default save/load paths and expose weight accessors") {
+      val weightsFile = new File("ai_weights.txt")
+
+      try {
+        Evaluator.resetWeights()
+        val savedPenalty = Evaluator.getOpeningPawnPushPenalty.get()
+        Evaluator.updateWeights(7.0, PieceType.Pawn, Color.White)
+        Evaluator.saveWeights()
+        weightsFile.exists() shouldBe true
+
+        Evaluator.updateGlobalWeight(Evaluator.getOpeningPawnPushPenalty, 3.0)
+        Evaluator.pawnWeight_test_access.get() shouldBe 107.0
+        Evaluator.getOpeningPawnPushPenalty.get() should not be savedPenalty
+
+        Evaluator.loadWeights()
+        Evaluator.pawnWeight_test_access.get() shouldBe 107.0
+        Evaluator.getOpeningPawnPushPenalty.get() shouldBe savedPenalty
+      } finally {
+        Evaluator.resetWeights()
+        weightsFile.delete()
+      }
+    }
   }
   
   describe("Evaluator weight updates") {

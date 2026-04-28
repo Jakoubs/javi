@@ -101,5 +101,13 @@ class ObserverSpec extends AnyFunSpec with Matchers {
 
       count shouldBe 1
     }
+
+    it("should ignore removal of an observer that was never registered") {
+      val bus = new TestBus
+      val obs = new Observer[String]:
+        def update(state: String): Unit = ()
+
+      noException should be thrownBy bus.removeObserver(obs)
+    }
   }
 }

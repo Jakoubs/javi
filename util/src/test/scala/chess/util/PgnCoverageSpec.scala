@@ -1,6 +1,7 @@
 package chess.util
 
 import chess.model.*
+import chess.util.parser.CombinatorPgnParser
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -118,6 +119,10 @@ class PgnCoverageSpec extends AnyFunSpec with Matchers {
   // ─── wrapText line-break path ────────────────────────────────────────────────
 
   describe("Pgn.exportPgn line wrapping") {
+    it("should wrap long text and leave short text unchanged in wrapText") {
+      Pgn.wrapText("a bb ccc", 20) shouldBe "a bb ccc"
+      Pgn.wrapText("word1 word2 word3", 10) should include("\n")
+    }
 
     it("should produce line breaks when move text exceeds 80 chars") {
       // Play enough moves to exceed 80 chars per line in the move text
@@ -186,6 +191,16 @@ class PgnCoverageSpec extends AnyFunSpec with Matchers {
       val san = Pgn.toSan(state, move, next)
       // Full square disambiguation: should include the from-square 'a1'
       san should include("a1")
+    }
+  }
+
+  describe("Combinator moveGroup primitives") {
+    it("should keep a standalone move token") {
+      CombinatorPgnParser.parseAll(CombinatorPgnParser.moveGroup, "e4").get shouldBe List("e4")
+    }
+
+    it("should turn a standalone comment into an empty move list") {
+      CombinatorPgnParser.parseAll(CombinatorPgnParser.moveGroup, "{only comment}").get shouldBe Nil
     }
   }
 }
