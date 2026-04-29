@@ -7,8 +7,8 @@ import com.mongodb.client.model.{Filters, Sorts, ReplaceOptions}
 import org.bson.Document
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
-import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao, PuzzleDao}
-import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme}
+import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao, PuzzleDao, SavedGameDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme, SavedGame}
 
 import java.util.concurrent.CompletableFuture
 
@@ -32,8 +32,9 @@ final class MongoPersistence private (
   private val movesCol:   MongoCollection[MoveEvent],
   private val openCol:    MongoCollection[Opening],
   private val puzzleCol:  MongoCollection[Puzzle],
-  private val themeCol:   MongoCollection[PuzzleTheme]
-) extends GameDao with MoveEventDao with OpeningDao with PuzzleDao:
+  private val themeCol:   MongoCollection[PuzzleTheme],
+  private val savedGameCol: MongoCollection[SavedGame]
+) extends GameDao with MoveEventDao with OpeningDao with PuzzleDao with SavedGameDao:
 
   // ─── Reactive-Streams → IO bridge ─────────────────────────────────────────
 
@@ -104,6 +105,22 @@ final class MongoPersistence private (
   override def deleteAll(): IO[Unit] =
     publisherToUnit(openCol.deleteMany(new Document()))
 
+  // ─── SavedGameDao ─────────────────────────────────────────────────────────
+
+  override def save(game: SavedGame): IO[Unit] =
+    val filter = Filters.eq("_id", game.id)
+    val opts   = new ReplaceOptions().upsert(true)
+    publisherToUnit(savedGameCol.replaceOne(filter, game, opts))
+
+  override def findByUserId(userId: Long): IO[List[SavedGame]] =
+    publisherToIO(savedGameCol.find(Filters.eq("userId", userId)).sort(Sorts.descending("createdAt")))
+
+  override def findSavedGameById(id: String): IO[Option[SavedGame]] =
+    publisherToIO(savedGameCol.find(Filters.eq("_id", id))).map(_.headOption)
+
+  override def delete(id: String, userId: Long): IO[Unit] =
+    publisherToUnit(savedGameCol.deleteOne(Filters.and(Filters.eq("_id", id), Filters.eq("userId", userId))))
+
   /** Close the underlying MongoClient. */
   def close(): IO[Unit] = IO(client.close())
 
@@ -111,6 +128,7 @@ final class MongoPersistence private (
   def moveEventDao: MoveEventDao = this
   def openingDao:   OpeningDao   = this
   def puzzleDao:    PuzzleDao    = this
+  def savedGameDao: SavedGameDao = this
 
   // ─── PuzzleDao ─────────────────────────────────────────────────────────────
 
@@ -171,5 +189,7 @@ object MongoPersistence:
         .withCodecRegistry(MongoCodecs.registry)
       val themeCol = db.getCollection("puzzle_themes", classOf[PuzzleTheme])
         .withCodecRegistry(MongoCodecs.registry)
-      new MongoPersistence(client, gamesCol, movesCol, openCol, puzzleCol, themeCol)
+      val savedGameCol = db.getCollection("saved_games", classOf[SavedGame])
+        .withCodecRegistry(MongoCodecs.registry)
+      new MongoPersistence(client, gamesCol, movesCol, openCol, puzzleCol, themeCol, savedGameCol)
     }

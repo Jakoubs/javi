@@ -1,0 +1,17 @@
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E171] Type Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\Main.scala:62:8 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m62 |[0m        [33mnew[0m [35mHttp4sRestApi[0m(KafkaService.noOp, authService, friendshipDao, InMemoryOpeningDao, InMemoryPuzzleDao)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mmissing argument for parameter savedGameDao of [33mconstructor[0m [35mHttp4sRestApi[0m in [33mclass[0m [35mHttp4sRestApi[0m: (kafkaService: chess.rest.KafkaService, authService: chess.rest.AuthService,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  friendshipDao: chess.persistence.dao.FriendshipDao,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  openingDao: chess.persistence.dao.OpeningDao,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  puzzleDao: chess.persistence.dao.PuzzleDao, savedGameDao:[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  chess.persistence.dao.SavedGameDao): chess.rest.Http4sRestApi[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m-- [E171] Type Error: D:\SoftwareArchitektur\javi\src\main\scala\chess\Main.scala:56:6 [0m[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m56 |[0m      [33mnew[0m [35mHttp4sRestApi[0m(KafkaService.noOp, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao)[0m
+[0m[[0m[31merror[0m] [0m[0m[31m[31m   |[0m      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0mmissing argument for parameter savedGameDao of [33mconstructor[0m [35mHttp4sRestApi[0m in [33mclass[0m [35mHttp4sRestApi[0m: (kafkaService: chess.rest.KafkaService, authService: chess.rest.AuthService,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  friendshipDao: chess.persistence.dao.FriendshipDao,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  openingDao: chess.persistence.dao.OpeningDao,[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  puzzleDao: chess.persistence.dao.PuzzleDao, savedGameDao:[0m
+[0m[[0m[31merror[0m] [0m[0m[31m   |[0m  chess.persistence.dao.SavedGameDao): chess.rest.Http4sRestApi[0m
+[0m[[0m[31merror[0m] [0m[0mtwo errors found[0m

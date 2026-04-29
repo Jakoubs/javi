@@ -4,7 +4,7 @@ import org.bson.{BsonReader, BsonWriter, Document}
 import org.bson.codecs.{Codec, DecoderContext, EncoderContext, DocumentCodec}
 import org.bson.codecs.configuration.{CodecProvider, CodecRegistries, CodecRegistry}
 
-import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme, SavedGame}
 
 /**
  * BSON codec helpers for [[PersistedGame]] and [[MoveEvent]].
@@ -190,6 +190,41 @@ object MongoCodecs:
         description = doc.getString("description")
       )
 
+  // ─── SavedGame codec ──────────────────────────────────────────────────────
+
+  private val savedGameCodec: Codec[SavedGame] = new Codec[SavedGame]:
+    private val docCodec = new DocumentCodec()
+
+    override def getEncoderClass: Class[SavedGame] = classOf[SavedGame]
+
+    override def encode(
+      writer: BsonWriter,
+      value:  SavedGame,
+      ctx:    EncoderContext
+    ): Unit =
+      val doc = new Document()
+        .append("_id",       value.id)
+        .append("name",      value.name)
+        .append("fen",       value.fen)
+        .append("pgn",       value.pgn)
+        .append("userId",    value.userId)
+        .append("createdAt", value.createdAt.toEpochMilli)
+      docCodec.encode(writer, doc, ctx)
+
+    override def decode(
+      reader: BsonReader,
+      ctx:    DecoderContext
+    ): SavedGame =
+      val doc = docCodec.decode(reader, ctx)
+      SavedGame(
+        id        = doc.getString("_id"),
+        name      = doc.getString("name"),
+        fen       = doc.getString("fen"),
+        pgn       = doc.getString("pgn"),
+        userId    = doc.getLong("userId"),
+        createdAt = java.time.Instant.ofEpochMilli(doc.getLong("createdAt"))
+      )
+
   // ─── CodecProvider & composite registry ───────────────────────────────────
 
   private object ChessCodecProvider extends CodecProvider:
@@ -199,6 +234,7 @@ object MongoCodecs:
       else if clazz == classOf[Opening] then openingCodec.asInstanceOf[Codec[T]]
       else if clazz == classOf[Puzzle] then puzzleCodec.asInstanceOf[Codec[T]]
       else if clazz == classOf[PuzzleTheme] then puzzleThemeCodec.asInstanceOf[Codec[T]]
+      else if clazz == classOf[SavedGame] then savedGameCodec.asInstanceOf[Codec[T]]
       else null
 
   /**

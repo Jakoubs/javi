@@ -4,8 +4,8 @@ import cats.effect.IO
 import _root_.slick.jdbc.JdbcProfile
 import _root_.slick.jdbc.JdbcBackend.Database
 
-import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao, PuzzleDao}
-import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening, Puzzle, PuzzleTheme}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao, PuzzleDao, SavedGameDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening, Puzzle, PuzzleTheme, SavedGame}
 
 /**
  * Unified Slick implementation of both [[GameDao]] and [[MoveEventDao]].
@@ -29,8 +29,9 @@ final class SlickPersistence private (
   private val uTbl: UserTable,
   private val oTbl: OpeningTable,
   private val pTbl: PuzzleTable,
-  private val ptTbl: PuzzleThemeTable
-) extends GameDao with MoveEventDao with UserDao with FriendshipDao with OpeningDao with PuzzleDao:
+  private val ptTbl: PuzzleThemeTable,
+  private val sTbl: SavedGameTable
+) extends GameDao with MoveEventDao with UserDao with FriendshipDao with OpeningDao with PuzzleDao with SavedGameDao:
 
   import profile.api.*
 
@@ -174,6 +175,22 @@ final class SlickPersistence private (
   override def findAllThemes(): IO[List[PuzzleTheme]] =
     run(ptTbl.puzzleThemes.sortBy(_.name.asc).result).map(_.toList)
 
+  // ─── SavedGameDao ─────────────────────────────────────────────────────────
+
+  override def save(game: SavedGame): IO[Unit] =
+    run(sTbl.savedGames.insertOrUpdate(game)).void
+
+  override def findByUserId(userId: Long): IO[List[SavedGame]] =
+    run(sTbl.savedGames.filter(_.userId === userId).sortBy(_.createdAt.desc).result).map(_.toList)
+
+  override def findSavedGameById(id: String): IO[Option[SavedGame]] =
+    run(sTbl.savedGames.filter(_.id === id).result.headOption)
+
+  override def delete(id: String, userId: Long): IO[Unit] =
+    run(sTbl.savedGames.filter(r => r.id === id && r.userId === userId).delete).void
+
+  // ─── Convenience ──────────────────────────────────────────────────────────
+
   /** Release the underlying HikariCP connection pool. */
   def close(): IO[Unit] = IO(db.close())
 
@@ -182,6 +199,7 @@ final class SlickPersistence private (
   def moveEventDao: MoveEventDao = this
   def openingDao:   OpeningDao   = this
   def puzzleDao:    PuzzleDao    = this
+  def savedGameDao: SavedGameDao = this
 
 object SlickPersistence:
 
@@ -199,9 +217,10 @@ object SlickPersistence:
     val oTbl  = OpeningTable(profile)
     val pTbl  = PuzzleTable(profile)
     val ptTbl = PuzzleThemeTable(profile)
-    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl, pTbl, ptTbl)
+    val sTbl  = SavedGameTable(profile)
+    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl, pTbl, ptTbl, sTbl)
     import profile.api.*
-    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema >> pTbl.createSchema >> ptTbl.createSchema
+    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema >> pTbl.createSchema >> ptTbl.createSchema >> sTbl.createSchema
     IO.fromFuture(IO(db.run(ddl))).as(instance)
 
   /**

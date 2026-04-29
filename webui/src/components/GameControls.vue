@@ -1,6 +1,6 @@
 <script setup>
 const props = defineProps(['state'])
-const emit = defineEmits(['command'])
+const emit = defineEmits(['command', 'save-game', 'load-game'])
 
 const commands = [
   { label: 'Undo Move', icon: '↺', cmd: 'undo' },
@@ -126,7 +126,7 @@ h3, h4 {
   justify-content: center;
 }
 
-.ai-controls {
+.ai-controls, .persistence-controls {
   margin-top: 0.5rem;
   display: flex;
   flex-direction: column;

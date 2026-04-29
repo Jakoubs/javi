@@ -4,7 +4,7 @@ import chess.controller.GameController
 import chess.view.{Tui, Gui}
 import chess.rest.{AuthService, EmailService, Http4sRestApi, KafkaService}
 import chess.persistence.PersistenceModule
-import chess.persistence.dao.{FriendshipDao, OpeningDao, UserDao, PuzzleDao}
+import chess.persistence.dao.{FriendshipDao, OpeningDao, UserDao, PuzzleDao, SavedGameDao}
 import chess.persistence.model.User
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,13 +53,13 @@ object Main:
       val emailService = EmailService.fromEnv().unsafeRunSync()
       val authService = new AuthService(persistence.userDao, emailService)
       shutdownHooks = persistence.close() :: shutdownHooks
-      new Http4sRestApi(KafkaService.noOp, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao)
+      new Http4sRestApi(KafkaService.noOp, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao, persistence.savedGameDao)
     catch
       case _: Throwable =>
         val userDao = InMemoryUserDao
         val friendshipDao = InMemoryFriendshipDao
         val authService = new AuthService(userDao, new EmailService("", "", "", "", "noreply@localhost"))
-        new Http4sRestApi(KafkaService.noOp, authService, friendshipDao, InMemoryOpeningDao, InMemoryPuzzleDao)
+        new Http4sRestApi(KafkaService.noOp, authService, friendshipDao, InMemoryOpeningDao, InMemoryPuzzleDao, InMemorySavedGameDao)
 
   private object InMemoryUserDao extends UserDao:
     override def save(user: User): IO[Long] = IO.pure(1L)
@@ -89,3 +89,10 @@ object Main:
     override def countPuzzles(): IO[Long] = IO.pure(0L)
     override def saveTheme(theme: chess.persistence.model.PuzzleTheme): IO[Unit] = IO.unit
     override def findAllThemes(): IO[List[chess.persistence.model.PuzzleTheme]] = IO.pure(Nil)
+    
+  private object InMemorySavedGameDao extends SavedGameDao:
+    override def save(game: chess.persistence.model.SavedGame): IO[Unit] = IO.unit
+    override def findByUserId(userId: Long): IO[List[chess.persistence.model.SavedGame]] = IO.pure(Nil)
+    override def findSavedGameById(id: String): IO[Option[chess.persistence.model.SavedGame]] = IO.pure(None)
+    override def delete(id: String, userId: Long): IO[Unit] = IO.unit
+

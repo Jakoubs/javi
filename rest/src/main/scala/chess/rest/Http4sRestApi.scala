@@ -18,7 +18,8 @@ import org.http4s.server.middleware.ErrorHandling
 import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
 import chess.controller.{liveMillis, displayFen, historyFen}
 import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, materialInfo, capturedPieces}
-import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao}
+import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao, SavedGameDao}
+import chess.persistence.model.SavedGame
 import chess.util.parser.CoordinateMoveParser
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.*
@@ -35,19 +36,24 @@ case class ChallengeRequest(friendId: Long)
 case class ChallengeResponse(partyCode: String)
 case class AddFriendRequest(friendName: String)
 case class AcceptFriendRequest(friendId: Long)
+case class SaveGameRequest(name: String, fen: String, pgn: String)
+case class LoadGameRequest(id: String)
 
 class Http4sRestApi(
   kafkaService: KafkaService,
   authService: AuthService,
   friendshipDao: FriendshipDao,
-  openingDao: OpeningDao,
-  puzzleDao: PuzzleDao
+  openingDao:    OpeningDao,
+  puzzleDao:     PuzzleDao,
+  savedGameDao:  SavedGameDao
 ):
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
   implicit val authReqDecoder: EntityDecoder[IO, AuthRequest] = jsonOf[IO, AuthRequest]
   implicit val challengeReqDecoder: EntityDecoder[IO, ChallengeRequest] = jsonOf[IO, ChallengeRequest]
   implicit val addFriendReqDecoder: EntityDecoder[IO, AddFriendRequest] = jsonOf[IO, AddFriendRequest]
   implicit val acceptFriendReqDecoder: EntityDecoder[IO, AcceptFriendRequest] = jsonOf[IO, AcceptFriendRequest]
+  implicit val saveGameReqDecoder: EntityDecoder[IO, SaveGameRequest] = jsonOf[IO, SaveGameRequest]
+  implicit val loadGameReqDecoder: EntityDecoder[IO, LoadGameRequest] = jsonOf[IO, LoadGameRequest]
 
   private val sessions = TrieMap.empty[String, SessionState]
 
@@ -249,6 +255,36 @@ class Http4sRestApi(
             case None      => BadRequest("Invalid square")
           }
         case Left(_) => BadRequest("Invalid FEN string")
+      }
+
+    // ─── Saved Games ─────────────────────────────────────────────────────────
+
+    case req @ POST -> Root / "api" / "games" / "save" :? UserIdParam(uid) =>
+      req.as[SaveGameRequest].flatMap { saveReq =>
+        val game = SavedGame(
+          id = java.util.UUID.randomUUID().toString,
+          name = saveReq.name,
+          fen = saveReq.fen,
+          pgn = saveReq.pgn,
+          userId = uid
+        )
+        savedGameDao.save(game) >> Ok(s"Game '${saveReq.name}' saved")
+      }
+
+    case GET -> Root / "api" / "games" / "saved" :? UserIdParam(uid) =>
+      savedGameDao.findByUserId(uid).flatMap(games => Ok(games.asJson))
+
+    case req @ POST -> Root / "api" / "games" / "load" :? SessionIdParam(sid) =>
+      req.as[LoadGameRequest].flatMap { loadReq =>
+        savedGameDao.findSavedGameById(loadReq.id).flatMap {
+          case Some(game) =>
+            val (sessionId, _) = getSession(sid)
+            dispatch(sessionId, Command.LoadFen(game.fen)).flatMap { newState =>
+              val msg = s"Loaded game: ${game.name}"
+              IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(message = Some(msg))))) >> Ok(msg)
+            }
+          case None => NotFound("Saved game not found")
+        }
       }
 
     case req =>

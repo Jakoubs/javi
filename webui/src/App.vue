@@ -12,6 +12,10 @@ import HomeView from './components/HomeView.vue'
 const activeView = ref('home') // 'home', 'game', or 'puzzles'
 const showNewGameModal = ref(false)
 const showCustomInModal = ref(false)
+const showSaveModal = ref(false)
+const showLoadModal = ref(false)
+const saveGameName = ref('')
+const savedGames = ref([])
 const customMin = ref(0)
 const customInc = ref(0)
 
@@ -183,6 +187,85 @@ const acceptFriend = async (friendId) => {
   } catch (e) {
     state.value.message = 'Failed to accept friend'
   }
+}
+
+// ── Saved Games Logic ────────────────────────────────────────────────────
+const triggerSaveGame = () => {
+  console.log('Triggering save game modal...')
+  showSaveModal.value = true
+}
+
+const triggerLoadGame = () => {
+  console.log('Triggering load game modal...')
+  fetchSavedGames()
+}
+
+const handleSaveGame = async () => {
+  if (!currentUser.value) {
+    showSaveModal.value = false
+    showAuthModal.value = true
+    return
+  }
+  if (!saveGameName.value.trim()) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/games/save?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: saveGameName.value.trim(),
+        fen: state.value.fen,
+        pgn: state.value.pgn
+      })
+    })
+    if (response.ok) {
+      showSaveModal.value = false
+      saveGameName.value = ''
+      state.value.message = 'Game saved successfully!'
+      state.value.messageType = 'Success'
+    } else {
+      const err = await response.text()
+      state.value.message = err || 'Failed to save game'
+      state.value.messageType = 'Error'
+    }
+  } catch (e) {
+    state.value.message = 'Server connection failed'
+    state.value.messageType = 'Error'
+  }
+}
+
+const fetchSavedGames = async () => {
+  if (!currentUser.value) {
+    showAuthModal.value = true
+    return
+  }
+  showLoadModal.value = true // Open it immediately so user sees something
+  savedGames.value = []      // Clear old list
+  try {
+    const response = await fetch(`${serverUrl.value}/api/games/saved?userId=${currentUser.value.id}`)
+    if (response.ok) {
+      savedGames.value = await response.json()
+    } else {
+      state.value.message = 'Failed to fetch saved games'
+      state.value.messageType = 'Error'
+    }
+  } catch (e) {
+    state.value.message = 'Server connection failed'
+    state.value.messageType = 'Error'
+  }
+}
+
+const loadSavedGame = async (gameId) => {
+  try {
+    const response = await fetch(`${serverUrl.value}/api/games/load?sessionId=${effectiveSessionId.value}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: gameId })
+    })
+    if (response.ok) {
+      showLoadModal.value = false
+      fetchState()
+    }
+  } catch (e) {}
 }
 
 
@@ -509,15 +592,22 @@ const effectiveFlipped = computed(() => {
         </button>
       </div>
 
-      <!-- User Account -->
-      <div class="user-account">
-        <div v-if="!currentUser" class="auth-trigger" @click="showAuthModal = true">
-          <span class="user-icon">👤</span>
-          <span class="auth-label">Login / Register</span>
+      <!-- User Account & Persistence -->
+      <div class="user-account-persistence">
+        <div class="persistence-icons">
+          <button @click="triggerSaveGame" class="header-icon-btn" title="Save Game">💾</button>
+          <button @click="triggerLoadGame" class="header-icon-btn" title="Load Game">📂</button>
         </div>
-        <div v-else class="user-profile glass-pill">
-          <span class="username">{{ currentUser.username }}</span>
-          <button @click="logout" class="logout-btn">Logout</button>
+
+        <div class="user-account">
+          <div v-if="!currentUser" class="auth-trigger" @click="showAuthModal = true">
+            <span class="user-icon">👤</span>
+            <span class="auth-label">Login / Register</span>
+          </div>
+          <div v-else class="user-profile glass-pill">
+            <span class="username">{{ currentUser.username }}</span>
+            <button @click="logout" class="logout-btn">Logout</button>
+          </div>
         </div>
       </div>
     </header>
@@ -627,7 +717,10 @@ const effectiveFlipped = computed(() => {
           @loadFen="handleLoadFen" 
           @loadPgn="handleLoadPgn"
         />
-        <GameControls :state="state" @command="sendCommand" />
+        <GameControls 
+          :state="state" 
+          @command="sendCommand" 
+        />
       </div>
     </main>
 
@@ -648,71 +741,124 @@ const effectiveFlipped = computed(() => {
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Auth Modal -->
-  <div v-if="showAuthModal" class="modal-overlay" @click.self="showAuthModal = false">
-    <div class="modal-content glass">
-      <h2>{{ authMode === 'login' ? 'Welcome Back' : 'Join Javi Chess' }}</h2>
-      <div class="auth-tabs">
-        <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
-        <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
+    <!-- Auth Modal -->
+    <div v-if="showAuthModal" class="modal-overlay" @click.self="showAuthModal = false">
+      <div class="modal-content glass">
+        <h2>{{ authMode === 'login' ? 'Welcome Back' : 'Join Javi Chess' }}</h2>
+        <div class="auth-tabs">
+          <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
+          <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
+        </div>
+        
+        <form @submit.prevent="handleAuth" class="auth-form">
+          <div class="form-group">
+            <input v-model="authForm.username" placeholder="Username" required class="glass-input">
+          </div>
+          <div v-if="authMode === 'register'" class="form-group">
+            <input v-model="authForm.email" type="email" placeholder="Email Address" required class="glass-input">
+          </div>
+          <div class="form-group">
+            <input v-model="authForm.password" type="password" placeholder="Password" required class="glass-input">
+          </div>
+          <p v-if="authError" class="auth-error">{{ authError }}</p>
+          <button type="submit" class="auth-submit-btn">{{ authMode === 'login' ? 'Login' : 'Sign Up' }}</button>
+        </form>
       </div>
-      
-      <form @submit.prevent="handleAuth" class="auth-form">
-        <div class="form-group">
-          <input v-model="authForm.username" placeholder="Username" required class="glass-input">
-        </div>
-        <div v-if="authMode === 'register'" class="form-group">
-          <input v-model="authForm.email" type="email" placeholder="Email Address" required class="glass-input">
-        </div>
-        <div class="form-group">
-          <input v-model="authForm.password" type="password" placeholder="Password" required class="glass-input">
-        </div>
-        <p v-if="authError" class="auth-error">{{ authError }}</p>
-        <button type="submit" class="auth-submit-btn">{{ authMode === 'login' ? 'Login' : 'Sign Up' }}</button>
-      </form>
     </div>
-  </div>
 
-  <!-- New Game Modal -->
-  <div v-if="showNewGameModal" class="modal-overlay" @click.self="showNewGameModal = false">
-    <div class="modal-content glass time-modal">
-      <button class="close-x" @click="showNewGameModal = false">&times;</button>
-      <div class="modal-header">
-        <h2>New Game</h2>
-        <p>Select your time control</p>
-      </div>
-
-      <div class="modal-body">
-        <div class="time-grid-modal">
-          <button 
-            v-for="p in timePresets" 
-            :key="p.name"
-            @click="handleStartGameFromHome(p.time, p.inc)"
-            class="preset-btn-modal primary"
-          >
-            {{ p.name }}
-          </button>
-          <button @click="showCustomInModal = !showCustomInModal" class="preset-btn-modal primary">
-            Custom
-          </button>
+    <!-- New Game Modal -->
+    <div v-if="showNewGameModal" class="modal-overlay" @click.self="showNewGameModal = false">
+      <div class="modal-content glass time-modal">
+        <button class="close-x" @click="showNewGameModal = false">&times;</button>
+        <div class="modal-header">
+          <h2>New Game</h2>
+          <p>Select your time control</p>
         </div>
 
-        <div v-if="showCustomInModal" class="custom-settings-modal glass-card">
-          <div class="modal-custom-row">
-            <div class="modal-custom-field">
-              <label>Time(min)</label>
-              <input type="number" v-model="customMin" min="0" max="180" class="glass-input compact">
+        <div class="modal-body">
+          <div class="time-grid-modal">
+            <button 
+              v-for="p in timePresets" 
+              :key="p.name"
+              @click="handleStartGameFromHome(p.time, p.inc)"
+              class="preset-btn-modal primary"
+            >
+              {{ p.name }}
+            </button>
+            <button @click="showCustomInModal = !showCustomInModal" class="preset-btn-modal primary">
+              Custom
+            </button>
+          </div>
+
+          <div v-if="showCustomInModal" class="custom-settings-modal glass-card">
+            <div class="modal-custom-row">
+              <div class="modal-custom-field">
+                <label>Time(min)</label>
+                <input type="number" v-model="customMin" min="0" max="180" class="glass-input compact">
+              </div>
+              <div class="modal-custom-field">
+                <label>inc(sec)</label>
+                <input type="number" v-model="customInc" min="0" max="60" class="glass-input compact">
+              </div>
             </div>
-            <div class="modal-custom-field">
-              <label>inc(sec)</label>
-              <input type="number" v-model="customInc" min="0" max="60" class="glass-input compact">
+            <button @click="handleStartGameFromHome(customMin > 0 ? customMin * 60000 : null, customInc * 1000)" class="preset-btn-modal primary full-width">
+              Start {{ customMin === 0 ? '(Unlimited)' : `(${customMin}m | ${customInc}s)` }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Game Modal -->
+    <div v-if="showSaveModal" class="modal-overlay" @click.self="showSaveModal = false">
+      <div class="modal glass-panel">
+        <div class="modal-header">
+          <h2>Save Current Game</h2>
+        </div>
+        <div class="modal-body">
+          <p>Enter a name for this save:</p>
+          <input 
+            v-model="saveGameName" 
+            class="glass-input full-width" 
+            placeholder="e.g. My Epic Win"
+            @keyup.enter="handleSaveGame"
+            autofocus
+          />
+        </div>
+        <div class="modal-footer">
+          <button @click="showSaveModal = false" class="btn">Cancel</button>
+          <button @click="handleSaveGame" class="btn primary">Save Game</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load Game Modal -->
+    <div v-if="showLoadModal" class="modal-overlay" @click.self="showLoadModal = false">
+      <div class="modal glass-panel">
+        <div class="modal-header">
+          <h2>Load Saved Game</h2>
+        </div>
+        <div class="modal-body">
+          <div v-if="savedGames.length === 0" class="no-saves">
+            No saved games found.
+          </div>
+          <div v-else class="saves-list">
+            <div 
+              v-for="game in savedGames" 
+              :key="game.id" 
+              class="save-item glass-panel"
+              @click="loadSavedGame(game.id)"
+            >
+              <div class="save-info">
+                <span class="save-name">{{ game.name }}</span>
+                <span class="save-date">{{ new Date(game.createdAt).toLocaleString() }}</span>
+              </div>
+              <button class="btn primary small-btn">Load</button>
             </div>
           </div>
-          <button @click="handleStartGameFromHome(customMin > 0 ? customMin * 60000 : null, customInc * 1000)" class="preset-btn-modal primary full-width">
-            Start {{ customMin === 0 ? '(Unlimited)' : `(${customMin}m | ${customInc}s)` }}
-          </button>
+        </div>
+        <div class="modal-footer">
+          <button @click="showLoadModal = false" class="btn">Close</button>
         </div>
       </div>
     </div>
@@ -1227,8 +1373,40 @@ main {
 }
 
 /* Social & Auth Styles */
+.user-account-persistence {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.persistence-icons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.header-icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.header-icon-btn:hover {
+  background: rgba(var(--primary-rgb), 0.1);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
 .user-account {
-  margin-left: 2rem;
+  margin-left: 0;
 }
 
 .auth-trigger {
@@ -1466,5 +1644,58 @@ main {
 
 .full-width {
   width: 100%;
+}
+
+.saves-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.save-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.save-item:hover {
+  background: rgba(var(--primary-rgb), 0.1);
+  transform: translateX(5px);
+  border-color: var(--primary);
+}
+
+.save-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: left;
+}
+
+.save-name {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.save-date {
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.small-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.no-saves {
+  padding: 2rem;
+  opacity: 0.5;
+  text-align: center;
 }
 </style>
