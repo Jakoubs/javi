@@ -1,92 +1,56 @@
-[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/scala-3.3.4/classes.bak[0m
 [0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryUserDao$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryOpeningDao$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryFriendshipDao$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryUserDao$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryOpeningDao$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryFriendshipDao$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryUserDao$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryOpeningDao$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryFriendshipDao$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.class[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryUserDao$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryOpeningDao$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	MoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryFriendshipDao$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/scala-3.3.4/classes.bak[0m
 [0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
 [0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
 [0m[[0m[0mdebug[0m] [0m[0mRegistering generated classes:[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryUserDao$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminService$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminService.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminGameInfo$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminStats.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryOpeningDao$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	MoveParser.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	TrainMain.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryPuzzleDao$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminUser$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminService$$anon$1.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryFriendshipDao$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminStats$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminGameInfo.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminUser.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.class[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryUserDao$.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminService$.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser$.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminService.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminGameInfo$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminStats.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	ParserRegistry$.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	CoordinateMoveParser.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryOpeningDao$.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	MoveParser.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	TrainMain.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryPuzzleDao$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminUser$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminService$$anon$1.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	TrainMain$.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	Main$InMemoryFriendshipDao$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminStats$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminGameInfo.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AdminUser.tasty[0m
 [0m[[0m[0mdebug[0m] [0m[0m	SanMoveParser.tasty[0m
-[0m[[0m[0mdebug[0m] [0m[0mRemoving the temporary directory used for backing up class files: D:\SoftwareArchitektur\javi\target\scala-3.3.4\classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mRemoving the temporary directory used for backing up class files: /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/scala-3.3.4/classes.bak[0m

@@ -22,8 +22,9 @@ const timePresets = [
 ]
 
 // ── Server URL (persisted in localStorage) ────────────────────────────────
-const DEFAULT_SERVER = ''
-const serverUrl = ref(localStorage.getItem('chessServerUrl') || DEFAULT_SERVER)
+const DEFAULT_SERVER = 'http://localhost:8080'
+const savedServer = localStorage.getItem('chessServerUrl')
+const serverUrl = ref(savedServer && (savedServer.includes(':8080') || savedServer.includes(':8081')) ? savedServer : DEFAULT_SERVER)
 const serverInput = ref(serverUrl.value)
 const serverConnected = ref(true)
 
@@ -47,6 +48,8 @@ const currentUser = ref(JSON.parse(localStorage.getItem('chessUser')))
 const friends = ref([])
 const friendRequests = ref([])
 const newFriendName = ref('')
+const friendFeedback = ref('')
+const friendFeedbackError = ref(false)
 
 
 const authMode = ref('login') // 'login' or 'register'
@@ -136,20 +139,32 @@ const challengeFriend = async (friendId) => {
 
 const addFriend = async () => {
   if (!newFriendName.value.trim() || !currentUser.value) return
+  friendFeedback.value = ''
+  friendFeedbackError.value = false
+  const targetName = newFriendName.value.trim()
   try {
     const response = await fetch(`${serverUrl.value}/api/social/friends/add?userId=${currentUser.value.id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ friendName: newFriendName.value.trim() })
+      body: JSON.stringify({ friendName: targetName })
     })
     if (response.ok) {
       newFriendName.value = ''
+      friendFeedback.value = `Anfrage an '${targetName}' verschickt!`
+      friendFeedbackError.value = false
       fetchFriends()
     } else {
-      state.value.message = await response.text()
+      const errText = await response.text()
+      if (errText.toLowerCase().includes("not found") || response.status === 404) {
+        friendFeedback.value = `User '${targetName}' existiert nicht!`
+      } else {
+        friendFeedback.value = errText || 'Fehler beim Hinzufügen'
+      }
+      friendFeedbackError.value = true
     }
   } catch (e) {
-    state.value.message = 'Failed to add friend'
+    friendFeedback.value = 'Server-Fehler'
+    friendFeedbackError.value = true
   }
 }
 
@@ -530,6 +545,9 @@ const effectiveFlipped = computed(() => {
             <input v-model="newFriendName" placeholder="Username..." @keyup.enter="addFriend" class="glass-input small">
             <button @click="addFriend" class="add-btn">+</button>
           </div>
+          <p v-if="friendFeedback" :style="{ color: friendFeedbackError ? '#ff6b6b' : '#4ecca3', fontSize: '0.75rem', marginTop: '4px', marginBottom: '8px', textAlign: 'left', opacity: 0.9 }">
+            {{ friendFeedback }}
+          </p>
         </div>
 
         <!-- Friend Requests -->
