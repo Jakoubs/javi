@@ -94,6 +94,12 @@ final class MongoPersistence private (
   override def findByFen(fen: String): IO[List[Opening]] =
     publisherToIO(openCol.find(Filters.eq("fen", fen)))
 
+  override def findByFenCore(fenCore: String): IO[List[Opening]] =
+    publisherToIO(openCol.find(Filters.regex("fen", s"^${java.util.regex.Pattern.quote(fenCore)}\\s+")))
+
+  override def findByFenBoardTurn(fenBoardTurn: String): IO[List[Opening]] =
+    publisherToIO(openCol.find(Filters.regex("fen", s"^${java.util.regex.Pattern.quote(fenBoardTurn)}\\s+")))
+
   override def save(opening: Opening): IO[Unit] =
     val filter = Filters.and(Filters.eq("fen", opening.fen), Filters.eq("move", opening.move))
     val opts   = new ReplaceOptions().upsert(true)

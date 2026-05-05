@@ -135,6 +135,12 @@ final class SlickPersistence private (
   override def findByFen(fen: String): IO[List[Opening]] =
     run(oTbl.openings.filter(_.fen === fen).result).map(_.toList)
 
+  override def findByFenCore(fenCore: String): IO[List[Opening]] =
+    run(oTbl.openings.filter(_.fen.like(s"$fenCore %")).result).map(_.toList)
+
+  override def findByFenBoardTurn(fenBoardTurn: String): IO[List[Opening]] =
+    run(oTbl.openings.filter(_.fen.like(s"$fenBoardTurn %")).result).map(_.toList)
+
   override def save(opening: Opening): IO[Unit] =
     run(oTbl.openings.insertOrUpdate(opening)).void
 

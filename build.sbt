@@ -5,6 +5,8 @@ lazy val circeVersion   = "0.14.10"
 lazy val http4sVersion  = "0.23.23"
 lazy val slickVersion   = "3.5.1"
 lazy val mongoVersion   = "5.1.0"
+lazy val djlVersion     = "0.31.0"
+lazy val onnxRtVersion  = "1.20.0"
 
 lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-Xmax-inlines", "64"),
@@ -46,7 +48,12 @@ lazy val ai = (project in file("ai"))
   .settings(
     commonSettings,
     name := "chess-ai",
-    coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|AiEngine|PassiveTrainer|Evaluator)"
+    coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|AiEngine|PassiveTrainer|Evaluator)",
+    libraryDependencies ++= Seq(
+      "ai.djl" % "api" % djlVersion,
+      "ai.djl.onnxruntime" % "onnxruntime-engine" % djlVersion,
+      "com.microsoft.onnxruntime" % "onnxruntime" % onnxRtVersion
+    )
   )
 
 lazy val controller = (project in file("controller"))
@@ -63,7 +70,7 @@ lazy val view = (project in file("view"))
     commonSettings,
     name := "chess-view",
     // Standalone GUI client: sbt "view/run"  (REST server must be running on :8080)
-    // Note: Not containerised – run locally with `sbt view/run`
+    // Note: Not containerised ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ run locally with `sbt view/run`
     Compile / mainClass := Some("chess.view.Gui"),
     libraryDependencies ++= Seq(
       "org.scalafx" %% "scalafx" % "20.0.0-R31"
@@ -86,7 +93,8 @@ lazy val rest = (project in file("rest"))
       "ch.qos.logback" %  "logback-classic"     % "1.4.11",
       "com.github.fd4s" %% "fs2-kafka"          % "3.5.0",
       "org.mindrot"    %  "jbcrypt"             % "0.4",
-      "com.sun.mail"   %  "jakarta.mail"        % "2.0.1"
+      "com.sun.mail"   %  "jakarta.mail"        % "2.0.1",
+      "com.github.luben" % "zstd-jni"           % "1.5.7-7"
     ),
     coverageExcludedPackages := "chess\\.(RestMain|rest\\..*)",
     assembly / mainClass := Some("chess.RestMain"),
@@ -111,9 +119,9 @@ lazy val persistence = (project in file("persistence"))
       "org.postgresql"      % "postgresql"                     % "42.7.3",
       // H2 for in-memory integration tests
       "com.h2database"      % "h2"                             % "2.2.224"  % Test,
-      // MongoDB Reactive Streams driver (pure Java – no Scala wrapper artifact needed)
+      // MongoDB Reactive Streams driver (pure Java ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ no Scala wrapper artifact needed)
       "org.mongodb" % "mongodb-driver-reactivestreams" % mongoVersion,
-      // Cats Effect – unified IO for both DAOs
+      // Cats Effect ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ unified IO for both DAOs
       "org.typelevel"      %% "cats-effect"                    % "3.5.4",
       // Typesafe Config (HOCON application.conf)
       "com.typesafe"        % "config"                         % "1.4.3"
@@ -131,15 +139,24 @@ lazy val root = (project in file("."))
   )
 
 lazy val lichess = (project in file("lichess"))
-  .dependsOn(model, util, ai)
+  .dependsOn(model, util, ai, persistence)
   .settings(
     commonSettings,
     name := "chess-lichess",
     coverageExcludedPackages := "chess\\.lichess.*",
+    Compile / run / fork := true,
+    Compile / run / javaOptions ++= Seq(
+      "-Xms1G",
+      "-Xmx3G",
+      "-XX:+UseG1GC",
+      "-XX:MaxGCPauseMillis=200",
+      "-XX:+UseStringDeduplication"
+    ),
     libraryDependencies ++= Seq(
       "org.apache.pekko" %% "pekko-http" % "1.0.1",
       "org.apache.pekko" %% "pekko-stream" % "1.0.1",
-      "org.apache.pekko" %% "pekko-actor-typed" % "1.0.1"
+      "org.apache.pekko" %% "pekko-actor-typed" % "1.0.1",
+      "ch.qos.logback" % "logback-classic" % "1.4.11"
     ),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", xs @ _*) => MergeStrategy.discard
@@ -147,3 +164,6 @@ lazy val lichess = (project in file("lichess"))
       case x                             => MergeStrategy.first
     }
   )
+
+
+
