@@ -8,53 +8,81 @@ object MoveGenerator:
   private def kingDirections: Array[(Int, Int)] = Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
 
   def legalMoves(state: GameState): List[Move] =
-    pseudoLegalMoves(state).filter(move => !leavesKingInCheck(state, move))
+    val pseudo = pseudoLegalMoves(state)
+    val legal = scala.collection.mutable.ListBuffer.empty[Move]
+    val kingPos = state.kingPos(state.activeColor)
+    val inCheck = kingPos.exists(pos => isAttackedBy(state.board, pos, state.activeColor.opposite))
+    var i = 0
+    while i < pseudo.length do
+      val move = pseudo(i)
+      if !leavesKingInCheck(state, move, kingPos, inCheck) then legal += move
+      i += 1
+    legal.toList
 
   def legalMovesFrom(state: GameState, from: Pos): List[Move] =
-    legalMoves(state).filter(_.from == from)
+    state.board.get(from) match
+      case Some(piece) if piece.color == state.activeColor =>
+        val pseudo = scala.collection.mutable.ArrayBuffer.empty[Move]
+        addPseudoMovesForPiece(pseudo, state, from, piece)
+        val legal = scala.collection.mutable.ListBuffer.empty[Move]
+        val kingPos = state.kingPos(state.activeColor)
+        val inCheck = kingPos.exists(pos => isAttackedBy(state.board, pos, state.activeColor.opposite))
+        var i = 0
+        while i < pseudo.length do
+          val move = pseudo(i)
+          if !leavesKingInCheck(state, move, kingPos, inCheck) then legal += move
+          i += 1
+        legal.toList
+      case _ => Nil
 
   def isInCheck(state: GameState, color: Color): Boolean =
-    state.board.findKing(color) match
+    state.kingPos(color) match
       case None      => false
       case Some(pos) => isAttackedBy(state.board, pos, color.opposite)
 
   private def pseudoLegalMoves(state: GameState): List[Move] =
     val pieces = state.board.allPiecesOf(state.activeColor)
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
+    val moves = scala.collection.mutable.ArrayBuffer.empty[Move]
     var index = 0
     while index < pieces.length do
       val (pos, piece) = pieces(index)
-      piece.pieceType match
-        case PieceType.Pawn =>
-          moves ++= pawnMoves(state, pos, piece.color)
-        case PieceType.Knight =>
-          moves ++= knightMoves(state, pos, piece.color)
-        case PieceType.Bishop =>
-          moves ++= slidingMoves(state, pos, piece.color, bishopDirections)
-        case PieceType.Rook =>
-          moves ++= slidingMoves(state, pos, piece.color, rookDirections)
-        case PieceType.Queen =>
-          moves ++= queenMoves(state, pos, piece.color)
-        case PieceType.King =>
-          moves ++= kingMoves(state, pos, piece.color)
+      addPseudoMovesForPiece(moves, state, pos, piece)
       index += 1
     moves.toList
 
-  private def pawnMoves(state: GameState, pos: Pos, color: Color): List[Move] =
+  private def addPseudoMovesForPiece(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    pos: Pos,
+    piece: Piece
+  ): Unit =
+    piece.pieceType match
+      case PieceType.Pawn =>
+        pawnMoves(out, state, pos, piece.color)
+      case PieceType.Knight =>
+        knightMoves(out, state, pos, piece.color)
+      case PieceType.Bishop =>
+        slidingMoves(out, state, pos, piece.color, bishopDirections)
+      case PieceType.Rook =>
+        slidingMoves(out, state, pos, piece.color, rookDirections)
+      case PieceType.Queen =>
+        queenMoves(out, state, pos, piece.color)
+      case PieceType.King =>
+        kingMoves(out, state, pos, piece.color)
+
+  private def pawnMoves(out: scala.collection.mutable.ArrayBuffer[Move], state: GameState, pos: Pos, color: Color): Unit =
     val dir = if color == Color.White then 1 else -1
     val startRow = if color == Color.White then 1 else 6
     val promRow = if color == Color.White then 7 else 0
     val board = state.board
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
-
     def addMoves(to: Pos): Unit =
       if to.row == promRow then
-        moves += Move(pos, to, Some(PieceType.Queen))
-        moves += Move(pos, to, Some(PieceType.Rook))
-        moves += Move(pos, to, Some(PieceType.Bishop))
-        moves += Move(pos, to, Some(PieceType.Knight))
+        out += Move(pos, to, Some(PieceType.Queen))
+        out += Move(pos, to, Some(PieceType.Rook))
+        out += Move(pos, to, Some(PieceType.Bishop))
+        out += Move(pos, to, Some(PieceType.Knight))
       else
-        moves += Move(pos, to)
+        out += Move(pos, to)
 
     val oneStep = pos + (0, dir)
     if oneStep.isValid && board.isEmpty(oneStep) then
@@ -62,39 +90,35 @@ object MoveGenerator:
 
     val twoStep = pos + (0, 2 * dir)
     if pos.row == startRow && board.isEmpty(oneStep) && board.isEmpty(twoStep) then
-      moves += Move(pos, twoStep)
+      out += Move(pos, twoStep)
 
     val leftTarget = pos + (-1, dir)
     if leftTarget.isValid then
       if board.isOccupiedBy(leftTarget, color.opposite) then addMoves(leftTarget)
-      else if state.enPassantTarget.contains(leftTarget) then moves += Move(pos, leftTarget)
+      else if state.enPassantTarget.contains(leftTarget) then out += Move(pos, leftTarget)
 
     val rightTarget = pos + (1, dir)
     if rightTarget.isValid then
       if board.isOccupiedBy(rightTarget, color.opposite) then addMoves(rightTarget)
-      else if state.enPassantTarget.contains(rightTarget) then moves += Move(pos, rightTarget)
+      else if state.enPassantTarget.contains(rightTarget) then out += Move(pos, rightTarget)
 
-    moves.toList
-
-  private def knightMoves(state: GameState, pos: Pos, color: Color): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
+  private def knightMoves(out: scala.collection.mutable.ArrayBuffer[Move], state: GameState, pos: Pos, color: Color): Unit =
     val deltas = knightDeltas
     var index = 0
     while index < deltas.length do
       val (dc, dr) = deltas(index)
       val to = pos + (dc, dr)
       if to.isValid && !state.board.isOccupiedBy(to, color) then
-        moves += Move(pos, to)
+        out += Move(pos, to)
       index += 1
-    moves.toList
 
   private def slidingMoves(
+    out: scala.collection.mutable.ArrayBuffer[Move],
     state: GameState,
     pos: Pos,
     color: Color,
     directions: Array[(Int, Int)]
-  ): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
+  ): Unit =
     var dirIndex = 0
     while dirIndex < directions.length do
       val (dc, dr) = directions(dirIndex)
@@ -104,29 +128,26 @@ object MoveGenerator:
         if state.board.isOccupiedBy(current, color) then
           blocked = true
         else if state.board.isOccupiedBy(current, color.opposite) then
-          moves += Move(pos, current)
+          out += Move(pos, current)
           blocked = true
         else
-          moves += Move(pos, current)
+          out += Move(pos, current)
           current = current + (dc, dr)
       dirIndex += 1
-    moves.toList
 
-  private def queenMoves(state: GameState, pos: Pos, color: Color): List[Move] =
-    slidingMoves(state, pos, color, Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)))
+  private def queenMoves(out: scala.collection.mutable.ArrayBuffer[Move], state: GameState, pos: Pos, color: Color): Unit =
+    slidingMoves(out, state, pos, color, Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)))
 
-  private def kingMoves(state: GameState, pos: Pos, color: Color): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
+  private def kingMoves(out: scala.collection.mutable.ArrayBuffer[Move], state: GameState, pos: Pos, color: Color): Unit =
     val directions = kingDirections
     var index = 0
     while index < directions.length do
       val (dc, dr) = directions(index)
       val to = pos + (dc, dr)
       if to.isValid && !state.board.isOccupiedBy(to, color) then
-        moves += Move(pos, to)
+        out += Move(pos, to)
       index += 1
-    moves ++= castlingMoves(state, pos, color)
-    moves.toList
+    out ++= castlingMoves(state, pos, color)
 
   // $COVERAGE-OFF$
   private def castlingMoves(state: GameState, kingPos: Pos, color: Color): List[Move] =
@@ -221,9 +242,20 @@ object MoveGenerator:
     found
   }
 
-  private def leavesKingInCheck(state: GameState, move: Move): Boolean =
+  private def leavesKingInCheck(state: GameState, move: Move, kingPos: Option[Pos], inCheck: Boolean): Boolean =
+    kingPos match
+      case Some(kp) if !inCheck && move.from != kp && !sharesLine(kp, move.from) =>
+        // Moving a piece that is not aligned with our king cannot expose a slider check.
+        false
+      case _ =>
+        leavesKingInCheckSlow(state, move)
+
+  private def leavesKingInCheckSlow(state: GameState, move: Move): Boolean =
     val nextBoard = applyMoveToBoard(state, move)
     nextBoard.findKing(state.activeColor).exists(pos => isAttackedBy(nextBoard, pos, state.activeColor.opposite))
+
+  private def sharesLine(a: Pos, b: Pos): Boolean =
+    a.row == b.row || a.col == b.col || math.abs(a.row - b.row) == math.abs(a.col - b.col)
 
   private def applyMoveToBoard(state: GameState, move: Move): Board =
     val board = state.board

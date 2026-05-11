@@ -6,7 +6,6 @@ import com.comcast.ip4s.*
 import chess.controller.GameController
 import chess.rest.Http4sRestApi
 import chess.persistence.PersistenceModule
-import chess.ai.Evaluator
 
 /**
  * Standalone Entry Point für den REST-Microservice.
@@ -31,8 +30,6 @@ object RestMain extends IOApp:
       _ <- Resource.eval(IO(println("===========================================")))
       _ <- Resource.eval(IO(println("  ♟  Chess REST Service  |  Port 8080")))
       _ <- Resource.eval(IO(println("===========================================")))
-      _ <- Resource.eval(IO(Evaluator.loadWeights()))
-      _ <- Resource.eval(IO(println("[AI]   Weights loaded.")))
       
       // Initialize Persistence
       persistence <- Resource.make(chess.persistence.PersistenceModule.build())(_.close())
@@ -46,7 +43,7 @@ object RestMain extends IOApp:
       emailService <- Resource.eval(chess.rest.EmailService.fromEnv())
       
       authService = new chess.rest.AuthService(persistence.userDao, emailService)
-      api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao, persistence.savedGameDao)))
+      api         <- Resource.eval(IO(new Http4sRestApi(kafka, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao)))
       
       _           <- Resource.eval(IO(println("[REST] Starting Http4s Ember server...")))
       

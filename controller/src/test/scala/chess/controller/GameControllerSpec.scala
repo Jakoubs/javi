@@ -362,7 +362,7 @@ class GameControllerSpec extends AnyFunSpec with Matchers {
       }
 
 
-      it("should trigger PassiveTrainer on game end") {
+      it("should end the game correctly on checkmate") {
         // Fast checkmate: 1. f3 e5 2. g4 Qh4# (Fool's Mate)
         var s = initial
         s = GameController.handleCommand(s, Command.ApplyMove(Move(Pos(5, 1), Pos(5, 2)))) // f3

@@ -4,7 +4,7 @@ import cats.effect.IO
 import _root_.slick.jdbc.PostgresProfile
 
 import chess.persistence.config.PersistenceConfig
-import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao, PuzzleDao, SavedGameDao}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao, PuzzleDao, SavedGameDao, TablebaseDao}
 import chess.persistence.mongo.MongoPersistence
 import chess.persistence.slick.SlickPersistence
 
@@ -27,6 +27,7 @@ final class PersistenceModule private (
   val userDao:       UserDao,
   val friendshipDao: FriendshipDao,
   val openingDao:    OpeningDao,
+  val tablebaseDao:  TablebaseDao,
   val puzzleDao:     PuzzleDao,
   val savedGameDao:  SavedGameDao,
   private val closeF: IO[Unit]
@@ -71,7 +72,7 @@ object PersistenceModule:
         poolSize = cfg.slick.poolSize
       )
       .map { slick =>
-        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick, slick, slick.openingDao, slick.puzzleDao, slick.savedGameDao, slick.close())
+        new PersistenceModule(slick.gameDao, slick.moveEventDao, slick, slick, slick.openingDao, slick.tablebaseDao, slick.puzzleDao, slick.savedGameDao, slick.close())
       }
 
   private def buildMongo(cfg: PersistenceConfig): IO[PersistenceModule] =
@@ -82,5 +83,5 @@ object PersistenceModule:
         // For now, let's assume we use Slick for users.
         val dummyUserDao = null.asInstanceOf[UserDao]
         val dummyFriendDao = null.asInstanceOf[FriendshipDao]
-        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, dummyUserDao, dummyFriendDao, mongo.openingDao, mongo.puzzleDao, mongo.savedGameDao, mongo.close())
+        new PersistenceModule(mongo.gameDao, mongo.moveEventDao, dummyUserDao, dummyFriendDao, mongo.openingDao, mongo.tablebaseDao, mongo.puzzleDao, mongo.savedGameDao, mongo.close())
       }

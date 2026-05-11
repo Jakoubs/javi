@@ -329,9 +329,6 @@ object GameController extends Observable[AppState]:
             messageType = MessageType.Success
           )
           
-          if nextApp.status != GameStatus.Playing then
-            chess.ai.PassiveTrainer.train(nextApp.game, nextApp.status)
-          
           nextApp
 
         case Left(errorMsg) =>
@@ -344,7 +341,7 @@ object GameController extends Observable[AppState]:
     var gameApp = AppState.initial
     var moveCount = 0
     while gameApp.status == GameStatus.Playing && moveCount < MAX_MOVES_PER_GAME do
-      val move = chess.ai.AiEngine.bestMove(gameApp.game, 2, epsilon = 0.1)
+      val move = chess.ai.AlphaBetaAgent.bestMove(gameApp.game, 200)
       move match
         case Some(m) => gameApp = handleMove(gameApp, m)
         case None    => gameApp = gameApp.copy(status = GameStatus.Draw("no legal moves"))
@@ -375,15 +372,12 @@ object GameController extends Observable[AppState]:
         if (done % 500 == 0 || done == numGames) then
           eval(Command.AiProgress(s"Training progress: $done/$numGames games completed."))
           
-        // Checkpoint saving
         if (done % checkpointInterval == 0) then
-          chess.ai.Evaluator.saveWeights()
-          eval(Command.AiProgress(s"Checkpoint reached ($done games): Weights saved."))
+          eval(Command.AiProgress(s"Checkpoint reached ($done games)."))
       }
     }
 
     allGames.foreach { _ =>
-      chess.ai.Evaluator.saveWeights()
       eval(Command.AiProgress(s"Training session completed! All $numGames games done."))
     }
 
@@ -398,9 +392,7 @@ object GameController extends Observable[AppState]:
     if app.status != GameStatus.Playing && !app.status.isInstanceOf[GameStatus.Check] then
        app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
-      val moveOpt = app.aiBot match
-        case "simple" => chess.ai.AiEngine.bestMove(app.game, 3)
-        case _        => chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
+      val moveOpt = chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
       
       moveOpt match
         case Some(move) => 
@@ -412,9 +404,7 @@ object GameController extends Observable[AppState]:
     if app.status != GameStatus.Playing then
        app.copy(message = Some("Game is already over."), messageType = MessageType.Error)
     else
-      val moveOpt = app.aiBot match
-        case "simple" => chess.ai.AiEngine.bestMove(app.game, 3)
-        case _        => chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
+      val moveOpt = chess.ai.AlphaBetaAgent.bestMove(app.game, timeLimitFromClock(app))
 
       moveOpt match
         case Some(move) => 
@@ -424,10 +414,10 @@ object GameController extends Observable[AppState]:
 
   private def handleSetAiBot(app: AppState, bot: String): AppState =
     val b = bot.toLowerCase
-    if b == "simple" || b == "alphabeta" then
+    if b == "alphabeta" then
       app.copy(aiBot = b, message = Some(s"AI bot set to $b."), messageType = MessageType.Success)
     else
-      app.copy(message = Some(s"Unknown bot: $b"), messageType = MessageType.Error)
+      app.copy(message = Some("Only 'alphabeta' is supported."), messageType = MessageType.Error)
 
   private def timeLimitFromClock(app: AppState): Long =
     app.clock match

@@ -6,7 +6,6 @@ lazy val http4sVersion  = "0.23.23"
 lazy val slickVersion   = "3.5.1"
 lazy val mongoVersion   = "5.1.0"
 lazy val djlVersion     = "0.31.0"
-lazy val onnxRtVersion  = "1.20.0"
 
 lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-Xmax-inlines", "64"),
@@ -44,15 +43,14 @@ lazy val util = (project in file("util"))
   )
 
 lazy val ai = (project in file("ai"))
-  .dependsOn(model, util)
+  .dependsOn(model, util, persistence)
   .settings(
     commonSettings,
     name := "chess-ai",
     coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|AiEngine|PassiveTrainer|Evaluator)",
     libraryDependencies ++= Seq(
       "ai.djl" % "api" % djlVersion,
-      "ai.djl.onnxruntime" % "onnxruntime-engine" % djlVersion,
-      "com.microsoft.onnxruntime" % "onnxruntime" % onnxRtVersion
+      "ai.djl.onnxruntime" % "onnxruntime-engine" % djlVersion
     )
   )
 
@@ -146,8 +144,9 @@ lazy val lichess = (project in file("lichess"))
     coverageExcludedPackages := "chess\\.lichess.*",
     Compile / run / fork := true,
     Compile / run / javaOptions ++= Seq(
-      "-Xms1G",
-      "-Xmx3G",
+      "-Xms256m",
+      "-Xmx1024m",
+      "-XX:MaxMetaspaceSize=256m",
       "-XX:+UseG1GC",
       "-XX:MaxGCPauseMillis=200",
       "-XX:+UseStringDeduplication"

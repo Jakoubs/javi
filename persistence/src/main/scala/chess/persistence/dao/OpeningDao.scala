@@ -10,6 +10,9 @@ trait OpeningDao:
   /** Find all moves for a given FEN. */
   def findByFen(fen: String): IO[List[Opening]]
 
+  /** Find the highest-weight opening move for a given FEN. */
+  def findBestByFen(fen: String): IO[Option[Opening]]
+
   /** Find all moves for a FEN core (first 4 FEN fields). */
   def findByFenCore(fenCore: String): IO[List[Opening]]
 

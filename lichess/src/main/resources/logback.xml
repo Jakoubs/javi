@@ -1,0 +1,21 @@
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="slick" level="ERROR"/>
+  <logger name="slick.compiler" level="ERROR"/>
+  <logger name="slick.jdbc" level="ERROR"/>
+  <logger name="slick.basic" level="ERROR"/>
+  <logger name="com.zaxxer.hikari" level="ERROR"/>
+  <logger name="org.mongodb.driver" level="ERROR"/>
+  <logger name="ai.djl.repository" level="ERROR"/>
+  <logger name="ai.djl.onnxruntime" level="ERROR"/>
+  <logger name="ai.onnxruntime" level="ERROR"/>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

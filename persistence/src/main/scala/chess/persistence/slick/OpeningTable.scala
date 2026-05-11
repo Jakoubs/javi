@@ -22,11 +22,26 @@ class OpeningTable(val profile: JdbcProfile):
 
   val openings = TableQuery[Openings]
 
+  class OpeningBest(tag: Tag) extends Table[Opening](tag, "opening_best"):
+    def fen    = column[String]("fen")
+    def move   = column[String]("move")
+    def name   = column[Option[String]]("name")
+    def weight = column[Int]("weight")
+
+    def pk = primaryKey("pk_opening_best", fen)
+    def * = (fen, move, name, weight).mapTo[Opening]
+
+  val openingBest = TableQuery[OpeningBest]
+
   import _root_.slick.jdbc.meta.MTable
   import scala.concurrent.ExecutionContext.Implicits.global
-  /** DDL to create the `openings` table if it does not exist. */
+  /** DDL to create the `openings` and `opening_best` tables if they do not exist. */
   val createSchema: profile.api.DBIO[Unit] =
     MTable.getTables("openings").flatMap { tables =>
       if tables.isEmpty then openings.schema.create
       else DBIO.successful(())
-    }
+    } >>
+      MTable.getTables("opening_best").flatMap { tables =>
+        if tables.isEmpty then openingBest.schema.create
+        else DBIO.successful(())
+      }

@@ -1,15 +1,16 @@
 package chess.rest
 
-import cats.effect.unsafe.implicits.global
 import chess.model.{GameRules, GameState}
-import chess.persistence.PersistenceModule
-import chess.persistence.model.Opening
+import chess.persistence.config.PersistenceConfig
 import chess.util.parser.SanMoveParser
 import com.github.luben.zstd.ZstdInputStream
 import com.github.luben.zstd.ZstdIOException
+import org.postgresql.copy.CopyManager
+import org.postgresql.core.BaseConnection
 
-import java.io.{BufferedInputStream, BufferedReader, InputStreamReader}
+import java.io.{BufferedInputStream, BufferedReader, InputStreamReader, StringReader}
 import java.net.URL
+import java.sql.{Connection, DriverManager}
 import scala.collection.mutable
 import scala.util.Try
 
@@ -31,8 +32,9 @@ object LichessDbOpeningImportMain:
     println(s"Opening import start | month=$month | maxPly=$maxPly | maxGames=$maxGames")
     println(s"Source: $url")
 
-    val persistence = PersistenceModule.build().unsafeRunSync()
-    val dao = persistence.openingDao
+    val cfg = PersistenceConfig.load()
+    val db = BulkOpeningImporter.connect(cfg)
+    db.ensureSchema()
 
     val counts = mutable.HashMap.empty[(String, String), Int]
     var parsedGames = 0L
@@ -58,7 +60,7 @@ object LichessDbOpeningImportMain:
             if parsedGames % 1000 == 0 then
               println(s"Progress: games=$parsedGames skipped=$skippedGames uniqueEntries=${counts.size}")
             if parsedGames > 0 && parsedGames % flushEveryGames == 0 then
-              totalUpserts += flushCounts(dao, counts)
+              totalUpserts += db.flushCounts(counts)
               println(s"Checkpoint flush: games=$parsedGames totalUpserts=$totalUpserts")
             movetext.clear()
             if maxGames > 0 && parsedGames >= maxGames then
@@ -71,7 +73,7 @@ object LichessDbOpeningImportMain:
             if parsedGames % 1000 == 0 then
               println(s"Progress: games=$parsedGames skipped=$skippedGames uniqueEntries=${counts.size}")
             if parsedGames > 0 && parsedGames % flushEveryGames == 0 then
-              totalUpserts += flushCounts(dao, counts)
+              totalUpserts += db.flushCounts(counts)
               println(s"Checkpoint flush: games=$parsedGames totalUpserts=$totalUpserts")
             movetext.clear()
             if maxGames > 0 && parsedGames >= maxGames then
@@ -83,16 +85,18 @@ object LichessDbOpeningImportMain:
 
       println(s"Parsing finished: games=$parsedGames skipped=$skippedGames uniqueEntries=${counts.size}")
 
-      totalUpserts += flushCounts(dao, counts)
+      totalUpserts += db.flushCounts(counts)
+      db.rebuildOpeningBest()
 
-      val total = dao.count().unsafeRunSync()
-      println(s"Import complete. upserts=$totalUpserts totalOpenings=$total")
+      val total = db.countOpenings()
+      val totalBest = db.countBest()
+      println(s"Import complete. upserts=$totalUpserts totalOpenings=$total openingBestRows=$totalBest")
 
     finally
       reader.close()
       zstd.close()
       in.close()
-      persistence.close().unsafeRunSync()
+      db.close()
 
   private def processGame(movetextRaw: String, maxPly: Int, counts: mutable.HashMap[(String, String), Int]): Boolean =
     val sanitized = stripPgnNoise(movetextRaw)
@@ -137,27 +141,134 @@ object LichessDbOpeningImportMain:
   private def isResultToken(tok: String): Boolean =
     tok == "1-0" || tok == "0-1" || tok == "1/2-1/2" || tok == "*"
 
-  private def flushCounts(dao: chess.persistence.dao.OpeningDao, counts: mutable.HashMap[(String, String), Int]): Long =
-    if counts.isEmpty then return 0L
-
-    val groupedByFen = counts.iterator.toSeq.groupBy(_._1._1)
-    var upserts = 0L
-    groupedByFen.foreach { case (fen, entries) =>
-      val existing = dao.findByFen(fen).unsafeRunSync().map(o => o.move -> o).toMap
-      entries.foreach { case ((_, move), inc) =>
-        val old = existing.get(move).map(_.weight).getOrElse(0)
-        val merged = Opening(fen = fen, move = move, name = None, weight = old + inc)
-        dao.save(merged).unsafeRunSync()
-        upserts += 1
-      }
-    }
-    counts.clear()
-    upserts
-
   private def safeReadLine(reader: BufferedReader): String =
     try reader.readLine()
     catch
       case e: ZstdIOException if e.getMessage != null && e.getMessage.toLowerCase.contains("truncated") =>
         println(s"Warning: truncated zstd stream encountered. Finishing with parsed subset. (${e.getMessage})")
         null
+
+  private final class BulkOpeningImporter(private val conn: Connection):
+    conn.setAutoCommit(false)
+
+    private val copyManager = CopyManager(conn.unwrap(classOf[BaseConnection]))
+    private val copySql = "COPY opening_import_stage (fen, move, weight) FROM STDIN WITH (FORMAT text)"
+    private val createStageSql =
+      """CREATE TEMP TABLE IF NOT EXISTS opening_import_stage (
+        |  fen text NOT NULL,
+        |  move text NOT NULL,
+        |  weight integer NOT NULL
+        |) ON COMMIT PRESERVE ROWS
+        |""".stripMargin
+    private val mergeSql =
+      """INSERT INTO openings (fen, move, name, weight)
+        |SELECT fen, move, NULL, SUM(weight)
+        |FROM opening_import_stage
+        |GROUP BY fen, move
+        |ON CONFLICT (fen, move)
+        |DO UPDATE SET weight = openings.weight + EXCLUDED.weight
+        |""".stripMargin
+    private val truncateStageSql = "TRUNCATE opening_import_stage"
+
+    def ensureSchema(): Unit =
+      val stmt = conn.createStatement()
+      try
+        stmt.execute(
+          """CREATE TABLE IF NOT EXISTS openings (
+            |  fen text NOT NULL,
+            |  move text NOT NULL,
+            |  name text NULL,
+            |  weight integer NOT NULL,
+            |  CONSTRAINT pk_openings PRIMARY KEY (fen, move)
+            |)
+            |""".stripMargin
+        )
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_openings_fen ON openings (fen)")
+        stmt.execute(
+          """CREATE TABLE IF NOT EXISTS opening_best (
+            |  fen text PRIMARY KEY,
+            |  move text NOT NULL,
+            |  name text NULL,
+            |  weight integer NOT NULL
+            |)
+            |""".stripMargin
+        )
+        stmt.execute(createStageSql)
+        conn.commit()
+      finally stmt.close()
+
+    def flushCounts(counts: mutable.HashMap[(String, String), Int]): Long =
+      if counts.isEmpty then return 0L
+
+      val tsv = new StringBuilder(counts.size * 80)
+      counts.foreach { case ((fen, move), weight) =>
+        tsv
+          .append(escapeCopyText(fen)).append('\t')
+          .append(escapeCopyText(move)).append('\t')
+          .append(weight).append('\n')
+      }
+
+      val stmt = conn.createStatement()
+      try
+        stmt.execute(truncateStageSql)
+        copyManager.copyIn(copySql, StringReader(tsv.toString()))
+        val upserts = stmt.executeUpdate(mergeSql).toLong
+        conn.commit()
+        counts.clear()
+        upserts
+      catch
+        case e: Throwable =>
+          conn.rollback()
+          throw e
+      finally stmt.close()
+
+    def rebuildOpeningBest(): Unit =
+      val stmt = conn.createStatement()
+      try
+        stmt.execute("TRUNCATE opening_best")
+        stmt.executeUpdate(
+          """INSERT INTO opening_best (fen, move, name, weight)
+            |SELECT DISTINCT ON (fen) fen, move, name, weight
+            |FROM openings
+            |ORDER BY fen, weight DESC, move ASC
+            |""".stripMargin
+        )
+        conn.commit()
+      catch
+        case e: Throwable =>
+          conn.rollback()
+          throw e
+      finally stmt.close()
+
+    def countOpenings(): Long =
+      val stmt = conn.createStatement()
+      try
+        val rs = stmt.executeQuery("SELECT COUNT(*) FROM openings")
+        rs.next()
+        rs.getLong(1)
+      finally stmt.close()
+
+    def countBest(): Long =
+      val stmt = conn.createStatement()
+      try
+        val rs = stmt.executeQuery("SELECT COUNT(*) FROM opening_best")
+        rs.next()
+        rs.getLong(1)
+      finally stmt.close()
+
+    def close(): Unit = conn.close()
+
+    private def escapeCopyText(value: String): String =
+      value
+        .replace("\\", "\\\\")
+        .replace("\t", "\\t")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+
+  private object BulkOpeningImporter:
+    def connect(cfg: PersistenceConfig): BulkOpeningImporter =
+      Class.forName(cfg.slick.driver)
+      new BulkOpeningImporter(
+        DriverManager.getConnection(cfg.slick.url, cfg.slick.user, cfg.slick.password)
+      )
 

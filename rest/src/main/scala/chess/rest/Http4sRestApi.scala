@@ -17,12 +17,13 @@ import org.http4s.server.middleware.ErrorHandling
 
 import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
 import chess.controller.{liveMillis, displayFen, historyFen}
-import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, materialInfo, capturedPieces}
-import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao, SavedGameDao}
-import chess.persistence.model.SavedGame
+import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, Move, materialInfo, capturedPieces, GameState}
+import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao}
+import chess.persistence.model.Opening
 import chess.util.parser.CoordinateMoveParser
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.*
+import java.util.concurrent.atomic.AtomicLong
 
 case class SessionState(
   appState: AppState = AppState.initial,
@@ -36,26 +37,90 @@ case class ChallengeRequest(friendId: Long)
 case class ChallengeResponse(partyCode: String)
 case class AddFriendRequest(friendName: String)
 case class AcceptFriendRequest(friendId: Long)
-case class SaveGameRequest(name: String, fen: String, pgn: String)
-case class LoadGameRequest(id: String)
 
 class Http4sRestApi(
   kafkaService: KafkaService,
   authService: AuthService,
   friendshipDao: FriendshipDao,
-  openingDao:    OpeningDao,
-  puzzleDao:     PuzzleDao,
-  savedGameDao:  SavedGameDao
+  openingDao: OpeningDao,
+  puzzleDao: PuzzleDao
 ):
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
   implicit val authReqDecoder: EntityDecoder[IO, AuthRequest] = jsonOf[IO, AuthRequest]
   implicit val challengeReqDecoder: EntityDecoder[IO, ChallengeRequest] = jsonOf[IO, ChallengeRequest]
   implicit val addFriendReqDecoder: EntityDecoder[IO, AddFriendRequest] = jsonOf[IO, AddFriendRequest]
   implicit val acceptFriendReqDecoder: EntityDecoder[IO, AcceptFriendRequest] = jsonOf[IO, AcceptFriendRequest]
-  implicit val saveGameReqDecoder: EntityDecoder[IO, SaveGameRequest] = jsonOf[IO, SaveGameRequest]
-  implicit val loadGameReqDecoder: EntityDecoder[IO, LoadGameRequest] = jsonOf[IO, LoadGameRequest]
 
   private val sessions = TrieMap.empty[String, SessionState]
+
+  // Opening-Book observability / tuning
+  private val openingDbQueryCount = AtomicLong(0L)
+  private val openingDbHitCount = AtomicLong(0L)
+  private val openingDbMissCount = AtomicLong(0L)
+  private val minOpeningWeight = 1
+
+  private def fenParts(fen: String): Array[String] =
+    fen.trim.split("\\s+")
+
+  // Keep piece placement + turn + castling rights + en-passant (first 4 FEN fields)
+  private def fenCoreKey(fen: String): Option[String] =
+    val parts = fenParts(fen)
+    if parts.length >= 4 then Some(parts.take(4).mkString(" ")) else None
+
+  // Keep piece placement + turn (first 2 FEN fields)
+  private def fenBoardTurnKey(fen: String): Option[String] =
+    val parts = fenParts(fen)
+    if parts.length >= 2 then Some(parts.take(2).mkString(" ")) else None
+
+  private def weightedPick(candidates: List[(Opening, Move)]): (Opening, Move) =
+    val total = candidates.map { case (o, _) => Math.max(0, o.weight).toDouble }.sum
+    if total <= 0.0 then candidates.head
+    else
+      val r = scala.util.Random.nextDouble() * total
+      var acc = 0.0
+      var chosen: Option[(Opening, Move)] = None
+      val it = candidates.iterator
+      while chosen.isEmpty && it.hasNext do
+        val next = it.next()
+        acc += Math.max(0, next._1.weight).toDouble
+        if r <= acc then chosen = Some(next)
+      chosen.getOrElse(candidates.head)
+
+  private def tryBookMove(game: GameState, fenKey: String, source: String): IO[Option[(Opening, Move, String)]] =
+    openingDao.findByFen(fenKey).map { openings =>
+      val byWeight = openings.filter(_.weight >= minOpeningWeight)
+      val legal = byWeight.flatMap { o =>
+        CoordinateMoveParser.parse(o.move, game).toOption.map(m => (o, m))
+      }
+
+      legal match
+        case (chosen :: _) =>
+          val picked = weightedPick(legal)
+          println(s"[OPENING][DB] read=true source=$source fenKeyFields=${fenKey.split("\\s+").length} openings=${openings.size} weightOk=${byWeight.size} legalOk=${legal.size} chosen=${picked._1.move} expected=book-weight:${picked._1.weight}")
+          Some((picked._1, picked._2, source))
+        case Nil =>
+          val reason =
+            if openings.isEmpty then "no-db-entries"
+            else if byWeight.isEmpty then s"all-below-min-weight($minOpeningWeight)"
+            else "no-legal-book-moves"
+          println(s"[OPENING][DB] read=true hit=false source=$source fenKeyFields=${fenKey.split("\\s+").length} openings=${openings.size} weightOk=${byWeight.size} expected=$reason")
+          None
+    }
+
+  private def findBookMoveWithFallback(game: GameState): IO[Option[(Opening, Move, String)]] =
+    val fen = game.toFen
+    val stages: List[(String, String)] =
+      List((fen, "book/exact")) ++
+        fenCoreKey(fen).map(k => (k, "book/fen-core")).toList ++
+        fenBoardTurnKey(fen).map(k => (k, "book/fen-board+turn")).toList
+
+    stages.foldLeft(IO.pure(Option.empty[(Opening, Move, String)])) { (accIO, stage) =>
+      val (fenKey, source) = stage
+      accIO.flatMap {
+        case Some(res) => IO.pure(Some(res))
+        case None      => tryBookMove(game, fenKey, source)
+      }
+    }
 
   private def getSession(sid: Option[String]): (String, SessionState) =
     val id = sid.getOrElse("default")
@@ -257,60 +322,49 @@ class Http4sRestApi(
         case Left(_) => BadRequest("Invalid FEN string")
       }
 
-    // ─── Saved Games ─────────────────────────────────────────────────────────
-
-    case req @ POST -> Root / "api" / "games" / "save" :? UserIdParam(uid) =>
-      req.as[SaveGameRequest].flatMap { saveReq =>
-        val game = SavedGame(
-          id = java.util.UUID.randomUUID().toString,
-          name = saveReq.name,
-          fen = saveReq.fen,
-          pgn = saveReq.pgn,
-          userId = uid
-        )
-        savedGameDao.save(game) >> Ok(s"Game '${saveReq.name}' saved")
-      }
-
-    case GET -> Root / "api" / "games" / "saved" :? UserIdParam(uid) =>
-      savedGameDao.findByUserId(uid).flatMap(games => Ok(games.asJson))
-
-    case req @ POST -> Root / "api" / "games" / "load" :? SessionIdParam(sid) =>
-      req.as[LoadGameRequest].flatMap { loadReq =>
-        savedGameDao.findSavedGameById(loadReq.id).flatMap {
-          case Some(game) =>
-            val (sessionId, _) = getSession(sid)
-            dispatch(sessionId, Command.LoadFen(game.fen)).flatMap { newState =>
-              val msg = s"Loaded game: ${game.name}"
-              IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(message = Some(msg))))) >> Ok(msg)
-            }
-          case None => NotFound("Saved game not found")
-        }
-      }
-
     case req =>
       IO(println(s"[REST DEBUG] Unmatched request: ${req.method} ${req.uri}")) >> NotFound(s"Route not found: ${req.uri}")
   }
 
   private def handleAiWithOpening(cmd: Command, sessionId: String, session: SessionState): IO[Response[IO]] =
     val app = session.appState
-    openingDao.findByFen(app.game.toFen).flatMap {
-      case Nil => dispatch(sessionId, cmd).flatMap(ns => if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("AI moved"))
-      case openings =>
-        val chosen = openings(scala.util.Random.nextInt(openings.size))
-        CoordinateMoveParser.parse(chosen.move, app.game).toOption match {
-          case Some(move) =>
-            if (cmd == Command.AiMove) {
-              dispatch(sessionId, Command.ApplyMove(move)).flatMap { _ =>
-                val msg = s"AI played opening: ${chosen.name.getOrElse("Book Move")} (${chosen.move})"
-                dispatch(sessionId, Command.SetOpening(chosen.name)).flatMap { _ =>
-                  IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = Some(msg))))) >> Ok(msg)
-                }
-              }
-            } else {
-              val msg = s"Opening suggests: ${chosen.move}"
-              IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = Some(move.from), highlights = Set(move.to), message = Some(msg))))) >> Ok(msg)
+    val game = app.game
+
+    openingDbQueryCount.incrementAndGet()
+    findBookMoveWithFallback(game).flatMap {
+      case None =>
+        openingDbMissCount.incrementAndGet()
+        val q = openingDbQueryCount.get()
+        val hitRate = openingDbHitCount.get().toDouble / Math.max(1L, q).toDouble
+        println(s"[OPENING][DB] read=true hit=false fallback-to-engine=true hitRate=${"%.3f".format(hitRate)} expected=engine-search")
+        dispatch(sessionId, cmd).flatMap(ns =>
+          if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("AI moved")
+        )
+
+      case Some((chosen, move, source)) =>
+        openingDbHitCount.incrementAndGet()
+        val q = openingDbQueryCount.get()
+        val hitRate = openingDbHitCount.get().toDouble / Math.max(1L, q).toDouble
+        println(s"[OPENING][DB] read=true hit=true source=$source hitRate=${"%.3f".format(hitRate)} chosen=${chosen.move} expected=book-weight:${chosen.weight}")
+
+        if (cmd == Command.AiMove) {
+          dispatch(sessionId, Command.ApplyMove(move)).flatMap { _ =>
+            val msg = s"AI played opening ($source): ${chosen.name.getOrElse("Book Move")} (${chosen.move})"
+            dispatch(sessionId, Command.SetOpening(chosen.name)).flatMap { _ =>
+              IO(
+                sessions.get(sessionId).foreach(s =>
+                  sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = Some(msg)))
+                )
+              ) >> Ok(msg)
             }
-          case None => dispatch(sessionId, cmd).flatMap(_ => Ok("AI moved (fallback)"))
+          }
+        } else {
+          val msg = s"Opening suggests ($source): ${chosen.move}"
+          IO(
+            sessions.get(sessionId).foreach(s =>
+              sessions.put(sessionId, s.copy(selectedPos = Some(move.from), highlights = Set(move.to), message = Some(msg)))
+            )
+          ) >> Ok(msg)
         }
     }
 

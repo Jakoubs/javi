@@ -20,7 +20,6 @@ class Tui(console: ConsoleIO = StdConsoleIO) extends Observer[AppState]:
     renderFull(app, console)
 
   def run(): Unit =
-    chess.ai.Evaluator.loadWeights()
     // Trigger initial render
     GameController.notifyObservers(GameController.appState)
 

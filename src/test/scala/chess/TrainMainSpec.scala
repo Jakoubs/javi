@@ -7,20 +7,17 @@ import java.nio.file.Files
 
 class TrainMainSpec extends AnyFunSpec with Matchers {
   describe("TrainMain") {
-    it("should run 1 training game and save weights") {
+    it("should run 1 training game and write metadata") {
       val tempDir = Files.createTempDirectory("chess-training-test").toString
       
       // Run TrainMain with 1 game
       TrainMain.main(Array("1", tempDir))
       
-      val weightsFile = new File(s"$tempDir/ai_weights.txt")
       val metaFile    = new File(s"$tempDir/training_meta.txt")
       
-      weightsFile.exists() shouldBe true
       metaFile.exists() shouldBe true
       
       // Cleanup
-      weightsFile.delete()
       metaFile.delete()
       new File(tempDir).delete()
     }
@@ -31,10 +28,9 @@ class TrainMainSpec extends AnyFunSpec with Matchers {
       // So instead, we just test with explicit 1 game.
       val tempDir = Files.createTempDirectory("chess-training-test-2").toString
       TrainMain.main(Array("1", tempDir))
-      new File(s"$tempDir/ai_weights.txt").exists() shouldBe true
+      new File(s"$tempDir/training_meta.txt").exists() shouldBe true
       
       // Cleanup
-      new File(s"$tempDir/ai_weights.txt").delete()
       new File(s"$tempDir/training_meta.txt").delete()
       new File(tempDir).delete()
     }

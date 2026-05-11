@@ -137,6 +137,12 @@ sealed trait GameState:
   def history:         List[GameState]
 
   def withHistory: GameState
+
+  // Cached king squares for this immutable state (avoids repeated board scans).
+  lazy val whiteKingPos: Option[Pos] = board.findKing(Color.White)
+  lazy val blackKingPos: Option[Pos] = board.findKing(Color.Black)
+  def kingPos(color: Color): Option[Pos] =
+    if color == Color.White then whiteKingPos else blackKingPos
   
   def toFen: String =
     val enPassant = enPassantTarget.map(_.toAlgebraic).getOrElse("-")

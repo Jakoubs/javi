@@ -53,13 +53,13 @@ object Main:
       val emailService = EmailService.fromEnv().unsafeRunSync()
       val authService = new AuthService(persistence.userDao, emailService)
       shutdownHooks = persistence.close() :: shutdownHooks
-      new Http4sRestApi(KafkaService.noOp, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao, persistence.savedGameDao)
+      new Http4sRestApi(KafkaService.noOp, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao)
     catch
       case _: Throwable =>
         val userDao = InMemoryUserDao
         val friendshipDao = InMemoryFriendshipDao
         val authService = new AuthService(userDao, new EmailService("", "", "", "", "noreply@localhost"))
-        new Http4sRestApi(KafkaService.noOp, authService, friendshipDao, InMemoryOpeningDao, InMemoryPuzzleDao, InMemorySavedGameDao)
+        new Http4sRestApi(KafkaService.noOp, authService, friendshipDao, InMemoryOpeningDao, InMemoryPuzzleDao)
 
   private object InMemoryUserDao extends UserDao:
     override def save(user: User): IO[Long] = IO.pure(1L)
@@ -77,6 +77,9 @@ object Main:
 
   private object InMemoryOpeningDao extends OpeningDao:
     override def findByFen(fen: String): IO[List[chess.persistence.model.Opening]] = IO.pure(Nil)
+    override def findBestByFen(fen: String): IO[Option[chess.persistence.model.Opening]] = IO.pure(None)
+    override def findByFenCore(fenCore: String): IO[List[chess.persistence.model.Opening]] = IO.pure(Nil)
+    override def findByFenBoardTurn(fenBoardTurn: String): IO[List[chess.persistence.model.Opening]] = IO.pure(Nil)
     override def save(opening: chess.persistence.model.Opening): IO[Unit] = IO.unit
     override def count(): IO[Long] = IO.pure(0L)
     override def deleteAll(): IO[Unit] = IO.unit

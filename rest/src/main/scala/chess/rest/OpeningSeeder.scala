@@ -19,6 +19,19 @@ import scala.concurrent.duration.*
  */
 class OpeningSeeder(explorer: LichessOpeningExplorer, persistence: PersistenceModule)(using ec: ExecutionContext):
 
+  private def fenParts(fen: String): Array[String] =
+    fen.trim.split("\\s+")
+
+  // Keep piece placement + turn + castling rights + en-passant (first 4 FEN fields)
+  private def fenCoreKey(fen: String): Option[String] =
+    val parts = fenParts(fen)
+    if parts.length >= 4 then Some(parts.take(4).mkString(" ")) else None
+
+  // Keep piece placement + turn (first 2 FEN fields)
+  private def fenBoardTurnKey(fen: String): Option[String] =
+    val parts = fenParts(fen)
+    if parts.length >= 2 then Some(parts.take(2).mkString(" ")) else None
+
   /**
    * Run the seeding process.
    * 
@@ -41,16 +54,31 @@ class OpeningSeeder(explorer: LichessOpeningExplorer, persistence: PersistenceMo
         case Some(res) =>
           val movesToFetch = res.moves.take(branch)
           movesToFetch.traverse { m =>
+            val fenExact = state.toFen
+            val coreKeyOpt = fenCoreKey(fenExact)
+            val boardKeyOpt = fenBoardTurnKey(fenExact)
+
+            val openingsToSave = (
+              List((fenExact, "exact")) ++
+                coreKeyOpt.map(k => (k, "fen-core")).toList ++
+                boardKeyOpt.map(k => (k, "fen-board+turn")).toList
+            // avoid pointless duplicates (e.g. if normalization produces same string)
+            ).distinctBy(_._1)
+
             val opening = Opening(
-              fen = state.toFen,
+              fen = fenExact,
               move = m.uci,
               name = res.opening.map(_.name),
               weight = m.white + m.draws + m.black
             )
             
             for {
-              _ <- persistence.openingDao.save(opening)
-              _ <- IO.println(s"Saved: ${opening.name.getOrElse("?")} | ${opening.move} (depth remaining: $depth)")
+              _ <- openingsToSave.traverse { (fenKey, _) =>
+                persistence.openingDao.save(
+                  opening.copy(fen = fenKey)
+                )
+              }
+              _ <- IO.println(s"Saved: ${opening.name.getOrElse("?")} | ${opening.move} @${openingsToSave.size} fen-keys (depth remaining: $depth)")
               
               // Apply move to get next FEN
               _ <- CoordinateMoveParser.parse(m.uci, state).toOption match {
