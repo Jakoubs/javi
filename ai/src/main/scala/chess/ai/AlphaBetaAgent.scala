@@ -54,6 +54,18 @@ object AlphaBetaAgent:
   private val RootDrawPolicyBias = 0.35
   private val FastHceAtOrBelowDepth =
     sys.env.get("CHESS_FAST_HCE_DEPTH").flatMap(_.toIntOption).getOrElse(-1)
+  private val PonderTotalCapMs =
+    sys.env.get("CHESS_PONDER_TOTAL_CAP_MS").flatMap(_.toLongOption).filter(_ > 0L)
+  private val PonderPredictMinMs =
+    sys.env.get("CHESS_PONDER_PREDICT_MIN_MS").flatMap(_.toLongOption).getOrElse(80L).max(1L)
+  private val PonderPredictMaxMs =
+    sys.env.get("CHESS_PONDER_PREDICT_MAX_MS").flatMap(_.toLongOption).getOrElse(350L).max(PonderPredictMinMs)
+  private val PonderPredictFraction =
+    sys.env.get("CHESS_PONDER_PREDICT_FRACTION").flatMap(_.toDoubleOption).getOrElse(0.25).max(0.0)
+  private val PonderReplyMinMs =
+    sys.env.get("CHESS_PONDER_REPLY_MIN_MS").flatMap(_.toLongOption).getOrElse(20L).max(1L)
+  private val PonderReplyMaxMs =
+    sys.env.get("CHESS_PONDER_REPLY_MAX_MS").flatMap(_.toLongOption).filter(_ > 0L)
   private val NnBlendWeight =
     sys.env.get("CHESS_NN_BLEND_WEIGHT").flatMap(_.toDoubleOption).getOrElse(0.2).max(0.0).min(1.0)
   private val RootNnTieBreakWindow =
@@ -114,7 +126,7 @@ object AlphaBetaAgent:
   final case class SearchResult(move: Move, scoreCp: Double, depth: Int, nodes: Long)
   private final case class AspirationStats(hit: Boolean, failLow: Int, failHigh: Int, retries: Int)
   private final case class OpeningHit(move: Move, weight: Int)
-  private final case class TablebaseHit(move: Move, wdl: Int, dtz: Option[Int], dtm: Option[Int])
+  private final case class TablebaseHit(move: Move, wdl: Int, dtz: Option[Int], dtm: Option[Int], source: String)
 
   private val zobristRandom = new SplittableRandom(0x1A2B3C4D5E6F7788L)
   private def nextZobrist(): Long =
@@ -168,15 +180,17 @@ object AlphaBetaAgent:
 
   def ponderLine(state: GameState, timeLimitMs: Long): Option[PonderResult] =
     val started = System.currentTimeMillis()
-    val totalBudget = math.max(1L, timeLimitMs)
-    val predictBudget = math.max(80L, math.min(350L, totalBudget / 4L))
+    val totalBudget = math.max(1L, PonderTotalCapMs.map(cap => math.min(timeLimitMs, cap)).getOrElse(timeLimitMs))
+    val fractionalPredict = math.round(totalBudget.toDouble * PonderPredictFraction)
+    val predictBudget = math.max(PonderPredictMinMs, math.min(PonderPredictMaxMs, fractionalPredict))
     runSearch(state, predictBudget, SearchMode.PonderPredict, logFinalMove = false).map { prediction =>
       val expectedMove = prediction.move
       val expectedState = GameRules.applyMove(state, expectedMove)
       val elapsed = System.currentTimeMillis() - started
       val remaining = math.max(1L, totalBudget - elapsed)
+      val replyBudget = PonderReplyMaxMs.map(cap => math.min(remaining, cap)).getOrElse(remaining)
       val replySearch =
-        if remaining > 20L then runSearch(expectedState, remaining, SearchMode.PonderReply, logFinalMove = false)
+        if replyBudget >= PonderReplyMinMs then runSearch(expectedState, replyBudget, SearchMode.PonderReply, logFinalMove = false)
         else None
       val plannedReply = replySearch.map(_.move)
       val depth = math.max(prediction.depth, replySearch.map(_.depth).getOrElse(0))
@@ -187,15 +201,18 @@ object AlphaBetaAgent:
     }
 
   private def runSearch(state: GameState, timeLimitMs: Long, mode: SearchMode, logFinalMove: Boolean): Option[SearchResult] =
+    val searchState =
+      if state.history.isEmpty then state
+      else state.copy(history = Nil, repetitionCounts = state.repetitionCounts)
     val profile = TimeProfile()
     val startedAll = System.nanoTime()
-    val legalMoves = cachedLegalMoves(state, positionHash(state), profile)
+    val legalMoves = cachedLegalMoves(searchState, positionHash(searchState), profile)
     if legalMoves.isEmpty then return None
     if legalMoves.size == 1 then return legalMoves.headOption.map(move => SearchResult(move, 0.0, 0, 0L))
 
-    if state.board.pieceCount <= 5 then
+    if searchState.board.pieceCount <= SyzygyProbe.maxPieces then
       val tbStart = System.nanoTime()
-      val tablebaseMove = lookupTablebaseMove(state, legalMoves)
+      val tablebaseMove = lookupTablebaseMove(searchState, legalMoves)
       profile.tablebaseLookupNs += (System.nanoTime() - tbStart)
       if mode == SearchMode.Search then
         tablebaseMove.foreach { hit =>
@@ -205,7 +222,7 @@ object AlphaBetaAgent:
             else "draw"
           val mateInfo = hit.dtm.map(x => s"mateIn=$x").getOrElse("mateIn=n/a")
           val dtzInfo = hit.dtz.map(x => s"dtz=$x").getOrElse("dtz=n/a")
-          println(s"[AI][MOVE] source=TABLEBASE move=${hit.move.toInputString} pieces=${state.board.pieceCount} verdict=$verdict $mateInfo $dtzInfo")
+          println(s"[AI][MOVE] source=${hit.source} move=${hit.move.toInputString} pieces=${searchState.board.pieceCount} verdict=$verdict $mateInfo $dtzInfo")
         }
       if tablebaseMove.nonEmpty then
         if logFinalMove then
@@ -213,15 +230,15 @@ object AlphaBetaAgent:
           logTimeProfile(profile, nodes = 0L)
         return tablebaseMove.map(hit => SearchResult(hit.move, 0.0, 0, 0L))
 
-    val currentPly = plyFromState(state)
+    val currentPly = plyFromState(searchState)
     val shouldQueryOpeningDb =
       mode == SearchMode.Search &&
       currentPly <= MaxOpeningBookPly &&
-      state.board.pieceCount > 10
+      searchState.board.pieceCount > 10
     val bookMove =
       if shouldQueryOpeningDb then
         val obStart = System.nanoTime()
-        val bm = lookupOpeningMove(state, legalMoves)
+        val bm = lookupOpeningMove(searchState, legalMoves)
         profile.openingLookupNs += (System.nanoTime() - obStart)
         bm
       else None
@@ -261,7 +278,7 @@ object AlphaBetaAgent:
         var retries = 0
         var done = false
         while !done do
-          searchRoot(state, legalMoves, depth, deadline, profile, alphaWindow, betaWindow) match
+          searchRoot(searchState, legalMoves, depth, deadline, profile, alphaWindow, betaWindow) match
             case Some(rs) =>
               completedNodes += rs.nodes
               completedStats = mergeStats(completedStats, rs.stats)
@@ -333,8 +350,7 @@ object AlphaBetaAgent:
     var bestMove: Option[Move] = None
     var bestScore = Double.NegativeInfinity
     val rootScores = scala.collection.mutable.ListBuffer.empty[(Move, Double)]
-    val historyRepetitionCounts = buildHistoryRepetitionCounts(state.history)
-    val repetitionFlags = ordered.map(m => wouldCauseImmediateThreefold(state, m, historyRepetitionCounts))
+    val repetitionFlags = ordered.map(m => wouldCauseImmediateThreefold(state, m))
     val materialLeadCp = materialLeadCpFor(state, state.activeColor)
     val stalemateFlags =
       if materialLeadCp >= StalemateAvoidMaterialCp then ordered.map(m => wouldCauseImmediateStalemate(state, m))
@@ -1255,22 +1271,10 @@ object AlphaBetaAgent:
 
   private def wouldCauseImmediateThreefold(
     state: GameState,
-    move: Move,
-    historyCounts: Map[Long, Int]
+    move: Move
   ): Boolean =
     val child = fastApplyMove(state, move)
-    val key = positionHash(child)
-    val count = 1 + historyCounts.getOrElse(key, 0) // child itself + matching history states
-    count >= 3
-
-  private def buildHistoryRepetitionCounts(history: List[GameState]): Map[Long, Int] =
-    val m = scala.collection.mutable.HashMap.empty[Long, Int]
-    var i = 0
-    while i < history.length do
-      val key = positionHash(history(i))
-      m.update(key, m.getOrElse(key, 0) + 1)
-      i += 1
-    m.toMap
+    child.repetitionCounts.getOrElse(child.positionHash, 0) >= 3
 
   private def wouldCauseImmediateStalemate(state: GameState, move: Move): Boolean =
     val child = fastApplyMove(state, move)
@@ -1399,10 +1403,15 @@ object AlphaBetaAgent:
       )
 
   private def lookupTablebaseMove(state: GameState, legalMoves: List[Move]): Option[TablebaseHit] =
-    persistenceOpt
-      .flatMap(_.tablebaseDao.findEntryByFen(state.toFen).unsafeRunSync())
-      .flatMap(e =>
-        CoordinateMoveParser.parse(e.bestMove, state).toOption
-          .filter(legalMoves.contains)
-          .map(m => TablebaseHit(m, e.wdl, e.dtz, e.dtm))
+    SyzygyProbe.probe(state)
+      .map(hit => TablebaseHit(hit.move, hit.wdl, hit.dtz, hit.dtm, "SYZYGY"))
+      .filter(hit => legalMoves.contains(hit.move))
+      .orElse(
+        persistenceOpt
+          .flatMap(_.tablebaseDao.findEntryByFen(state.toFen).unsafeRunSync())
+          .flatMap(e =>
+            CoordinateMoveParser.parse(e.bestMove, state).toOption
+              .filter(legalMoves.contains)
+              .map(m => TablebaseHit(m, e.wdl, e.dtz, e.dtm, "TABLEBASE_DB"))
+          )
       )
