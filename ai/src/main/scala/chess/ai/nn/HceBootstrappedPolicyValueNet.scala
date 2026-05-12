@@ -1,6 +1,6 @@
 package chess.ai.nn
 
-import chess.model.{Color, GameState, Move, Piece, PieceType}
+import chess.model.{Color, GameState, Move, Piece, PieceType, Pos}
 
 class HceBootstrappedPolicyValueNet(
   includePositionalHeuristics: Boolean = true
@@ -235,6 +235,8 @@ object HceBootstrappedPolicyValueNet:
     val ownByFile = ownPawns.groupBy(_.col).view.mapValues(_.size).toMap
     val ownKnightCount = own.count(_._2.pieceType == PieceType.Knight)
     val ownBishopCount = own.count(_._2.pieceType == PieceType.Bishop)
+    val ownDevelopedMinors = developedMinorCount(own, color)
+    val oppDevelopedMinors = developedMinorCount(opp, color.opposite)
 
     var score = 0
 
@@ -247,8 +249,10 @@ object HceBootstrappedPolicyValueNet:
     }
 
     score += developmentScore(own, color, endgame)
-    score += earlyQueenPenalty(own, color, ownKnightCount + ownBishopCount)
-    score += kingSafetyScore(state, own, color, endgame)
+    score += earlyQueenPenalty(own, color, ownDevelopedMinors)
+    score += openingCoordinationScore(state, own, color, endgame, ownDevelopedMinors)
+    score += kingSafetyScore(state, own, opp, ownPawns, oppPawns, color, endgame)
+    score += initiativePressureScore(state, own, opp, ownPawns, oppPawns, color, endgame, ownDevelopedMinors, oppDevelopedMinors)
 
     if ownBishopCount >= 2 then score += 22
     score += rookFileActivity(own, ownByFile, oppPawns, color, endgame)
@@ -318,13 +322,56 @@ object HceBootstrappedPolicyValueNet:
           case _ => acc
       }
 
-  private def earlyQueenPenalty(own: List[(chess.model.Pos, Piece)], color: Color, ownMinorCount: Int): Int =
+  private def developedMinorCount(own: List[(Pos, Piece)], color: Color): Int =
+    val homeRow = if color == Color.White then 0 else 7
+    own.count {
+      case (p, Piece(_, PieceType.Knight | PieceType.Bishop)) => p.row != homeRow
+      case _ => false
+    }
+
+  private def earlyQueenPenalty(own: List[(chess.model.Pos, Piece)], color: Color, ownDevelopedMinors: Int): Int =
     val queenStart = if color == Color.White then chess.model.Pos(3, 0) else chess.model.Pos(3, 7)
     own.find(_._2.pieceType == PieceType.Queen) match
-      case Some((qPos, _)) if qPos != queenStart && ownMinorCount >= 3 => -20
+      case Some((qPos, _)) if qPos != queenStart && ownDevelopedMinors <= 2 => -36
+      case Some((qPos, _)) if qPos != queenStart && ownDevelopedMinors == 3 => -18
       case _ => 0
 
-  private def kingSafetyScore(state: GameState, own: List[(chess.model.Pos, Piece)], color: Color, endgame: Boolean): Int =
+  private def openingCoordinationScore(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    color: Color,
+    endgame: Boolean,
+    ownDevelopedMinors: Int
+  ): Int =
+    if endgame then 0
+    else
+      val homeRow = if color == Color.White then 0 else 7
+      val rooks = own.collect { case (p, Piece(_, PieceType.Rook)) => p }
+      val kingPos = own.collectFirst { case (p, Piece(_, PieceType.King)) => p }.getOrElse(Pos(4, homeRow))
+      val rooksMovedEarlyPenalty =
+        if ownDevelopedMinors <= 2 then
+          rooks.count(p => !(p.row == homeRow && (p.col == 0 || p.col == 7))) * 18
+        else 0
+      val kingCentralPenalty =
+        if kingPos.row == homeRow && kingPos.col >= 3 && kingPos.col <= 5 && ownDevelopedMinors <= 2 then 18
+        else 0
+      val castlingRights = state.castlingRights
+      val lostCastlingPenalty =
+        if color == Color.White then
+          if !castlingRights.whiteKingSide && !castlingRights.whiteQueenSide && ownDevelopedMinors <= 2 then 18 else 0
+        else
+          if !castlingRights.blackKingSide && !castlingRights.blackQueenSide && ownDevelopedMinors <= 2 then 18 else 0
+      -(rooksMovedEarlyPenalty + kingCentralPenalty + lostCastlingPenalty)
+
+  private def kingSafetyScore(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    opp: List[(Pos, Piece)],
+    ownPawns: List[Pos],
+    oppPawns: List[Pos],
+    color: Color,
+    endgame: Boolean
+  ): Int =
     val kingPosOpt = own.collectFirst { case (p, Piece(_, PieceType.King)) => p }
     if kingPosOpt.isEmpty then return 0
     val kingPos = kingPosOpt.get
@@ -336,19 +383,152 @@ object HceBootstrappedPolicyValueNet:
 
     var s = 0
     val castled = kingPos == chess.model.Pos(6, row) || kingPos == chess.model.Pos(2, row)
-    if castled then s += (if endgame then 8 else 28)
-    else if !hasKingSideRight && !hasQueenSideRight then s -= (if endgame then 6 else 20)
+    if castled then s += (if endgame then 10 else 34)
+    else if !hasKingSideRight && !hasQueenSideRight then s -= (if endgame then 10 else 34)
 
     if !endgame then
       val shieldSquares =
         if kingPos.col >= 5 then List(chess.model.Pos(5, pawnShieldRow), chess.model.Pos(6, pawnShieldRow), chess.model.Pos(7, pawnShieldRow))
         else if kingPos.col <= 2 then List(chess.model.Pos(0, pawnShieldRow), chess.model.Pos(1, pawnShieldRow), chess.model.Pos(2, pawnShieldRow))
         else Nil
-      val ownPawnSet = own.collect { case (p, Piece(_, PieceType.Pawn)) => p }.toSet
+      val ownPawnSet = ownPawns.toSet
       shieldSquares.foreach { sq =>
-        if ownPawnSet.contains(sq) then s += 6 else s -= 8
+        if ownPawnSet.contains(sq) then s += 8 else s -= 16
       }
+      s -= kingFilePressureScore(kingPos, ownPawns, oppPawns, opp, color)
+      s -= advancedShieldPawnExposure(kingPos, ownPawns, color)
+      s -= enemyHeavyPiecePressure(kingPos, opp)
+      s -= enemyKnightOutpostPressure(state, kingPos, ownPawns, opp, color)
     s
+
+  private def initiativePressureScore(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    opp: List[(Pos, Piece)],
+    ownPawns: List[Pos],
+    oppPawns: List[Pos],
+    color: Color,
+    endgame: Boolean,
+    ownDevelopedMinors: Int,
+    oppDevelopedMinors: Int
+  ): Int =
+    if endgame then 0
+    else
+      val oppKingPosOpt = opp.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+      if oppKingPosOpt.isEmpty then 0
+      else
+        val oppKingPos = oppKingPosOpt.get
+        val heavyPressure = enemyHeavyPiecePressure(oppKingPos, own)
+        val knightPressure = enemyKnightOutpostPressure(state, oppKingPos, oppPawns, own, color.opposite)
+        val filePressure = kingFilePressureScore(oppKingPos, oppPawns, ownPawns, own, color.opposite)
+        val developmentLead = (ownDevelopedMinors - oppDevelopedMinors).max(0)
+        val initiativeBase = (heavyPressure / 2) + (knightPressure / 2) + (filePressure / 2)
+        initiativeBase + (developmentLead * 8)
+
+  private def kingFilePressureScore(
+    kingPos: Pos,
+    ownPawns: List[Pos],
+    oppPawns: List[Pos],
+    enemyPieces: List[(Pos, Piece)],
+    color: Color
+  ): Int =
+    val files = ((kingPos.col - 1) to (kingPos.col + 1)).filter(f => f >= 0 && f <= 7)
+    files.map { file =>
+      val ownPawnOnFile = ownPawns.exists(_.col == file)
+      val oppPawnOnFile = oppPawns.exists(_.col == file)
+      val heavyOnFile = enemyPieces.count {
+        case (p, Piece(_, PieceType.Rook | PieceType.Queen)) => p.col == file
+        case _ => false
+      }
+      val closeHeavy = enemyPieces.exists {
+        case (p, Piece(_, PieceType.Rook | PieceType.Queen)) =>
+          p.col == file &&
+          math.abs(p.row - kingPos.row) <= 4 &&
+          (if color == Color.White then p.row >= kingPos.row else p.row <= kingPos.row)
+        case _ => false
+      }
+      val opennessPenalty =
+        if !ownPawnOnFile && !oppPawnOnFile then 10
+        else if !ownPawnOnFile then 6
+        else 0
+      val heavyPenalty = heavyOnFile * (if closeHeavy then 12 else 8)
+      opennessPenalty + heavyPenalty
+    }.sum
+
+  private def advancedShieldPawnExposure(kingPos: Pos, ownPawns: List[Pos], color: Color): Int =
+    if kingPos.col < 5 then 0
+    else
+      val homeShieldRow = if color == Color.White then 1 else 6
+      val advancedRows =
+        if color == Color.White then Set(2, 3, 4)
+        else Set(5, 4, 3)
+      val shieldFiles = List(5, 6, 7)
+      shieldFiles.map { file =>
+        val hasHomePawn = ownPawns.exists(p => p.col == file && p.row == homeShieldRow)
+        val advancedPawn = ownPawns.exists(p => p.col == file && advancedRows.contains(p.row))
+        if !hasHomePawn && advancedPawn then 14
+        else if !hasHomePawn then 8
+        else 0
+      }.sum
+
+  private def enemyHeavyPiecePressure(kingPos: Pos, enemyPieces: List[(Pos, Piece)]): Int =
+    enemyPieces.map {
+      case (p, Piece(_, PieceType.Queen)) =>
+        val d = chebyshevDistance(p, kingPos)
+        if d <= 2 then 26
+        else if d <= 4 then 14
+        else 0
+      case (p, Piece(_, PieceType.Rook)) =>
+        val d = chebyshevDistance(p, kingPos)
+        if d <= 2 then 18
+        else if d <= 4 then 10
+        else 0
+      case _ => 0
+    }.sum
+
+  private def enemyKnightOutpostPressure(
+    state: GameState,
+    kingPos: Pos,
+    ownPawns: List[Pos],
+    enemyPieces: List[(Pos, Piece)],
+    color: Color
+  ): Int =
+    enemyPieces.map {
+      case (p, Piece(_, PieceType.Knight)) =>
+        val attacksZone = knightAttacks(p).exists(t => chebyshevDistance(t, kingPos) <= 1)
+        val supportedByPawn = enemyPawnSupportsSquare(state, p, color.opposite)
+        val hardToChallengeByPawn =
+          !ownPawns.exists { ownPawn =>
+            ownPawn.col == p.col - 1 || ownPawn.col == p.col + 1
+          }
+        if attacksZone && supportedByPawn && hardToChallengeByPawn then 28
+        else if attacksZone && supportedByPawn then 24
+        else if attacksZone then 16
+        else if chebyshevDistance(p, kingPos) <= 2 then 10
+        else 0
+      case _ => 0
+    }.sum
+
+  private def enemyPawnSupportsSquare(state: GameState, target: Pos, pawnColor: Color): Boolean =
+    val supportRowDelta = if pawnColor == Color.White then -1 else 1
+    List(
+      Pos(target.col - 1, target.row + supportRowDelta),
+      Pos(target.col + 1, target.row + supportRowDelta)
+    ).exists(pos =>
+      pos.isValid && state.board.get(pos).contains(Piece(pawnColor, PieceType.Pawn))
+    )
+
+  private def knightAttacks(pos: Pos): List[Pos] =
+    List(
+      Pos(pos.col + 2, pos.row + 1),
+      Pos(pos.col + 2, pos.row - 1),
+      Pos(pos.col - 2, pos.row + 1),
+      Pos(pos.col - 2, pos.row - 1),
+      Pos(pos.col + 1, pos.row + 2),
+      Pos(pos.col + 1, pos.row - 2),
+      Pos(pos.col - 1, pos.row + 2),
+      Pos(pos.col - 1, pos.row - 2)
+    ).filter(_.isValid)
 
   private def rookFileActivity(
     own: List[(chess.model.Pos, Piece)],

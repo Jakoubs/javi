@@ -5,6 +5,7 @@ import chess.ai.nn.{HceBootstrappedPolicyValueNet, OnnxValueNet, PolicyValueEval
 import chess.model.*
 import chess.persistence.PersistenceModule
 import chess.util.parser.CoordinateMoveParser
+import java.util.SplittableRandom
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
@@ -64,21 +65,21 @@ object AlphaBetaAgent:
       case Some(mode) if Set("root-nn", "nn-root", "root-tiebreak", "nn-tiebreak").contains(mode) =>
         EvalMode.RootNnTieBreak
       case _ => EvalMode.Hce
-  private val tt = new ConcurrentHashMap[String, TTEntry]()
-  private val ttEvictionQueue = new ConcurrentLinkedQueue[String]()
+  private val tt = new ConcurrentHashMap[Long, TTEntry]()
+  private val ttEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val ttStamp = new AtomicLong(0L)
   private val ttCount = new AtomicLong(0L)
   private val MaxTtEntries = 300_000
-  private val statusCache = new ConcurrentHashMap[String, GameStatus]()
-  private val statusEvictionQueue = new ConcurrentLinkedQueue[String]()
+  private val statusCache = new ConcurrentHashMap[Long, GameStatus]()
+  private val statusEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val statusCount = new AtomicLong(0L)
   private val MaxStatusEntries = 200_000
-  private val moveCache = new ConcurrentHashMap[String, List[Move]]()
-  private val moveEvictionQueue = new ConcurrentLinkedQueue[String]()
+  private val moveCache = new ConcurrentHashMap[Long, List[Move]]()
+  private val moveEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val moveCount = new AtomicLong(0L)
   private val MaxMoveEntries = 300_000
-  private val evalCache = new ConcurrentHashMap[String, PolicyValueEvaluation]()
-  private val evalEvictionQueue = new ConcurrentLinkedQueue[String]()
+  private val evalCache = new ConcurrentHashMap[Long, PolicyValueEvaluation]()
+  private val evalEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val evalCount = new AtomicLong(0L)
   private val MaxEvalEntries = 300_000
 
@@ -114,6 +115,25 @@ object AlphaBetaAgent:
   private final case class AspirationStats(hit: Boolean, failLow: Int, failHigh: Int, retries: Int)
   private final case class OpeningHit(move: Move, weight: Int)
   private final case class TablebaseHit(move: Move, wdl: Int, dtz: Option[Int], dtm: Option[Int])
+
+  private val zobristRandom = new SplittableRandom(0x4D595DF4D0F33173L)
+  private def nextZobrist(): Long =
+    val x = zobristRandom.nextLong()
+    if x != 0L then x else 0x9E3779B97F4A7C15L
+
+  private val pieceSquareZobrist: Array[Long] = Array.fill(12 * 64)(nextZobrist())
+  private val castlingZobrist: Array[Long] = Array.fill(4)(nextZobrist())
+  private val enPassantZobrist: Array[Long] = Array.fill(64)(nextZobrist())
+  private val blackToMoveZobrist: Long = nextZobrist()
+  private val statusFiftyMoveZobrist: Long = nextZobrist()
+  private val statusRepetitionZobrist: Array[Long] = Array.fill(4)(nextZobrist())
+  private val evalNamespaceZobrist: Map[String, Long] = Map(
+    "nn" -> nextZobrist(),
+    "hce" -> nextZobrist(),
+    "hce_fast" -> nextZobrist(),
+    "root_hce" -> nextZobrist(),
+    "root_nn" -> nextZobrist()
+  )
 
   private lazy val persistenceOpt =
     Try {
@@ -173,7 +193,7 @@ object AlphaBetaAgent:
   private def runSearch(state: GameState, timeLimitMs: Long, mode: SearchMode, logFinalMove: Boolean): Option[SearchResult] =
     val profile = TimeProfile()
     val startedAll = System.nanoTime()
-    val legalMoves = cachedLegalMoves(state, repetitionKey(state), profile)
+    val legalMoves = cachedLegalMoves(state, positionHash(state), profile)
     if legalMoves.isEmpty then return None
     if legalMoves.size == 1 then return legalMoves.headOption.map(move => SearchResult(move, 0.0, 0, 0L))
 
@@ -310,7 +330,7 @@ object AlphaBetaAgent:
     val started = System.currentTimeMillis()
     val nodes = Array(0L)
     val stats = Array(SearchStats())
-    val ttMoveRoot = Option(tt.get(state.toFen)).flatMap(_.best)
+    val ttMoveRoot = Option(tt.get(positionHash(state))).flatMap(_.best)
     val ordered = orderMoves(state, legalMoves, depth, None, ttMoveRoot, profile)
     var alpha = startAlpha
     val beta = startBeta
@@ -355,7 +375,7 @@ object AlphaBetaAgent:
         else 0
       val ttPutStart = System.nanoTime()
       putTt(
-        state.toFen,
+        positionHash(state),
         TTEntry(scoreToTt(rootScore, plyFromRoot = 0), depth, bound, Some(move), ttStamp.incrementAndGet())
       )
       profile.ttNs += (System.nanoTime() - ttPutStart)
@@ -378,9 +398,9 @@ object AlphaBetaAgent:
     nodes(0) += 1
     if System.currentTimeMillis() >= deadline then boundary.break(sanitizeScore(alpha))
 
-    val fen = state.toFen
+    val positionKey = positionHash(state)
     val ttStart = System.nanoTime()
-    val ttHit = tt.get(fen)
+    val ttHit = tt.get(positionKey)
     profile.ttNs += (System.nanoTime() - ttStart)
     var a = alpha
     if ttHit != null && ttHit.depth >= depth then
@@ -396,10 +416,10 @@ object AlphaBetaAgent:
     if depth <= 0 then
       boundary.break(quiescence(state, a, beta, deadline, nodes, profile, plyFromRoot, qDepth = 0))
 
-    val legalMoves = cachedLegalMoves(state, repetitionKey(state), profile)
+    val legalMoves = cachedLegalMoves(state, positionKey, profile)
 
     if legalMoves.isEmpty then
-      cachedStatus(state, fen, profile) match
+      cachedStatus(state, statusHash(state), profile) match
         case GameStatus.Checkmate(_) =>
           boundary.break(matedScore(plyFromRoot))
         case GameStatus.Stalemate | GameStatus.Draw(_) =>
@@ -410,7 +430,7 @@ object AlphaBetaAgent:
     // Avoid expensive status checks on every interior node; only do them when
     // draw conditions can realistically trigger despite legal moves.
     if state.halfMoveClock >= 100 then
-      cachedStatus(state, fen, profile) match
+      cachedStatus(state, statusHash(state), profile) match
         case GameStatus.Draw(_) =>
           boundary.break(0.0)
         case _ => ()
@@ -530,7 +550,7 @@ object AlphaBetaAgent:
       else if currentAlpha >= beta then 1
       else 0
     val ttPutStart = System.nanoTime()
-    putTt(fen, TTEntry(scoreToTt(sanitizeScore(currentAlpha), plyFromRoot), depth, bound, bestSeen, ttStamp.incrementAndGet()))
+    putTt(positionKey, TTEntry(scoreToTt(sanitizeScore(currentAlpha), plyFromRoot), depth, bound, bestSeen, ttStamp.incrementAndGet()))
     profile.ttNs += (System.nanoTime() - ttPutStart)
     currentAlpha
 
@@ -559,7 +579,7 @@ object AlphaBetaAgent:
     if System.currentTimeMillis() >= deadline then boundary.break(sanitizeScore(alpha))
 
     if state.halfMoveClock >= 100 then
-      cachedStatus(state, state.toFen, profile) match
+      cachedStatus(state, statusHash(state), profile) match
         case GameStatus.Draw(_) => boundary.break(0.0)
         case _ => ()
 
@@ -573,7 +593,7 @@ object AlphaBetaAgent:
 
     val moves =
       if inCheck then
-        val legalMoves = cachedLegalMoves(state, repetitionKey(state), profile)
+        val legalMoves = cachedLegalMoves(state, positionHash(state), profile)
         if legalMoves.isEmpty then boundary.break(matedScore(plyFromRoot))
         if qDepth >= MaxQuiescenceDepth then
           boundary.break(staticEvalCp(state, legalMoves, profile, -qDepth, alpha, beta))
@@ -581,7 +601,7 @@ object AlphaBetaAgent:
       else
         val noisy = noisyMoves(state, profile)
         if qDepth < QuiescenceChecksDepth then
-          val checks = cachedLegalMoves(state, repetitionKey(state), profile).filter { move =>
+          val checks = cachedLegalMoves(state, positionHash(state), profile).filter { move =>
             !isCapture(state, move) && move.promotion.isEmpty && givesCheck(state, move)
           }
           (noisy ++ checks).distinct
@@ -745,7 +765,135 @@ object AlphaBetaAgent:
           case None => 0
       else 0
 
-    ttScore + captureScore + promotionScore + killerScore + counterScore + historyScore
+    val defensiveScore = defensiveModeOrderingScore(state, boardArr, move, attacker, captureScore > 0)
+
+    ttScore + captureScore + promotionScore + killerScore + counterScore + historyScore + defensiveScore
+
+  private def defensiveModeOrderingScore(
+    state: GameState,
+    boardArr: Array[Piece | Null],
+    move: Move,
+    attacker: Piece | Null,
+    isCaptureMove: Boolean
+  ): Int =
+    val ownKingPosOpt = findKing(boardArr, state.activeColor)
+    val oppKingPosOpt = findKing(boardArr, state.activeColor.opposite)
+    if ownKingPosOpt.isEmpty then 0
+    else
+      val ownKingPos = ownKingPosOpt.get
+      val danger = kingDangerForOrdering(boardArr, ownKingPos, state.activeColor)
+      if danger < 18 then 0
+      else
+        val quietQueenMove =
+          attacker != null &&
+          attacker.pieceType == PieceType.Queen &&
+          !isCaptureMove &&
+          move.promotion.isEmpty &&
+          !givesCheck(state, move)
+        val queenWanderPenalty =
+          if quietQueenMove && chebyshevDistance(move.to, ownKingPos) > chebyshevDistance(move.from, ownKingPos) then 14_000
+          else if quietQueenMove then 9_000
+          else 0
+        val castleBonus =
+          if attacker != null &&
+            attacker.pieceType == PieceType.King &&
+            math.abs(move.to.col - move.from.col) == 2
+          then 11_000
+          else 0
+        val defendZoneBonus =
+          if attacker != null &&
+            !isCaptureMove &&
+            attacker.pieceType != PieceType.Queen &&
+            chebyshevDistance(move.to, ownKingPos) <= 1
+          then 3_600
+          else if attacker != null &&
+            !isCaptureMove &&
+            attacker.pieceType == PieceType.Pawn &&
+            chebyshevDistance(move.to, ownKingPos) <= 2
+          then 2_400
+          else 0
+        val attackerCaptureBonus =
+          if isCaptureMove then
+            boardArr(squareIndex(move.to)) match
+              case Piece(enemyColor, PieceType.Queen | PieceType.Rook | PieceType.Knight) if enemyColor == state.activeColor.opposite =>
+                8_000
+              case Piece(enemyColor, PieceType.Bishop) if enemyColor == state.activeColor.opposite && chebyshevDistance(move.to, ownKingPos) <= 2 =>
+                4_500
+              case _ => 0
+          else 0
+        castleBonus + defendZoneBonus + attackerCaptureBonus - queenWanderPenalty
+
+  private def kingDangerForOrdering(boardArr: Array[Piece | Null], kingPos: Pos, color: Color): Int =
+    val files = ((kingPos.col - 1) to (kingPos.col + 1)).filter(f => f >= 0 && f <= 7)
+    var score = 0
+    files.foreach { file =>
+      val ownPawnOnFile = piecesOnFile(boardArr, file, color, PieceType.Pawn)
+      val oppPawnOnFile = piecesOnFile(boardArr, file, color.opposite, PieceType.Pawn)
+      val heavyPressure = countPiecesOnFile(boardArr, file, color.opposite, Set(PieceType.Rook, PieceType.Queen))
+      if !ownPawnOnFile && !oppPawnOnFile then score += 8
+      else if !ownPawnOnFile then score += 5
+      score += heavyPressure * 5
+    }
+    score += countNearbyPieces(boardArr, kingPos, color.opposite, PieceType.Queen, maxDistance = 4, closeBonus = 9, farBonus = 4)
+    score += countNearbyPieces(boardArr, kingPos, color.opposite, PieceType.Rook, maxDistance = 4, closeBonus = 7, farBonus = 3)
+    score += countNearbyPieces(boardArr, kingPos, color.opposite, PieceType.Knight, maxDistance = 3, closeBonus = 8, farBonus = 3)
+    score
+
+  private def piecesOnFile(boardArr: Array[Piece | Null], file: Int, color: Color, pieceType: PieceType): Boolean =
+    var row = 0
+    while row < 8 do
+      boardArr(squareIndex(Pos(file, row))) match
+        case Piece(`color`, `pieceType`) => return true
+        case _ => ()
+      row += 1
+    false
+
+  private def countPiecesOnFile(boardArr: Array[Piece | Null], file: Int, color: Color, pieceTypes: Set[PieceType]): Int =
+    var row = 0
+    var count = 0
+    while row < 8 do
+      boardArr(squareIndex(Pos(file, row))) match
+        case Piece(`color`, pt) if pieceTypes.contains(pt) => count += 1
+        case _ => ()
+      row += 1
+    count
+
+  private def countNearbyPieces(
+    boardArr: Array[Piece | Null],
+    target: Pos,
+    color: Color,
+    pieceType: PieceType,
+    maxDistance: Int,
+    closeBonus: Int,
+    farBonus: Int
+  ): Int =
+    var idx = 0
+    var total = 0
+    while idx < 64 do
+      boardArr(idx) match
+        case Piece(`color`, `pieceType`) =>
+          val pos = posFromSquareIndex(idx)
+          val distance = chebyshevDistance(pos, target)
+          if distance <= 2 then total += closeBonus
+          else if distance <= maxDistance then total += farBonus
+        case _ => ()
+      idx += 1
+    total
+
+  private def findKing(boardArr: Array[Piece | Null], color: Color): Option[Pos] =
+    var idx = 0
+    while idx < 64 do
+      boardArr(idx) match
+        case Piece(`color`, PieceType.King) => return Some(posFromSquareIndex(idx))
+        case _ => ()
+      idx += 1
+    None
+
+  private def posFromSquareIndex(idx: Int): Pos =
+    Pos(idx % 8, idx / 8)
+
+  private def chebyshevDistance(a: Pos, b: Pos): Int =
+    math.max(math.abs(a.col - b.col), math.abs(a.row - b.row))
 
   private def isCapture(state: GameState, move: Move): Boolean =
     state.board.isOccupied(move.to) || state.enPassantTarget.contains(move.to)
@@ -1017,43 +1165,43 @@ object AlphaBetaAgent:
         i += 1
       c += 1
 
-  private def putTt(fen: String, entry: TTEntry): Unit =
-    val previous = tt.put(fen, entry)
+  private def putTt(key: Long, entry: TTEntry): Unit =
+    val previous = tt.put(key, entry)
     if previous == null then ttCount.incrementAndGet()
-    ttEvictionQueue.add(fen)
+    ttEvictionQueue.add(key)
     evictIfNeeded(tt, ttEvictionQueue, ttCount, MaxTtEntries)
 
-  private def cachedStatus(state: GameState, fen: String, profile: TimeProfile): GameStatus =
+  private def cachedStatus(state: GameState, key: Long, profile: TimeProfile): GameStatus =
     val t0 = System.nanoTime()
-    val cached = statusCache.get(fen)
+    val cached = statusCache.get(key)
     profile.statusNs += (System.nanoTime() - t0)
     if cached != null then cached
     else
       val t1 = System.nanoTime()
       val computed = GameRules.computeStatus(state)
       profile.statusNs += (System.nanoTime() - t1)
-      val existing = statusCache.putIfAbsent(fen, computed)
+      val existing = statusCache.putIfAbsent(key, computed)
       if existing != null then existing
       else
         statusCount.incrementAndGet()
-        statusEvictionQueue.add(fen)
+        statusEvictionQueue.add(key)
         evictIfNeeded(statusCache, statusEvictionQueue, statusCount, MaxStatusEntries)
         computed
 
-  private def cachedLegalMoves(state: GameState, fen: String, profile: TimeProfile): List[Move] =
+  private def cachedLegalMoves(state: GameState, key: Long, profile: TimeProfile): List[Move] =
     val t0 = System.nanoTime()
-    val cached = moveCache.get(fen)
+    val cached = moveCache.get(key)
     profile.moveGenNs += (System.nanoTime() - t0)
     if cached != null then cached
     else
       val t1 = System.nanoTime()
       val computed = MoveGenerator.legalMoves(state)
       profile.moveGenNs += (System.nanoTime() - t1)
-      val existing = moveCache.putIfAbsent(fen, computed)
+      val existing = moveCache.putIfAbsent(key, computed)
       if existing != null then existing
       else
         moveCount.incrementAndGet()
-        moveEvictionQueue.add(fen)
+        moveEvictionQueue.add(key)
         evictIfNeeded(moveCache, moveEvictionQueue, moveCount, MaxMoveEntries)
         computed
 
@@ -1084,18 +1232,18 @@ object AlphaBetaAgent:
   private def wouldCauseImmediateThreefold(
     state: GameState,
     move: Move,
-    historyCounts: Map[String, Int]
+    historyCounts: Map[Long, Int]
   ): Boolean =
     val child = fastApplyMove(state, move)
-    val key = repetitionKey(child)
+    val key = positionHash(child)
     val count = 1 + historyCounts.getOrElse(key, 0) // child itself + matching history states
     count >= 3
 
-  private def buildHistoryRepetitionCounts(history: List[GameState]): Map[String, Int] =
-    val m = scala.collection.mutable.HashMap.empty[String, Int]
+  private def buildHistoryRepetitionCounts(history: List[GameState]): Map[Long, Int] =
+    val m = scala.collection.mutable.HashMap.empty[Long, Int]
     var i = 0
     while i < history.length do
-      val key = repetitionKey(history(i))
+      val key = positionHash(history(i))
       m.update(key, m.getOrElse(key, 0) + 1)
       i += 1
     m.toMap
@@ -1115,14 +1263,52 @@ object AlphaBetaAgent:
     }
     own - opp
 
-  private def repetitionKey(state: GameState): String =
-    val active = if state.activeColor == Color.White then "w" else "b"
-    s"${state.board.toFenPlacement} $active ${state.castlingRights.toFen} ${state.enPassantTarget.map(_.toAlgebraic).getOrElse("-")}"
-
   private def plyFromState(state: GameState): Int =
     // fullMoveNumber starts at 1; White to move at ply 0, Black at ply 1.
     val base = (state.fullMoveNumber - 1) * 2
     if state.activeColor == Color.White then base else base + 1
+
+  private def positionHash(state: GameState): Long =
+    var h = 0L
+    state.board.pieces.foreach { case (pos, piece) =>
+      h ^= pieceSquareZobrist((pieceHashIndex(piece) * 64) + squareIndex(pos))
+    }
+    if state.activeColor == Color.Black then h ^= blackToMoveZobrist
+    if state.castlingRights.whiteKingSide then h ^= castlingZobrist(0)
+    if state.castlingRights.whiteQueenSide then h ^= castlingZobrist(1)
+    if state.castlingRights.blackKingSide then h ^= castlingZobrist(2)
+    if state.castlingRights.blackQueenSide then h ^= castlingZobrist(3)
+    state.enPassantTarget.foreach(pos => h ^= enPassantZobrist(squareIndex(pos)))
+    h
+
+  private def statusHash(state: GameState): Long =
+    val repetitionBucket = repetitionCountForCurrentPosition(state).min(3)
+    var h = positionHash(state)
+    if state.halfMoveClock >= 100 then h ^= statusFiftyMoveZobrist
+    h ^ statusRepetitionZobrist(repetitionBucket)
+
+  private def evalHash(state: GameState, cacheNamespace: String): Long =
+    positionHash(state) ^ evalNamespaceZobrist.getOrElse(cacheNamespace, 0L)
+
+  private def repetitionCountForCurrentPosition(state: GameState): Int =
+    val current = positionHash(state)
+    var count = 1
+    var i = 0
+    while i < state.history.length do
+      if positionHash(state.history(i)) == current then count += 1
+      i += 1
+    count
+
+  private def pieceHashIndex(piece: Piece): Int =
+    val colorOffset = if piece.color == Color.White then 0 else 6
+    colorOffset + (piece.pieceType match
+      case PieceType.Pawn => 0
+      case PieceType.Knight => 1
+      case PieceType.Bishop => 2
+      case PieceType.Rook => 3
+      case PieceType.Queen => 4
+      case PieceType.King => 5
+    )
 
   private def squareIndex(pos: Pos): Int = pos.row * 8 + pos.col
   private def colorIndex(color: Color): Int = if color == Color.White then 0 else 1
@@ -1136,7 +1322,7 @@ object AlphaBetaAgent:
     cacheNamespace: String
   ): PolicyValueEvaluation =
     val started = System.nanoTime()
-    val cacheKey = s"$cacheNamespace:${repetitionKey(state)}"
+    val cacheKey = evalHash(state, cacheNamespace)
     val cached = evalCache.get(cacheKey)
     val out =
       if cached != null then cached
@@ -1192,9 +1378,9 @@ object AlphaBetaAgent:
       s"ttMs=${ms(p.ttNs)} heuristicsMs=${ms(p.heuristicNs)} openingDbMs=${ms(p.openingLookupNs)} tablebaseDbMs=${ms(p.tablebaseLookupNs)}"
     )
 
-  private def evictIfNeeded[T](
-    map: ConcurrentHashMap[String, T],
-    queue: ConcurrentLinkedQueue[String],
+  private def evictIfNeeded[K, T](
+    map: ConcurrentHashMap[K, T],
+    queue: ConcurrentLinkedQueue[K],
     count: AtomicLong,
     maxEntries: Int
   ): Unit =
