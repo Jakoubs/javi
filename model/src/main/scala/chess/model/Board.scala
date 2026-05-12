@@ -1,5 +1,7 @@
 package chess.model
 
+import java.util.SplittableRandom
+
 /** Immutable 8x8 board represented internally as bitboards. */
 final case class Board private (
   private val whitePawnsBb: Long,
@@ -27,13 +29,13 @@ final case class Board private (
   def pieceCount: Int =
     java.lang.Long.bitCount(occupiedBb)
 
-  private[model] def occupiedMask: Long =
+  private[chess] def occupiedMask: Long =
     occupiedBb
 
-  private[model] def colorMask(color: Color): Long =
+  private[chess] def colorMask(color: Color): Long =
     occupancyOf(color)
 
-  private[model] def bitboardOf(color: Color, pieceType: PieceType): Long =
+  private[chess] def bitboardOf(color: Color, pieceType: PieceType): Long =
     (color, pieceType) match
       case (Color.White, PieceType.Pawn)   => whitePawnsBb
       case (Color.White, PieceType.Knight) => whiteKnightsBb
@@ -51,6 +53,10 @@ final case class Board private (
   def get(pos: Pos): Option[Piece] =
     if !pos.isValid then None
     else pieceAtMask(squareMask(pos))
+
+  private[chess] def pieceAtOrNull(pos: Pos): Piece | Null =
+    if !pos.isValid then null
+    else pieceAtMaskOrNull(squareMask(pos))
 
   def isOccupied(pos: Pos): Boolean =
     pos.isValid && ((occupiedBb & squareMask(pos)) != 0L)
@@ -77,6 +83,77 @@ final case class Board private (
         val fromMask = squareMask(from)
         val toMask = squareMask(to)
         clearMask(toMask).clearMask(fromMask).addPiece(piece, toMask)
+
+  private[chess] def applyMoveUnchecked(
+    from: Pos,
+    to: Pos,
+    movingPiece: Piece,
+    resultingPiece: Piece,
+    enPassantCapturePos: Pos | Null = null,
+    rookFrom: Pos | Null = null,
+    rookTo: Pos | Null = null
+  ): Board =
+    val fromMask = squareMask(from)
+    val toMask = squareMask(to)
+    val enPassantMask =
+      if enPassantCapturePos == null then 0L else squareMask(enPassantCapturePos.nn)
+    val rookFromMask =
+      if rookFrom == null then 0L else squareMask(rookFrom.nn)
+    val rookToMask =
+      if rookTo == null then 0L else squareMask(rookTo.nn)
+
+    var whitePawns = whitePawnsBb
+    var whiteKnights = whiteKnightsBb
+    var whiteBishops = whiteBishopsBb
+    var whiteRooks = whiteRooksBb
+    var whiteQueens = whiteQueensBb
+    var whiteKing = whiteKingBb
+    var blackPawns = blackPawnsBb
+    var blackKnights = blackKnightsBb
+    var blackBishops = blackBishopsBb
+    var blackRooks = blackRooksBb
+    var blackQueens = blackQueensBb
+    var blackKing = blackKingBb
+
+    val clearedMasks = ~(fromMask | toMask | enPassantMask | rookFromMask | rookToMask)
+    whitePawns &= clearedMasks
+    whiteKnights &= clearedMasks
+    whiteBishops &= clearedMasks
+    whiteRooks &= clearedMasks
+    whiteQueens &= clearedMasks
+    whiteKing &= clearedMasks
+    blackPawns &= clearedMasks
+    blackKnights &= clearedMasks
+    blackBishops &= clearedMasks
+    blackRooks &= clearedMasks
+    blackQueens &= clearedMasks
+    blackKing &= clearedMasks
+
+    (resultingPiece.color, resultingPiece.pieceType) match
+      case (Color.White, PieceType.Pawn)   => whitePawns |= toMask
+      case (Color.White, PieceType.Knight) => whiteKnights |= toMask
+      case (Color.White, PieceType.Bishop) => whiteBishops |= toMask
+      case (Color.White, PieceType.Rook)   => whiteRooks |= toMask
+      case (Color.White, PieceType.Queen)  => whiteQueens |= toMask
+      case (Color.White, PieceType.King)   => whiteKing |= toMask
+      case (Color.Black, PieceType.Pawn)   => blackPawns |= toMask
+      case (Color.Black, PieceType.Knight) => blackKnights |= toMask
+      case (Color.Black, PieceType.Bishop) => blackBishops |= toMask
+      case (Color.Black, PieceType.Rook)   => blackRooks |= toMask
+      case (Color.Black, PieceType.Queen)  => blackQueens |= toMask
+      case (Color.Black, PieceType.King)   => blackKing |= toMask
+
+    if rookTo != null then
+      val rookPiece = Piece(movingPiece.color, PieceType.Rook)
+      (rookPiece.color, rookPiece.pieceType) match
+        case (Color.White, PieceType.Rook) => whiteRooks |= rookToMask
+        case (Color.Black, PieceType.Rook) => blackRooks |= rookToMask
+        case _ => ()
+
+    new Board(
+      whitePawns, whiteKnights, whiteBishops, whiteRooks, whiteQueens, whiteKing,
+      blackPawns, blackKnights, blackBishops, blackRooks, blackQueens, blackKing
+    )
 
   def findKing(color: Color): Option[Pos] =
     bitboardHeadPos(if color == Color.White then whiteKingBb else blackKingBb)
@@ -153,19 +230,23 @@ final case class Board private (
     whiteOccupancyBb | blackOccupancyBb
 
   private def pieceAtMask(mask: Long): Option[Piece] =
-    if (whitePawnsBb & mask) != 0L then Some(Piece(Color.White, PieceType.Pawn))
-    else if (whiteKnightsBb & mask) != 0L then Some(Piece(Color.White, PieceType.Knight))
-    else if (whiteBishopsBb & mask) != 0L then Some(Piece(Color.White, PieceType.Bishop))
-    else if (whiteRooksBb & mask) != 0L then Some(Piece(Color.White, PieceType.Rook))
-    else if (whiteQueensBb & mask) != 0L then Some(Piece(Color.White, PieceType.Queen))
-    else if (whiteKingBb & mask) != 0L then Some(Piece(Color.White, PieceType.King))
-    else if (blackPawnsBb & mask) != 0L then Some(Piece(Color.Black, PieceType.Pawn))
-    else if (blackKnightsBb & mask) != 0L then Some(Piece(Color.Black, PieceType.Knight))
-    else if (blackBishopsBb & mask) != 0L then Some(Piece(Color.Black, PieceType.Bishop))
-    else if (blackRooksBb & mask) != 0L then Some(Piece(Color.Black, PieceType.Rook))
-    else if (blackQueensBb & mask) != 0L then Some(Piece(Color.Black, PieceType.Queen))
-    else if (blackKingBb & mask) != 0L then Some(Piece(Color.Black, PieceType.King))
-    else None
+    val piece = pieceAtMaskOrNull(mask)
+    if piece == null then None else Some(piece.nn)
+
+  private def pieceAtMaskOrNull(mask: Long): Piece | Null =
+    if (whitePawnsBb & mask) != 0L then Piece(Color.White, PieceType.Pawn)
+    else if (whiteKnightsBb & mask) != 0L then Piece(Color.White, PieceType.Knight)
+    else if (whiteBishopsBb & mask) != 0L then Piece(Color.White, PieceType.Bishop)
+    else if (whiteRooksBb & mask) != 0L then Piece(Color.White, PieceType.Rook)
+    else if (whiteQueensBb & mask) != 0L then Piece(Color.White, PieceType.Queen)
+    else if (whiteKingBb & mask) != 0L then Piece(Color.White, PieceType.King)
+    else if (blackPawnsBb & mask) != 0L then Piece(Color.Black, PieceType.Pawn)
+    else if (blackKnightsBb & mask) != 0L then Piece(Color.Black, PieceType.Knight)
+    else if (blackBishopsBb & mask) != 0L then Piece(Color.Black, PieceType.Bishop)
+    else if (blackRooksBb & mask) != 0L then Piece(Color.Black, PieceType.Rook)
+    else if (blackQueensBb & mask) != 0L then Piece(Color.Black, PieceType.Queen)
+    else if (blackKingBb & mask) != 0L then Piece(Color.Black, PieceType.King)
+    else null
 
   private def clearMask(mask: Long): Board =
     copy(
@@ -316,6 +397,91 @@ object Board:
     if col == 8 then Right(pieces)
     else Left(s"Rank '$rank' must describe exactly 8 files in FEN")
 
+private[chess] object ZobristHash:
+  private val zobristRandom = new SplittableRandom(0x4D595DF4D0F33173L)
+  private def nextZobrist(): Long =
+    val x = zobristRandom.nextLong()
+    if x != 0L then x else 0x9E3779B97F4A7C15L
+
+  private val pieceSquareZobrist: Array[Long] = Array.fill(12 * 64)(nextZobrist())
+  private val castlingZobrist: Array[Long] = Array.fill(4)(nextZobrist())
+  private val enPassantZobrist: Array[Long] = Array.fill(64)(nextZobrist())
+  private val blackToMoveZobrist: Long = nextZobrist()
+
+  def compute(state: GameState): Long =
+    compute(state.board, state.activeColor, state.castlingRights, state.enPassantTarget)
+
+  def compute(
+    board: Board,
+    activeColor: Color,
+    castlingRights: CastlingRights,
+    enPassantTarget: Option[Pos]
+  ): Long =
+    var h = 0L
+    board.foreachPiece { (pos, piece) =>
+      h ^= pieceSquareZobrist((pieceHashIndex(piece) * 64) + Board.squareIndex(pos))
+    }
+    if activeColor == Color.Black then h ^= blackToMoveZobrist
+    h = xorCastlingRights(h, castlingRights)
+    xorEnPassantTarget(h, enPassantTarget)
+
+  def advance(
+    currentHash: Long,
+    activeColor: Color,
+    castlingRights: CastlingRights,
+    enPassantTarget: Option[Pos],
+    move: Move,
+    movingPiece: Piece,
+    resultingPiece: Piece,
+    capturedPiece: Piece | Null,
+    capturedPos: Pos | Null,
+    newCastlingRights: CastlingRights,
+    newEnPassantTarget: Option[Pos],
+    rookFrom: Pos | Null = null,
+    rookTo: Pos | Null = null
+  ): Long =
+    var h = currentHash
+    h ^= pieceSquareZobrist((pieceHashIndex(movingPiece) * 64) + Board.squareIndex(move.from))
+    h ^= pieceSquareZobrist((pieceHashIndex(resultingPiece) * 64) + Board.squareIndex(move.to))
+    if capturedPiece != null && capturedPos != null then
+      h ^= pieceSquareZobrist((pieceHashIndex(capturedPiece.nn) * 64) + Board.squareIndex(capturedPos.nn))
+    if rookFrom != null && rookTo != null then
+      val rookPiece = Piece(activeColor, PieceType.Rook)
+      h ^= pieceSquareZobrist((pieceHashIndex(rookPiece) * 64) + Board.squareIndex(rookFrom.nn))
+      h ^= pieceSquareZobrist((pieceHashIndex(rookPiece) * 64) + Board.squareIndex(rookTo.nn))
+    h ^= blackToMoveZobrist
+    h = xorCastlingRights(h, castlingRights)
+    h = xorCastlingRights(h, newCastlingRights)
+    h = xorEnPassantTarget(h, enPassantTarget)
+    xorEnPassantTarget(h, newEnPassantTarget)
+
+  def advanceNullMove(currentHash: Long, enPassantTarget: Option[Pos]): Long =
+    xorEnPassantTarget(currentHash ^ blackToMoveZobrist, enPassantTarget)
+
+  private def xorCastlingRights(hash: Long, castlingRights: CastlingRights): Long =
+    var h = hash
+    if castlingRights.whiteKingSide then h ^= castlingZobrist(0)
+    if castlingRights.whiteQueenSide then h ^= castlingZobrist(1)
+    if castlingRights.blackKingSide then h ^= castlingZobrist(2)
+    if castlingRights.blackQueenSide then h ^= castlingZobrist(3)
+    h
+
+  private def xorEnPassantTarget(hash: Long, enPassantTarget: Option[Pos]): Long =
+    enPassantTarget match
+      case Some(pos) => hash ^ enPassantZobrist(Board.squareIndex(pos))
+      case None => hash
+
+  private def pieceHashIndex(piece: Piece): Int =
+    val colorOffset = if piece.color == Color.White then 0 else 6
+    colorOffset + (piece.pieceType match
+      case PieceType.Pawn => 0
+      case PieceType.Knight => 1
+      case PieceType.Bishop => 2
+      case PieceType.Rook => 3
+      case PieceType.Queen => 4
+      case PieceType.King => 5
+    )
+
 sealed trait GameState:
   def board: Board
   def activeColor: Color
@@ -324,12 +490,27 @@ sealed trait GameState:
   def halfMoveClock: Int
   def fullMoveNumber: Int
   def history: List[GameState]
+  protected def cachedPositionHashValue: Long
+  protected def cachedHashBoard: Board | Null
+  protected def cachedHashCastlingRights: CastlingRights | Null
+  protected def cachedHashEnPassantTarget: Option[Pos] | Null
+  protected def cachedRepetitionCountsValue: Map[Long, Int] | Null
 
   def withHistory: GameState
 
   // Cached king squares for this immutable state (avoids repeated board scans).
   lazy val whiteKingPos: Option[Pos] = board.findKing(Color.White)
   lazy val blackKingPos: Option[Pos] = board.findKing(Color.Black)
+  lazy val positionHash: Long =
+    if cachedHashBoard == board &&
+      cachedHashCastlingRights == castlingRights &&
+      cachedHashEnPassantTarget == enPassantTarget
+    then cachedPositionHashValue
+    else ZobristHash.compute(this)
+  lazy val repetitionCounts: Map[Long, Int] =
+    val cached = cachedRepetitionCountsValue
+    if cached != null && cached.contains(positionHash) then cached.nn
+    else Map(positionHash -> 1)
   def kingPos(color: Color): Option[Pos] =
     if color == Color.White then whiteKingPos else blackKingPos
 
@@ -344,16 +525,17 @@ extension (s: GameState)
     enPassantTarget: Option[Pos] = s.enPassantTarget,
     halfMoveClock: Int = s.halfMoveClock,
     fullMoveNumber: Int = s.fullMoveNumber,
-    history: List[GameState] = s.history
+    history: List[GameState] = s.history,
+    repetitionCounts: Map[Long, Int] = s.repetitionCounts
   ): GameState = s match
-    case w: WhiteToMove => w.copy(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history)
-    case b: BlackToMove => b.copy(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history)
+    case _: WhiteToMove => GameState.white(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history, repetitionCounts = repetitionCounts)
+    case _: BlackToMove => GameState.black(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history, repetitionCounts = repetitionCounts)
 
   def withActiveColor(color: Color): GameState = (s, color) match
     case (w: WhiteToMove, Color.White) => w
     case (b: BlackToMove, Color.Black) => b
-    case (w: WhiteToMove, Color.Black) => BlackToMove(w.board, w.castlingRights, w.enPassantTarget, w.halfMoveClock, w.fullMoveNumber, w.history)
-    case (b: BlackToMove, Color.White) => WhiteToMove(b.board, b.castlingRights, b.enPassantTarget, b.halfMoveClock, b.fullMoveNumber, b.history)
+    case (w: WhiteToMove, Color.Black) => GameState.black(w.board, w.castlingRights, w.enPassantTarget, w.halfMoveClock, w.fullMoveNumber, w.history)
+    case (b: BlackToMove, Color.White) => GameState.white(b.board, b.castlingRights, b.enPassantTarget, b.halfMoveClock, b.fullMoveNumber, b.history)
 
   /** Returns all pieces of the given color that have been captured. */
   def capturedPieces(color: Color): List[PieceType] =
@@ -396,10 +578,25 @@ case class WhiteToMove(
   enPassantTarget: Option[Pos],
   halfMoveClock: Int,
   fullMoveNumber: Int,
-  history: List[GameState] = Nil
+  history: List[GameState] = Nil,
+  protected val cachedPositionHashValue: Long = 0L,
+  protected val cachedHashBoard: Board | Null = null,
+  protected val cachedHashCastlingRights: CastlingRights | Null = null,
+  protected val cachedHashEnPassantTarget: Option[Pos] | Null = null,
+  protected val cachedRepetitionCountsValue: Map[Long, Int] | Null = null
 ) extends GameState:
   val activeColor: Color = Color.White
-  def withHistory: GameState = copy(history = history :+ this)
+  def withHistory: GameState =
+    GameState.white(
+      board,
+      castlingRights,
+      enPassantTarget,
+      halfMoveClock,
+      fullMoveNumber,
+      history :+ this,
+      positionHash = positionHash,
+      repetitionCounts = repetitionCounts
+    )
 
 case class BlackToMove(
   board: Board,
@@ -407,15 +604,76 @@ case class BlackToMove(
   enPassantTarget: Option[Pos],
   halfMoveClock: Int,
   fullMoveNumber: Int,
-  history: List[GameState] = Nil
+  history: List[GameState] = Nil,
+  protected val cachedPositionHashValue: Long = 0L,
+  protected val cachedHashBoard: Board | Null = null,
+  protected val cachedHashCastlingRights: CastlingRights | Null = null,
+  protected val cachedHashEnPassantTarget: Option[Pos] | Null = null,
+  protected val cachedRepetitionCountsValue: Map[Long, Int] | Null = null
 ) extends GameState:
   val activeColor: Color = Color.Black
-  def withHistory: GameState = copy(history = history :+ this)
+  def withHistory: GameState =
+    GameState.black(
+      board,
+      castlingRights,
+      enPassantTarget,
+      halfMoveClock,
+      fullMoveNumber,
+      history :+ this,
+      positionHash = positionHash,
+      repetitionCounts = repetitionCounts
+    )
 
 object GameState:
   val initialFen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
-  def initial: GameState = WhiteToMove(
+  private val NoCachedHash = Long.MinValue
+
+  private[chess] def white(
+    board: Board,
+    castlingRights: CastlingRights,
+    enPassantTarget: Option[Pos],
+    halfMoveClock: Int,
+    fullMoveNumber: Int,
+    history: List[GameState] = Nil,
+    positionHash: Long = NoCachedHash,
+    repetitionCounts: Map[Long, Int] | Null = null
+  ): WhiteToMove =
+    val hash =
+      if positionHash != NoCachedHash then positionHash
+      else ZobristHash.compute(board, Color.White, castlingRights, enPassantTarget)
+    val reps =
+      if repetitionCounts != null && repetitionCounts.contains(hash) then repetitionCounts
+      else Map(hash -> 1)
+    WhiteToMove(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history, hash, board, castlingRights, enPassantTarget, reps)
+
+  private[chess] def black(
+    board: Board,
+    castlingRights: CastlingRights,
+    enPassantTarget: Option[Pos],
+    halfMoveClock: Int,
+    fullMoveNumber: Int,
+    history: List[GameState] = Nil,
+    positionHash: Long = NoCachedHash,
+    repetitionCounts: Map[Long, Int] | Null = null
+  ): BlackToMove =
+    val hash =
+      if positionHash != NoCachedHash then positionHash
+      else ZobristHash.compute(board, Color.Black, castlingRights, enPassantTarget)
+    val reps =
+      if repetitionCounts != null && repetitionCounts.contains(hash) then repetitionCounts
+      else Map(hash -> 1)
+    BlackToMove(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history, hash, board, castlingRights, enPassantTarget, reps)
+
+  private[chess] def advanceRepetitionCounts(
+    previous: Map[Long, Int],
+    newPositionHash: Long,
+    irreversible: Boolean
+  ): Map[Long, Int] =
+    if irreversible then Map(newPositionHash -> 1)
+    else previous.updated(newPositionHash, previous.getOrElse(newPositionHash, 0) + 1)
+
+  def initial: GameState = white(
     board = Board.initial,
     castlingRights = CastlingRights(),
     enPassantTarget = None,
@@ -447,9 +705,9 @@ object GameState:
                               case Right(fullMoveNumber) =>
                                 Right(
                                   if activeColor == Color.White then
-                                    WhiteToMove(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber)
+                                    white(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber)
                                   else
-                                    BlackToMove(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber)
+                                    black(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber)
                                 )
       case _ => Left("FEN must contain 6 space-separated fields")
 

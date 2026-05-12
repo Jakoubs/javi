@@ -116,15 +116,11 @@ object AlphaBetaAgent:
   private final case class OpeningHit(move: Move, weight: Int)
   private final case class TablebaseHit(move: Move, wdl: Int, dtz: Option[Int], dtm: Option[Int])
 
-  private val zobristRandom = new SplittableRandom(0x4D595DF4D0F33173L)
+  private val zobristRandom = new SplittableRandom(0x1A2B3C4D5E6F7788L)
   private def nextZobrist(): Long =
     val x = zobristRandom.nextLong()
     if x != 0L then x else 0x9E3779B97F4A7C15L
 
-  private val pieceSquareZobrist: Array[Long] = Array.fill(12 * 64)(nextZobrist())
-  private val castlingZobrist: Array[Long] = Array.fill(4)(nextZobrist())
-  private val enPassantZobrist: Array[Long] = Array.fill(64)(nextZobrist())
-  private val blackToMoveZobrist: Long = nextZobrist()
   private val statusFiftyMoveZobrist: Long = nextZobrist()
   private val statusRepetitionZobrist: Array[Long] = Array.fill(4)(nextZobrist())
   private val evalNamespaceZobrist: Map[String, Long] = Map(
@@ -710,26 +706,25 @@ object AlphaBetaAgent:
     val started = System.nanoTime()
     if legalMoves.size <= 1 then legalMoves
     else
-      val boardArr = toBoardArray(state.board)
-      val out = legalMoves.sortBy(m => -moveOrderingScore(state, boardArr, m, depth, prevMove, ttMove))
+      val out = legalMoves.sortBy(m => -moveOrderingScore(state, state.board, m, depth, prevMove, ttMove))
       profile.orderMovesNs += (System.nanoTime() - started)
       out
 
   private def moveOrderingScore(
     state: GameState,
-    boardArr: Array[Piece | Null],
+    board: Board,
     move: Move,
     depth: Int,
     prevMove: Option[Move],
     ttMove: Option[Move]
   ): Int =
     val ttScore = if ttMove.contains(move) then 200_000 else 0
-    val attacker = boardArr(squareIndex(move.from))
-    val victim = boardArr(squareIndex(move.to))
+    val attacker = board.pieceAtOrNull(move.from)
+    val victim = board.pieceAtOrNull(move.to)
     val attackerValue = if attacker == null then 0 else PieceType.pieceValue(attacker.pieceType)
     val victimValue = if victim == null then 0 else PieceType.pieceValue(victim.pieceType)
     val captureScore =
-      if isCapture(boardArr, state.enPassantTarget, move) then 100_000 + (10 * victimValue) - attackerValue
+      if isCapture(board, state.enPassantTarget, move) then 100_000 + (10 * victimValue) - attackerValue
       else 0
     val promotionScore = move.promotion match
       case Some(PieceType.Queen) => 39_000
@@ -765,23 +760,22 @@ object AlphaBetaAgent:
           case None => 0
       else 0
 
-    val defensiveScore = defensiveModeOrderingScore(state, boardArr, move, attacker, captureScore > 0)
+    val defensiveScore = defensiveModeOrderingScore(state, board, move, attacker, captureScore > 0)
 
     ttScore + captureScore + promotionScore + killerScore + counterScore + historyScore + defensiveScore
 
   private def defensiveModeOrderingScore(
     state: GameState,
-    boardArr: Array[Piece | Null],
+    board: Board,
     move: Move,
     attacker: Piece | Null,
     isCaptureMove: Boolean
   ): Int =
-    val ownKingPosOpt = findKing(boardArr, state.activeColor)
-    val oppKingPosOpt = findKing(boardArr, state.activeColor.opposite)
+    val ownKingPosOpt = state.kingPos(state.activeColor)
     if ownKingPosOpt.isEmpty then 0
     else
       val ownKingPos = ownKingPosOpt.get
-      val danger = kingDangerForOrdering(boardArr, ownKingPos, state.activeColor)
+      val danger = kingDangerForOrdering(board, ownKingPos, state.activeColor)
       if danger < 18 then 0
       else
         val quietQueenMove =
@@ -814,7 +808,7 @@ object AlphaBetaAgent:
           else 0
         val attackerCaptureBonus =
           if isCaptureMove then
-            boardArr(squareIndex(move.to)) match
+            board.pieceAtOrNull(move.to) match
               case Piece(enemyColor, PieceType.Queen | PieceType.Rook | PieceType.Knight) if enemyColor == state.activeColor.opposite =>
                 8_000
               case Piece(enemyColor, PieceType.Bishop) if enemyColor == state.activeColor.opposite && chebyshevDistance(move.to, ownKingPos) <= 2 =>
@@ -823,43 +817,36 @@ object AlphaBetaAgent:
           else 0
         castleBonus + defendZoneBonus + attackerCaptureBonus - queenWanderPenalty
 
-  private def kingDangerForOrdering(boardArr: Array[Piece | Null], kingPos: Pos, color: Color): Int =
+  private def kingDangerForOrdering(board: Board, kingPos: Pos, color: Color): Int =
     val files = ((kingPos.col - 1) to (kingPos.col + 1)).filter(f => f >= 0 && f <= 7)
     var score = 0
     files.foreach { file =>
-      val ownPawnOnFile = piecesOnFile(boardArr, file, color, PieceType.Pawn)
-      val oppPawnOnFile = piecesOnFile(boardArr, file, color.opposite, PieceType.Pawn)
-      val heavyPressure = countPiecesOnFile(boardArr, file, color.opposite, Set(PieceType.Rook, PieceType.Queen))
+      val ownPawnOnFile = piecesOnFile(board, file, color, PieceType.Pawn)
+      val oppPawnOnFile = piecesOnFile(board, file, color.opposite, PieceType.Pawn)
+      val heavyPressure = countPiecesOnFile(board, file, color.opposite, PieceType.Rook, PieceType.Queen)
       if !ownPawnOnFile && !oppPawnOnFile then score += 8
       else if !ownPawnOnFile then score += 5
       score += heavyPressure * 5
     }
-    score += countNearbyPieces(boardArr, kingPos, color.opposite, PieceType.Queen, maxDistance = 4, closeBonus = 9, farBonus = 4)
-    score += countNearbyPieces(boardArr, kingPos, color.opposite, PieceType.Rook, maxDistance = 4, closeBonus = 7, farBonus = 3)
-    score += countNearbyPieces(boardArr, kingPos, color.opposite, PieceType.Knight, maxDistance = 3, closeBonus = 8, farBonus = 3)
+    score += countNearbyPieces(board, kingPos, color.opposite, PieceType.Queen, maxDistance = 4, closeBonus = 9, farBonus = 4)
+    score += countNearbyPieces(board, kingPos, color.opposite, PieceType.Rook, maxDistance = 4, closeBonus = 7, farBonus = 3)
+    score += countNearbyPieces(board, kingPos, color.opposite, PieceType.Knight, maxDistance = 3, closeBonus = 8, farBonus = 3)
     score
 
-  private def piecesOnFile(boardArr: Array[Piece | Null], file: Int, color: Color, pieceType: PieceType): Boolean =
-    var row = 0
-    while row < 8 do
-      boardArr(squareIndex(Pos(file, row))) match
-        case Piece(`color`, `pieceType`) => return true
-        case _ => ()
-      row += 1
-    false
+  private def piecesOnFile(board: Board, file: Int, color: Color, pieceType: PieceType): Boolean =
+    (board.bitboardOf(color, pieceType) & fileMask(file)) != 0L
 
-  private def countPiecesOnFile(boardArr: Array[Piece | Null], file: Int, color: Color, pieceTypes: Set[PieceType]): Int =
-    var row = 0
-    var count = 0
-    while row < 8 do
-      boardArr(squareIndex(Pos(file, row))) match
-        case Piece(`color`, pt) if pieceTypes.contains(pt) => count += 1
-        case _ => ()
-      row += 1
-    count
+  private def countPiecesOnFile(board: Board, file: Int, color: Color, pieceTypes: PieceType*): Int =
+    val mask = fileMask(file)
+    var total = 0
+    var i = 0
+    while i < pieceTypes.length do
+      total += java.lang.Long.bitCount(board.bitboardOf(color, pieceTypes(i)) & mask)
+      i += 1
+    total
 
   private def countNearbyPieces(
-    boardArr: Array[Piece | Null],
+    board: Board,
     target: Pos,
     color: Color,
     pieceType: PieceType,
@@ -867,27 +854,16 @@ object AlphaBetaAgent:
     closeBonus: Int,
     farBonus: Int
   ): Int =
-    var idx = 0
+    var bb = board.bitboardOf(color, pieceType)
     var total = 0
-    while idx < 64 do
-      boardArr(idx) match
-        case Piece(`color`, `pieceType`) =>
-          val pos = posFromSquareIndex(idx)
-          val distance = chebyshevDistance(pos, target)
-          if distance <= 2 then total += closeBonus
-          else if distance <= maxDistance then total += farBonus
-        case _ => ()
-      idx += 1
+    while bb != 0L do
+      val idx = java.lang.Long.numberOfTrailingZeros(bb)
+      val pos = posFromSquareIndex(idx)
+      val distance = chebyshevDistance(pos, target)
+      if distance <= 2 then total += closeBonus
+      else if distance <= maxDistance then total += farBonus
+      bb &= (bb - 1L)
     total
-
-  private def findKing(boardArr: Array[Piece | Null], color: Color): Option[Pos] =
-    var idx = 0
-    while idx < 64 do
-      boardArr(idx) match
-        case Piece(`color`, PieceType.King) => return Some(posFromSquareIndex(idx))
-        case _ => ()
-      idx += 1
-    None
 
   private def posFromSquareIndex(idx: Int): Pos =
     Pos(idx % 8, idx / 8)
@@ -898,8 +874,8 @@ object AlphaBetaAgent:
   private def isCapture(state: GameState, move: Move): Boolean =
     state.board.isOccupied(move.to) || state.enPassantTarget.contains(move.to)
 
-  private def isCapture(boardArr: Array[Piece | Null], enPassant: Option[Pos], move: Move): Boolean =
-    boardArr(squareIndex(move.to)) != null || enPassant.contains(move.to)
+  private def isCapture(board: Board, enPassant: Option[Pos], move: Move): Boolean =
+    board.pieceAtOrNull(move.to) != null || enPassant.contains(move.to)
 
   private def noisyMoves(state: GameState, profile: TimeProfile): List[Move] =
     val started = System.nanoTime()
@@ -1031,12 +1007,8 @@ object AlphaBetaAgent:
     val child = fastApplyMove(state, move)
     MoveGenerator.isInCheck(child, child.activeColor)
 
-  private def toBoardArray(board: Board): Array[Piece | Null] =
-    val out = Array.fill[Piece | Null](64)(null)
-    board.foreachPiece { (pos, piece) =>
-      out(squareIndex(pos)) = piece
-    }
-    out
+  private def fileMask(file: Int): Long =
+    0x0101010101010101L << file
 
   private def updateKillers(depth: Int, move: Move): Unit =
     val d = depth.max(0).min(MaxSearchDepth)
@@ -1070,11 +1042,13 @@ object AlphaBetaAgent:
 
   private def makeNullMoveState(state: GameState): GameState =
     val nextHalf = state.halfMoveClock + 1
+    val nextHash = ZobristHash.advanceNullMove(state.positionHash, state.enPassantTarget)
+    val nextRepetitionCounts = GameState.advanceRepetitionCounts(state.repetitionCounts, nextHash, irreversible = false)
     state match
-      case WhiteToMove(b, cr, _, _, fm, _) =>
-        BlackToMove(b, cr, None, nextHalf, fm, Nil)
-      case BlackToMove(b, cr, _, _, fm, _) =>
-        WhiteToMove(b, cr, None, nextHalf, fm + 1, Nil)
+      case WhiteToMove(b, cr, _, _, fm, _, _, _, _, _, _) =>
+        GameState.black(b, cr, None, nextHalf, fm, Nil, positionHash = nextHash, repetitionCounts = nextRepetitionCounts)
+      case BlackToMove(b, cr, _, _, fm, _, _, _, _, _, _) =>
+        GameState.white(b, cr, None, nextHalf, fm + 1, Nil, positionHash = nextHash, repetitionCounts = nextRepetitionCounts)
 
   private def hasNonPawnMaterial(state: GameState, color: Color): Boolean =
     state.board.allPiecesOf(color).exists { case (_, p) =>
@@ -1090,28 +1064,37 @@ object AlphaBetaAgent:
     val piece = board.get(move.from).get
     val color = piece.color
 
-    val boardAfterEP =
+    val enPassantCapturePos: Pos | Null =
       if piece.pieceType == PieceType.Pawn && state.enPassantTarget.contains(move.to) then
         val capturedRow = if color == Color.White then move.to.row - 1 else move.to.row + 1
-        board.remove(Pos(move.to.col, capturedRow))
-      else board
+        Pos(move.to.col, capturedRow)
+      else null
 
-    val boardAfterCastle =
+    val (rookFrom, rookTo): (Pos | Null, Pos | Null) =
       if piece.pieceType == PieceType.King then
         val dc = move.to.col - move.from.col
         if math.abs(dc) == 2 then
           val row = move.from.row
           val rookCol = if dc > 0 then 7 else 0
           val newCol = if dc > 0 then 5 else 3
-          boardAfterEP.movePiece(Pos(rookCol, row), Pos(newCol, row))
-        else boardAfterEP
-      else boardAfterEP
+          (Pos(rookCol, row), Pos(newCol, row))
+        else (null, null)
+      else (null, null)
 
     val movedPiece = move.promotion match
       case Some(pt) => Piece(color, pt)
       case None => piece
 
-    val boardAfterMove = boardAfterCastle.remove(move.from).put(move.to, movedPiece)
+    val boardAfterMove =
+      board.applyMoveUnchecked(
+        from = move.from,
+        to = move.to,
+        movingPiece = piece,
+        resultingPiece = movedPiece,
+        enPassantCapturePos = enPassantCapturePos,
+        rookFrom = rookFrom,
+        rookTo = rookTo
+      )
     val newRights = updateCastlingRightsFast(state.castlingRights, piece, move)
     val newEP =
       if piece.pieceType == PieceType.Pawn && math.abs(move.to.row - move.from.row) == 2 then
@@ -1121,11 +1104,52 @@ object AlphaBetaAgent:
     val isPawnMove = piece.pieceType == PieceType.Pawn
     val newHalfClock = if isCapture || isPawnMove then 0 else state.halfMoveClock + 1
     val newFullMove = if color == Color.Black then state.fullMoveNumber + 1 else state.fullMoveNumber
+    val capturedPiece =
+      if enPassantCapturePos != null then Piece(color.opposite, PieceType.Pawn)
+      else board.pieceAtOrNull(move.to)
+    val capturedPos =
+      if enPassantCapturePos != null then enPassantCapturePos else if capturedPiece != null then move.to else null
+    val newPositionHash =
+      ZobristHash.advance(
+        currentHash = state.positionHash,
+        activeColor = color,
+        castlingRights = state.castlingRights,
+        enPassantTarget = state.enPassantTarget,
+        move = move,
+        movingPiece = piece,
+        resultingPiece = movedPiece,
+        capturedPiece = capturedPiece,
+        capturedPos = capturedPos,
+        newCastlingRights = newRights,
+        newEnPassantTarget = newEP,
+        rookFrom = rookFrom,
+        rookTo = rookTo
+      )
+    val newRepetitionCounts =
+      GameState.advanceRepetitionCounts(state.repetitionCounts, newPositionHash, irreversible = isCapture || isPawnMove)
 
     if color.opposite == Color.White then
-      WhiteToMove(boardAfterMove, newRights, newEP, newHalfClock, newFullMove, Nil)
+      GameState.white(
+        boardAfterMove,
+        newRights,
+        newEP,
+        newHalfClock,
+        newFullMove,
+        Nil,
+        positionHash = newPositionHash,
+        repetitionCounts = newRepetitionCounts
+      )
     else
-      BlackToMove(boardAfterMove, newRights, newEP, newHalfClock, newFullMove, Nil)
+      GameState.black(
+        boardAfterMove,
+        newRights,
+        newEP,
+        newHalfClock,
+        newFullMove,
+        Nil,
+        positionHash = newPositionHash,
+        repetitionCounts = newRepetitionCounts
+      )
 
   private def updateCastlingRightsFast(cr: CastlingRights, piece: Piece, move: Move): CastlingRights =
     var updated = cr
@@ -1269,20 +1293,10 @@ object AlphaBetaAgent:
     if state.activeColor == Color.White then base else base + 1
 
   private def positionHash(state: GameState): Long =
-    var h = 0L
-    state.board.foreachPiece { (pos, piece) =>
-      h ^= pieceSquareZobrist((pieceHashIndex(piece) * 64) + squareIndex(pos))
-    }
-    if state.activeColor == Color.Black then h ^= blackToMoveZobrist
-    if state.castlingRights.whiteKingSide then h ^= castlingZobrist(0)
-    if state.castlingRights.whiteQueenSide then h ^= castlingZobrist(1)
-    if state.castlingRights.blackKingSide then h ^= castlingZobrist(2)
-    if state.castlingRights.blackQueenSide then h ^= castlingZobrist(3)
-    state.enPassantTarget.foreach(pos => h ^= enPassantZobrist(squareIndex(pos)))
-    h
+    state.positionHash
 
   private def statusHash(state: GameState): Long =
-    val repetitionBucket = repetitionCountForCurrentPosition(state).min(3)
+    val repetitionBucket = state.repetitionCounts.getOrElse(state.positionHash, 0).min(3)
     var h = positionHash(state)
     if state.halfMoveClock >= 100 then h ^= statusFiftyMoveZobrist
     h ^ statusRepetitionZobrist(repetitionBucket)
@@ -1291,24 +1305,7 @@ object AlphaBetaAgent:
     positionHash(state) ^ evalNamespaceZobrist.getOrElse(cacheNamespace, 0L)
 
   private def repetitionCountForCurrentPosition(state: GameState): Int =
-    val current = positionHash(state)
-    var count = 1
-    var i = 0
-    while i < state.history.length do
-      if positionHash(state.history(i)) == current then count += 1
-      i += 1
-    count
-
-  private def pieceHashIndex(piece: Piece): Int =
-    val colorOffset = if piece.color == Color.White then 0 else 6
-    colorOffset + (piece.pieceType match
-      case PieceType.Pawn => 0
-      case PieceType.Knight => 1
-      case PieceType.Bishop => 2
-      case PieceType.Rook => 3
-      case PieceType.Queen => 4
-      case PieceType.King => 5
-    )
+    state.repetitionCounts.getOrElse(state.positionHash, 0)
 
   private def squareIndex(pos: Pos): Int = pos.row * 8 + pos.col
   private def colorIndex(color: Color): Int = if color == Color.White then 0 else 1

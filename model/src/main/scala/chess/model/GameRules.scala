@@ -1,78 +1,110 @@
 package chess.model
 
-// ─── GameRules ───────────────────────────────────────────────────────────────
-
 object GameRules:
-
-  // ── Apply a move ───────────────────────────────────────────────────────────
 
   /**
    * Apply `move` to `state` and return the new state.
    * Assumes the move is legal (use MoveGenerator.legalMoves to verify first).
    */
   def applyMove(state: GameState, move: Move): GameState =
-    val board  = state.board
-    val piece  = board.get(move.from).get   // safe: called after legality check
-    val color  = piece.color
+    val board = state.board
+    val piece = board.get(move.from).get   // safe: called after legality check
+    val color = piece.color
 
-    // ── 1. Handle en-passant capture ──────────────────────────────────────
-    val boardAfterEP =
+    val enPassantCapturePos: Pos | Null =
       if piece.pieceType == PieceType.Pawn && state.enPassantTarget.contains(move.to) then
         val capturedRow = if color == Color.White then move.to.row - 1 else move.to.row + 1
-        board.remove(Pos(move.to.col, capturedRow))
-      else board
+        Pos(move.to.col, capturedRow)
+      else null
 
-    // ── 2. Handle castling (move rook) ────────────────────────────────────
-    val boardAfterCastle =
+    val (rookFrom, rookTo): (Pos | Null, Pos | Null) =
       if piece.pieceType == PieceType.King then
         val dc = move.to.col - move.from.col
         if math.abs(dc) == 2 then
-          val row     = move.from.row
+          val row = move.from.row
           val rookCol = if dc > 0 then 7 else 0
-          val newCol  = if dc > 0 then 5 else 3
-          boardAfterEP.movePiece(Pos(rookCol, row), Pos(newCol, row))
-        else boardAfterEP
-      else boardAfterEP
+          val newCol = if dc > 0 then 5 else 3
+          (Pos(rookCol, row), Pos(newCol, row))
+        else (null, null)
+      else (null, null)
 
-    // ── 3. Move piece (with optional promotion) ───────────────────────────
     val movedPiece = move.promotion match
       case Some(pt) => Piece(color, pt)
       case None     => piece
 
     val boardAfterMove =
-      boardAfterCastle.remove(move.from).put(move.to, movedPiece)
+      board.applyMoveUnchecked(
+        from = move.from,
+        to = move.to,
+        movingPiece = piece,
+        resultingPiece = movedPiece,
+        enPassantCapturePos = enPassantCapturePos,
+        rookFrom = rookFrom,
+        rookTo = rookTo
+      )
 
-    // ── 4. Update castling rights ─────────────────────────────────────────
     val cr = updateCastlingRights(state.castlingRights, piece, move)
-
-    // ── 5. Update en-passant target ───────────────────────────────────────
     val newEP =
       if piece.pieceType == PieceType.Pawn && math.abs(move.to.row - move.from.row) == 2 then
         val epRow = (move.from.row + move.to.row) / 2
         Some(Pos(move.from.col, epRow))
       else None
 
-    // ── 6. Update clocks ──────────────────────────────────────────────────
-    val isCapture    = board.isOccupied(move.to) || state.enPassantTarget.contains(move.to)
-    val isPawnMove   = piece.pieceType == PieceType.Pawn
+    val isCapture = board.isOccupied(move.to) || state.enPassantTarget.contains(move.to)
+    val isPawnMove = piece.pieceType == PieceType.Pawn
     val newHalfClock = if isCapture || isPawnMove then 0 else state.halfMoveClock + 1
-    val newFullMove  = if color == Color.Black then state.fullMoveNumber + 1 else state.fullMoveNumber
+    val newFullMove = if color == Color.Black then state.fullMoveNumber + 1 else state.fullMoveNumber
+    val capturedPiece =
+      if enPassantCapturePos != null then Piece(color.opposite, PieceType.Pawn)
+      else board.pieceAtOrNull(move.to)
+    val capturedPos =
+      if enPassantCapturePos != null then enPassantCapturePos else if capturedPiece != null then move.to else null
+    val newPositionHash =
+      ZobristHash.advance(
+        currentHash = state.positionHash,
+        activeColor = color,
+        castlingRights = state.castlingRights,
+        enPassantTarget = state.enPassantTarget,
+        move = move,
+        movingPiece = piece,
+        resultingPiece = movedPiece,
+        capturedPiece = capturedPiece,
+        capturedPos = capturedPos,
+        newCastlingRights = cr,
+        newEnPassantTarget = newEP,
+        rookFrom = rookFrom,
+        rookTo = rookTo
+      )
+    val newRepetitionCounts =
+      GameState.advanceRepetitionCounts(state.repetitionCounts, newPositionHash, irreversible = isCapture || isPawnMove)
 
-    val newState = if color.opposite == Color.White then
-      WhiteToMove(boardAfterMove, cr, newEP, newHalfClock, newFullMove, state.history :+ state)
+    if color.opposite == Color.White then
+      GameState.white(
+        boardAfterMove,
+        cr,
+        newEP,
+        newHalfClock,
+        newFullMove,
+        state.history :+ state,
+        positionHash = newPositionHash,
+        repetitionCounts = newRepetitionCounts
+      )
     else
-      BlackToMove(boardAfterMove, cr, newEP, newHalfClock, newFullMove, state.history :+ state)
-
-    newState
-
-  // ── Castling rights update ─────────────────────────────────────────────────
+      GameState.black(
+        boardAfterMove,
+        cr,
+        newEP,
+        newHalfClock,
+        newFullMove,
+        state.history :+ state,
+        positionHash = newPositionHash,
+        repetitionCounts = newRepetitionCounts
+      )
 
   private def updateCastlingRights(cr: CastlingRights, piece: Piece, move: Move): CastlingRights =
     var updated = cr
-    // King moved → lose both sides
     if piece.pieceType == PieceType.King then
       updated = if piece.color == Color.White then updated.disableWhite else updated.disableBlack
-    // Rook moved from corner
     if piece.pieceType == PieceType.Rook then
       move.from match
         case Pos(0, 0) => updated = updated.disableWhiteQueenSide
@@ -80,7 +112,6 @@ object GameRules:
         case Pos(0, 7) => updated = updated.disableBlackQueenSide
         case Pos(7, 7) => updated = updated.disableBlackKingSide
         case _         => ()
-    // Rook captured on corner
     move.to match
       case Pos(0, 0) => updated = updated.disableWhiteQueenSide
       case Pos(7, 0) => updated = updated.disableWhiteKingSide
@@ -89,15 +120,13 @@ object GameRules:
       case _         => ()
     updated
 
-  // ── Status evaluation ──────────────────────────────────────────────────────
-
   def computeStatus(state: GameState): GameStatus =
-    val moves    = MoveGenerator.legalMoves(state)
-    val inCheck  = MoveGenerator.isInCheck(state, state.activeColor)
+    val moves = MoveGenerator.legalMoves(state)
+    val inCheck = MoveGenerator.isInCheck(state, state.activeColor)
 
     if moves.isEmpty then
       if inCheck then GameStatus.Checkmate(state.activeColor)
-      else            GameStatus.Stalemate
+      else GameStatus.Stalemate
     else if inCheck then
       GameStatus.Check(state.activeColor)
     else if isFiftyMoveRule(state) then
@@ -109,37 +138,29 @@ object GameRules:
     else
       GameStatus.Playing
 
-  // ── Draw detection ─────────────────────────────────────────────────────────
-
   private def isFiftyMoveRule(state: GameState): Boolean =
     state.halfMoveClock >= 100
 
   private def isThreefoldRepetition(state: GameState): Boolean =
-    // Compare board + active color + castling rights + en-passant (FEN-like key)
-    val key = positionKey(state)
-    (state :: state.history).count(positionKey(_) == key) >= 3
-
-  private def positionKey(state: GameState): String =
-    s"${state.board.toFenPlacement} ${GameState.colorToFen(state.activeColor)} ${state.castlingRights.toFen} ${state.enPassantTarget.map(_.toAlgebraic).getOrElse("-")}"
+    state.repetitionCounts.getOrElse(state.positionHash, 0) >= 3
 
   private def isInsufficientMaterial(state: GameState): Boolean =
     val pieces = scala.collection.mutable.ListBuffer.empty[Piece]
     state.board.foreachPiece { (_, piece) =>
       pieces += piece
     }
-    val types  = pieces.map(_.pieceType)
+    val types = pieces.map(_.pieceType)
     val counts = types.groupBy(identity).view.mapValues(_.size).toMap
-    
-    val kingCount   = counts.getOrElse(PieceType.King, 0)
-    val totalCount  = types.size
-    
-    if kingCount < 2 then return true // Should not happen in normal chess
 
-    if totalCount == 2 then true // K vs K
+    val kingCount = counts.getOrElse(PieceType.King, 0)
+    val totalCount = types.size
+
+    if kingCount < 2 then return true
+
+    if totalCount == 2 then true
     else if totalCount == 3 then
-      counts.contains(PieceType.Bishop) || counts.contains(PieceType.Knight) // K+B vs K or K+N vs K
+      counts.contains(PieceType.Bishop) || counts.contains(PieceType.Knight)
     else if totalCount == 4 && counts.getOrElse(PieceType.Bishop, 0) == 2 then
-      // K+B vs K+B (if same color)
       val bishops = scala.collection.mutable.ListBuffer.empty[Pos]
       state.board.foreachPiece { (pos, piece) =>
         if piece.pieceType == PieceType.Bishop then bishops += pos
