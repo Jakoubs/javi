@@ -89,6 +89,7 @@ object AlphaBetaAgent:
   private final case class SearchStats(
     betaCutoffs: Long = 0L,
     heuristicCutoffs: Long = 0L,
+    heuristicSavedNodesEstimate: Double = 0.0,
     killerCutoffs: Long = 0L,
     counterCutoffs: Long = 0L,
     historyCutoffs: Long = 0L
@@ -443,6 +444,7 @@ object AlphaBetaAgent:
     val originalAlpha = a
     var currentAlpha = a
     val ordered = orderMoves(state, legalMoves, depth, prevMove, Option(ttHit).flatMap(_.best), profile)
+    val nodeStartAtThisPosition = nodes(0)
     var bestSeen: Option[Move] = None
     var moveIndex = 0
 
@@ -496,10 +498,19 @@ object AlphaBetaAgent:
             cm != null && cm == move
           }
         val hasHistory = !isCapture(state, move) && history(c)(from)(to) > 0
+        val isHeuristicCutoff = isKiller || isCounter || hasHistory
+        val searchedMoves = moveIndex + 1
+        val skippedMoves = (ordered.length - searchedMoves).max(0)
+        val nodesSpentHere = (nodes(0) - nodeStartAtThisPosition).max(1L)
+        val avgNodesPerTriedMove = nodesSpentHere.toDouble / searchedMoves.toDouble
+        val savedNodesEstimate =
+          if isHeuristicCutoff then skippedMoves.toDouble * avgNodesPerTriedMove
+          else 0.0
         val old = stats(0)
         stats(0) = old.copy(
           betaCutoffs = old.betaCutoffs + 1,
-          heuristicCutoffs = old.heuristicCutoffs + (if isKiller || isCounter || hasHistory then 1 else 0),
+          heuristicCutoffs = old.heuristicCutoffs + (if isHeuristicCutoff then 1 else 0),
+          heuristicSavedNodesEstimate = old.heuristicSavedNodesEstimate + savedNodesEstimate,
           killerCutoffs = old.killerCutoffs + (if isKiller then 1 else 0),
           counterCutoffs = old.counterCutoffs + (if isCounter then 1 else 0),
           historyCutoffs = old.historyCutoffs + (if hasHistory then 1 else 0)
@@ -1147,18 +1158,25 @@ object AlphaBetaAgent:
     SearchStats(
       betaCutoffs = a.betaCutoffs + b.betaCutoffs,
       heuristicCutoffs = a.heuristicCutoffs + b.heuristicCutoffs,
+      heuristicSavedNodesEstimate = a.heuristicSavedNodesEstimate + b.heuristicSavedNodesEstimate,
       killerCutoffs = a.killerCutoffs + b.killerCutoffs,
       counterCutoffs = a.counterCutoffs + b.counterCutoffs,
       historyCutoffs = a.historyCutoffs + b.historyCutoffs
     )
 
   private def logSearchHeuristicSavings(nodes: Long, stats: SearchStats): Unit =
-    val heuristicPct =
-      if nodes > 0 then (stats.heuristicCutoffs.toDouble * 100.0) / nodes.toDouble
+    val heuristicShareOfCutoffs =
+      if stats.betaCutoffs > 0 then (stats.heuristicCutoffs.toDouble * 100.0) / stats.betaCutoffs.toDouble
       else 0.0
-    val heuristicPctText = f"$heuristicPct%.2f"
+    val heuristicShareText = f"$heuristicShareOfCutoffs%.2f"
+    val savedNodesEstimate = math.round(stats.heuristicSavedNodesEstimate)
+    val savedNodesPct =
+      if nodes > 0 then (stats.heuristicSavedNodesEstimate * 100.0) / nodes.toDouble
+      else 0.0
+    val savedNodesPctText = f"$savedNodesPct%.2f"
     println(
-      s"[AI][SEARCH-HEURISTICS] nodes=$nodes betaCutoffs=${stats.betaCutoffs} heuristicCuts=${stats.heuristicCutoffs} heuristicCutPct=$heuristicPctText"
+      s"[AI][SEARCH-HEURISTICS] nodes=$nodes betaCutoffs=${stats.betaCutoffs} heuristicCuts=${stats.heuristicCutoffs} " +
+      s"heuristicShareOfCutoffs=$heuristicShareText savedNodesEstimate=$savedNodesEstimate savedNodesPct=$savedNodesPctText"
     )
 
   private def logTimeProfile(p: TimeProfile, nodes: Long): Unit =

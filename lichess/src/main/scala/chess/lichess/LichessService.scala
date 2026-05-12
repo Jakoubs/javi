@@ -13,7 +13,14 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
   implicit val ec: ExecutionContext = system.executionContext
   private var botUser: Option[LichessUser] = None
 
-  private val activeGames = TrieMap.empty[String, (String, String, Int)]
+  private final case class ActiveGame(
+    whiteId: String,
+    blackId: String,
+    lastMoveCount: Int,
+    state: GameState
+  )
+
+  private val activeGames = TrieMap.empty[String, ActiveGame]
   private val opponentGone = TrieMap.empty[String, Boolean]
 
   private final case class PonderBundle(
@@ -117,7 +124,7 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
           val wId = full.white.id.getOrElse("unknown").toLowerCase
           val bId = full.black.id.getOrElse("unknown").toLowerCase
           println(s"Spieler: Weiss=$wId, Schwarz=$bId")
-          activeGames.put(gameId, (wId, bId, -1))
+          activeGames.put(gameId, ActiveGame(wId, bId, -1, GameState.initial))
           opponentGone.remove(gameId)
           ponderCache.remove(gameId)
           ponderInFlight.remove(gameId)
@@ -139,19 +146,27 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
     val moveCount = moves.length
 
     activeGames.get(gameId) match {
-      case Some((whiteId, blackId, lastCount)) if moveCount > lastCount =>
-        activeGames.put(gameId, (whiteId, blackId, moveCount))
+      case Some(game) if moveCount < game.lastMoveCount =>
+        activeGames.put(gameId, game.copy(lastMoveCount = -1, state = GameState.initial))
+        processGameUpdate(gameId, lichessState)
 
+      case Some(game) if moveCount > game.lastMoveCount || game.lastMoveCount < 0 =>
         try {
-          var currentState: GameState = GameState.initial
-          for (moveStr <- moves) {
+          var currentState: GameState =
+            if game.lastMoveCount >= 0 then game.state
+            else GameState.initial
+          val replayFrom =
+            if game.lastMoveCount >= 0 then game.lastMoveCount
+            else 0
+          for (moveStr <- moves.drop(replayFrom)) {
             val move = CoordinateMoveParser.parse(moveStr, currentState).get
             currentState = GameRules.applyMove(currentState, move)
           }
+          activeGames.put(gameId, game.copy(lastMoveCount = moveCount, state = currentState))
 
           if (lichessState.status == "started") {
             val ourId = botUser.map(_.id.toLowerCase).getOrElse("")
-            val ourColor = if (whiteId == ourId) Color.White else if (blackId == ourId) Color.Black else null
+            val ourColor = if (game.whiteId == ourId) Color.White else if (game.blackId == ourId) Color.Black else null
 
             val oppIsGone = opponentGone.getOrElse(gameId, false)
             if (oppIsGone) {
@@ -194,7 +209,7 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
         } catch {
           case e: Exception =>
             println(s"Fehler bei der Zugverarbeitung ($gameId): ${e.getMessage}")
-            activeGames.put(gameId, (whiteId, blackId, moveCount - 1))
+            activeGames.put(gameId, game.copy(lastMoveCount = -1, state = GameState.initial))
         }
 
       case Some(_) => // already seen
@@ -219,7 +234,7 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
         case Some(result) =>
           val expectedMove = result.expectedOpponentMove.toInputString
           val plannedReply = result.plannedReply.map(_.toInputString)
-          if activeGames.get(gameId).exists(_._3 == moveCount) then
+          if activeGames.get(gameId).exists(_.lastMoveCount == moveCount) then
             ponderCache.put(
               gameId,
               PonderBundle(moveCount, fen, expectedMove, result.expectedFen, plannedReply, result.depth, result.warmedNodes)
