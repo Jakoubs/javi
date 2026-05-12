@@ -324,8 +324,19 @@ object AlphaBetaAgent:
     val elapsed = System.currentTimeMillis() - started
     val picked = rootNnTieBreak(state, rootScores.toList, bestScore, deadline, profile).orElse(bestMove)
     picked.map { move =>
-      val score = rootScores.find(_._1 == move).map(_._2).getOrElse(bestScore)
-      RootSearch(move, sanitizeScore(score), nodes(0), elapsed, stats(0))
+      val pickedScore = rootScores.find(_._1 == move).map(_._2).getOrElse(bestScore)
+      val rootScore = sanitizeScore(bestScore)
+      val bound =
+        if rootScore <= startAlpha then 2
+        else if rootScore >= startBeta then 1
+        else 0
+      val ttPutStart = System.nanoTime()
+      putTt(
+        state.toFen,
+        TTEntry(scoreToTt(rootScore, plyFromRoot = 0), depth, bound, Some(move), ttStamp.incrementAndGet())
+      )
+      profile.ttNs += (System.nanoTime() - ttPutStart)
+      RootSearch(move, sanitizeScore(pickedScore), nodes(0), elapsed, stats(0))
     }
 
   private def negamax(
