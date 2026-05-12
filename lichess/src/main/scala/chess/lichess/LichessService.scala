@@ -220,9 +220,9 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
   private def calculateTimeLimit(state: GameState, lichess: LichessGameState): Long = {
     val timeLeft = if (state.activeColor == Color.White) lichess.wtime else lichess.btime
     val inc = if (state.activeColor == Color.White) lichess.winc else lichess.binc
-    val safeTimeLeft = math.max(0L, timeLeft - 2000L)
+    val safeTimeLeft = math.max(0L, timeLeft - 500L)
     Math.max(1L, Math.min(10000L, (safeTimeLeft / 20) + inc))
-  
+  }
 
   private def startPonderIfNeeded(gameId: String, moveCount: Int, state: GameState, ourColor: Color, totalBudgetMs: Long): Unit = {
     val fen = state.toFen
