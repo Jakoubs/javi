@@ -53,7 +53,7 @@ class OnnxValueNet(
 
   private def encode12(state: GameState): Array[Float] =
     val out = Array.fill[Float](12 * 8 * 8)(0.0f)
-    state.board.pieces.foreach { case (pos, piece) =>
+    state.board.foreachPiece { (pos, piece) =>
       val plane = piecePlane(piece.color, piece.pieceType)
       val idx = plane * 64 + pos.row * 8 + pos.col
       out(idx) = 1.0f

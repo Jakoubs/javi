@@ -197,7 +197,7 @@ object AlphaBetaAgent:
     if legalMoves.isEmpty then return None
     if legalMoves.size == 1 then return legalMoves.headOption.map(move => SearchResult(move, 0.0, 0, 0L))
 
-    if state.board.pieces.size <= 5 then
+    if state.board.pieceCount <= 5 then
       val tbStart = System.nanoTime()
       val tablebaseMove = lookupTablebaseMove(state, legalMoves)
       profile.tablebaseLookupNs += (System.nanoTime() - tbStart)
@@ -209,7 +209,7 @@ object AlphaBetaAgent:
             else "draw"
           val mateInfo = hit.dtm.map(x => s"mateIn=$x").getOrElse("mateIn=n/a")
           val dtzInfo = hit.dtz.map(x => s"dtz=$x").getOrElse("dtz=n/a")
-          println(s"[AI][MOVE] source=TABLEBASE move=${hit.move.toInputString} pieces=${state.board.pieces.size} verdict=$verdict $mateInfo $dtzInfo")
+          println(s"[AI][MOVE] source=TABLEBASE move=${hit.move.toInputString} pieces=${state.board.pieceCount} verdict=$verdict $mateInfo $dtzInfo")
         }
       if tablebaseMove.nonEmpty then
         if logFinalMove then
@@ -221,7 +221,7 @@ object AlphaBetaAgent:
     val shouldQueryOpeningDb =
       mode == SearchMode.Search &&
       currentPly <= MaxOpeningBookPly &&
-      state.board.pieces.size > 10
+      state.board.pieceCount > 10
     val bookMove =
       if shouldQueryOpeningDb then
         val obStart = System.nanoTime()
@@ -440,7 +440,7 @@ object AlphaBetaAgent:
     if allowNullMove &&
       depth >= 3 &&
       !inCheck &&
-      state.board.pieces.size > 6 &&
+      state.board.pieceCount > 6 &&
       hasNonPawnMaterial(state, state.activeColor)
     then
       val nullState = makeNullMoveState(state)
@@ -680,7 +680,7 @@ object AlphaBetaAgent:
     depth: Int
   ): PolicyValueEvaluation =
     val inCheck = MoveGenerator.isInCheck(state, state.activeColor)
-    val pieceCount = state.board.pieces.size
+    val pieceCount = state.board.pieceCount
     val useFastHce = depth <= FastHceAtOrBelowDepth && pieceCount > 10 && !inCheck
     val net = if useFastHce then fastHceNet else hceNet
     safeNetEvaluate(net, state, legalMoves, profile, isNn = false, cacheNamespace = if useFastHce then "hce_fast" else "hce")
@@ -906,7 +906,7 @@ object AlphaBetaAgent:
     val out = scala.collection.mutable.ArrayBuffer.empty[Move]
     val legal = scala.collection.mutable.ArrayBuffer.empty[Move]
     val color = state.activeColor
-    state.board.pieces.foreach {
+    state.board.foreachPiece {
       case (pos, Piece(`color`, PieceType.Pawn)) =>
         addNoisyPawnMoves(out, state, pos, color)
       case (pos, Piece(`color`, PieceType.Knight)) =>
@@ -1033,7 +1033,7 @@ object AlphaBetaAgent:
 
   private def toBoardArray(board: Board): Array[Piece | Null] =
     val out = Array.fill[Piece | Null](64)(null)
-    board.pieces.foreach { case (pos, piece) =>
+    board.foreachPiece { (pos, piece) =>
       out(squareIndex(pos)) = piece
     }
     out
@@ -1257,7 +1257,7 @@ object AlphaBetaAgent:
   private def materialLeadCpFor(state: GameState, color: Color): Int =
     var own = 0
     var opp = 0
-    state.board.pieces.foreach { case (_, p) =>
+    state.board.foreachPiece { (_, p) =>
       val v = PieceType.pieceValue(p.pieceType) * 100
       if p.color == color then own += v else opp += v
     }
@@ -1270,7 +1270,7 @@ object AlphaBetaAgent:
 
   private def positionHash(state: GameState): Long =
     var h = 0L
-    state.board.pieces.foreach { case (pos, piece) =>
+    state.board.foreachPiece { (pos, piece) =>
       h ^= pieceSquareZobrist((pieceHashIndex(piece) * 64) + squareIndex(pos))
     }
     if state.activeColor == Color.Black then h ^= blackToMoveZobrist

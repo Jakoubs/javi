@@ -204,7 +204,7 @@ object HceBootstrappedPolicyValueNet:
     var mgScore = 0
     var egScore = 0
     var phase = 0
-    state.board.pieces.foreach { case (pos, piece) =>
+    state.board.foreachPiece { (pos, piece) =>
       val sign = if piece.color == Color.White then 1 else -1
       val sq = pstIndex(pos.row, pos.col, piece.color)
       val pt = piece.pieceType

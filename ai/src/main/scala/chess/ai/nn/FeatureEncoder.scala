@@ -11,7 +11,7 @@ object FeatureEncoder:
   def encode(state: GameState): Array[Float] =
     val out = Array.fill[Float](TensorSize)(0.0f)
 
-    state.board.pieces.foreach { case (pos, piece) =>
+    state.board.foreachPiece { (pos, piece) =>
       val plane = piecePlane(piece.color, piece.pieceType)
       out(index(plane, pos.row, pos.col)) = 1.0f
     }

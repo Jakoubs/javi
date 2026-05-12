@@ -123,7 +123,10 @@ object GameRules:
     s"${state.board.toFenPlacement} ${GameState.colorToFen(state.activeColor)} ${state.castlingRights.toFen} ${state.enPassantTarget.map(_.toAlgebraic).getOrElse("-")}"
 
   private def isInsufficientMaterial(state: GameState): Boolean =
-    val pieces = state.board.pieces.values.toList
+    val pieces = scala.collection.mutable.ListBuffer.empty[Piece]
+    state.board.foreachPiece { (_, piece) =>
+      pieces += piece
+    }
     val types  = pieces.map(_.pieceType)
     val counts = types.groupBy(identity).view.mapValues(_.size).toMap
     
@@ -137,8 +140,11 @@ object GameRules:
       counts.contains(PieceType.Bishop) || counts.contains(PieceType.Knight) // K+B vs K or K+N vs K
     else if totalCount == 4 && counts.getOrElse(PieceType.Bishop, 0) == 2 then
       // K+B vs K+B (if same color)
-      val bishops = state.board.pieces.filter(_._2.pieceType == PieceType.Bishop).toList
-      val pos1 = bishops(0)._1
-      val pos2 = bishops(1)._1
+      val bishops = scala.collection.mutable.ListBuffer.empty[Pos]
+      state.board.foreachPiece { (pos, piece) =>
+        if piece.pieceType == PieceType.Bishop then bishops += pos
+      }
+      val pos1 = bishops(0)
+      val pos2 = bishops(1)
       (pos1.row + pos1.col) % 2 == (pos2.row + pos2.col) % 2
     else false
