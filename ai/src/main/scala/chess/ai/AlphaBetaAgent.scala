@@ -23,7 +23,9 @@ object AlphaBetaAgent:
   final case class PonderResult(
     expectedOpponentMove: Move,
     expectedFen: String,
-    plannedReply: Option[Move]
+    plannedReply: Option[Move],
+    depth: Int,
+    warmedNodes: Long
   )
 
   private enum SearchMode:
@@ -86,6 +88,7 @@ object AlphaBetaAgent:
   private val counterMoves: Array[Array[Array[Move | Null]]] = Array.fill(2, 64, 64)(null)
   private final case class SearchStats(
     betaCutoffs: Long = 0L,
+    heuristicCutoffs: Long = 0L,
     killerCutoffs: Long = 0L,
     counterCutoffs: Long = 0L,
     historyCutoffs: Long = 0L
@@ -106,6 +109,7 @@ object AlphaBetaAgent:
     var heuristicNs: Long = 0L
   )
   private final case class RootSearch(move: Move, scoreCp: Double, nodes: Long, elapsedMs: Long, stats: SearchStats)
+  final case class SearchResult(move: Move, scoreCp: Double, depth: Int, nodes: Long)
   private final case class AspirationStats(hit: Boolean, failLow: Int, failHigh: Int, retries: Int)
   private final case class OpeningHit(move: Move, weight: Int)
   private final case class TablebaseHit(move: Move, wdl: Int, dtz: Option[Int], dtm: Option[Int])
@@ -136,6 +140,9 @@ object AlphaBetaAgent:
     )
 
   def bestMove(state: GameState, timeLimitMs: Long): Option[Move] =
+    bestMoveWithStats(state, timeLimitMs).map(_.move)
+
+  def bestMoveWithStats(state: GameState, timeLimitMs: Long): Option[SearchResult] =
     runSearch(state, timeLimitMs, SearchMode.Search, logFinalMove = true)
 
   def ponder(state: GameState, timeLimitMs: Long): Unit =
@@ -146,22 +153,28 @@ object AlphaBetaAgent:
     val started = System.currentTimeMillis()
     val totalBudget = math.max(1L, timeLimitMs)
     val predictBudget = math.max(80L, math.min(350L, totalBudget / 4L))
-    runSearch(state, predictBudget, SearchMode.PonderPredict, logFinalMove = false).map { expectedMove =>
+    runSearch(state, predictBudget, SearchMode.PonderPredict, logFinalMove = false).map { prediction =>
+      val expectedMove = prediction.move
       val expectedState = GameRules.applyMove(state, expectedMove)
       val elapsed = System.currentTimeMillis() - started
       val remaining = math.max(1L, totalBudget - elapsed)
-      val plannedReply =
+      val replySearch =
         if remaining > 20L then runSearch(expectedState, remaining, SearchMode.PonderReply, logFinalMove = false)
         else None
-      PonderResult(expectedMove, expectedState.toFen, plannedReply)
+      val plannedReply = replySearch.map(_.move)
+      val depth = math.max(prediction.depth, replySearch.map(_.depth).getOrElse(0))
+      val warmedNodes = prediction.nodes + replySearch.map(_.nodes).getOrElse(0L)
+      val replyText = plannedReply.map(m => s" reply=${m.toInputString}").getOrElse(" reply=none")
+      println(s"[AI][PONDER] depth=$depth warmednodes=$warmedNodes expected=${expectedMove.toInputString}$replyText")
+      PonderResult(expectedMove, expectedState.toFen, plannedReply, depth, warmedNodes)
     }
 
-  private def runSearch(state: GameState, timeLimitMs: Long, mode: SearchMode, logFinalMove: Boolean): Option[Move] =
+  private def runSearch(state: GameState, timeLimitMs: Long, mode: SearchMode, logFinalMove: Boolean): Option[SearchResult] =
     val profile = TimeProfile()
     val startedAll = System.nanoTime()
     val legalMoves = cachedLegalMoves(state, repetitionKey(state), profile)
     if legalMoves.isEmpty then return None
-    if legalMoves.size == 1 then return legalMoves.headOption
+    if legalMoves.size == 1 then return legalMoves.headOption.map(move => SearchResult(move, 0.0, 0, 0L))
 
     if state.board.pieces.size <= 5 then
       val tbStart = System.nanoTime()
@@ -180,8 +193,8 @@ object AlphaBetaAgent:
       if tablebaseMove.nonEmpty then
         if logFinalMove then
           profile.totalNs = System.nanoTime() - startedAll
-          logTimeProfile(profile)
-        return tablebaseMove.map(_.move)
+          logTimeProfile(profile, nodes = 0L)
+        return tablebaseMove.map(hit => SearchResult(hit.move, 0.0, 0, 0L))
 
     val currentPly = plyFromState(state)
     val shouldQueryOpeningDb =
@@ -202,8 +215,8 @@ object AlphaBetaAgent:
     if bookMove.nonEmpty then
       if logFinalMove then
         profile.totalNs = System.nanoTime() - startedAll
-        logTimeProfile(profile)
-      return bookMove.map(_.move)
+        logTimeProfile(profile, nodes = 0L)
+      return bookMove.map(hit => SearchResult(hit.move, 0.0, 0, 0L))
 
     val start = System.currentTimeMillis()
     val deadline = start + math.max(1L, timeLimitMs)
@@ -211,6 +224,9 @@ object AlphaBetaAgent:
     var best: Option[Move] = None
     var lastComplete: Option[Move] = None
     var lastScoreCp = 0.0
+    var completedDepth = 0
+    var completedNodes = 0L
+    var completedStats = SearchStats()
     var depth = 1
 
     val searchStart = System.nanoTime()
@@ -229,20 +245,26 @@ object AlphaBetaAgent:
         var done = false
         while !done do
           searchRoot(state, legalMoves, depth, deadline, profile, alphaWindow, betaWindow) match
-            case Some(rs) if useAspiration && rs.scoreCp <= alphaWindow =>
-              failLow += 1
-              retries += 1
-              window *= 2.0
-              alphaWindow = sanitizeScore(base - window)
-              betaWindow = sanitizeScore(base + window)
-            case Some(rs) if useAspiration && rs.scoreCp >= betaWindow =>
-              failHigh += 1
-              retries += 1
-              window *= 2.0
-              alphaWindow = sanitizeScore(base - window)
-              betaWindow = sanitizeScore(base + window)
-            case other =>
-              rootResult = other
+            case Some(rs) =>
+              completedNodes += rs.nodes
+              completedStats = mergeStats(completedStats, rs.stats)
+              if useAspiration && rs.scoreCp <= alphaWindow then
+                failLow += 1
+                retries += 1
+                window *= 2.0
+                alphaWindow = sanitizeScore(base - window)
+                betaWindow = sanitizeScore(base + window)
+              else if useAspiration && rs.scoreCp >= betaWindow then
+                failHigh += 1
+                retries += 1
+                window *= 2.0
+                alphaWindow = sanitizeScore(base - window)
+                betaWindow = sanitizeScore(base + window)
+              else
+                rootResult = Some(rs)
+                done = true
+            case None =>
+              rootResult = None
               done = true
         val aspStats =
           if useAspiration then AspirationStats(hit = retries == 0, failLow = failLow, failHigh = failHigh, retries = retries)
@@ -252,15 +274,13 @@ object AlphaBetaAgent:
             best = Some(rs.move)
             lastComplete = Some(rs.move)
             lastScoreCp = rs.scoreCp
-            val tag = mode match
-              case SearchMode.Search => "SEARCH"
-              case SearchMode.PonderPredict => "PONDER-PREDICT"
-              case SearchMode.PonderReply => "PONDER-REPLY"
-            println(
-              s"[AI][$tag] depth=$depth nodes=${rs.nodes} timeMs=${rs.elapsedMs} evalCp=${math.round(rs.scoreCp)} pv=${rs.move.toInputString} " +
-              s"cutoffs=${rs.stats.betaCutoffs} killer=${rs.stats.killerCutoffs} counter=${rs.stats.counterCutoffs} history=${rs.stats.historyCutoffs} " +
-              s"aspiration=${if useAspiration then (if aspStats.hit then "hit" else "miss") else "off"} failLow=${aspStats.failLow} failHigh=${aspStats.failHigh} retries=${aspStats.retries}"
-            )
+            completedDepth = depth
+            if mode == SearchMode.Search then
+              val evalPawnsText = f"${rs.scoreCp}%.3f"
+              println(
+                s"[AI][SEARCH] depth=$depth nodes=${rs.nodes} timeMs=${rs.elapsedMs} evalPawns=$evalPawnsText pv=${rs.move.toInputString} " +
+                s"aspiration=${if useAspiration then (if aspStats.hit then "hit" else "miss") else "off"} failLow=${aspStats.failLow} failHigh=${aspStats.failHigh} retries=${aspStats.retries}"
+              )
           case None =>
             boundary.break()
         depth += 1
@@ -268,12 +288,14 @@ object AlphaBetaAgent:
 
     val picked = best.orElse(lastComplete).orElse(legalMoves.headOption)
     if logFinalMove then
+      logSearchHeuristicSavings(completedNodes, completedStats)
       picked.foreach { move =>
-        println(s"[AI][MOVE] source=SEARCH move=${move.toInputString} evalCp=${math.round(lastScoreCp)}")
+        val evalPawnsText = f"$lastScoreCp%.3f"
+        println(s"[AI][MOVE] source=SEARCH move=${move.toInputString} evalPawns=$evalPawnsText")
       }
       profile.totalNs = System.nanoTime() - startedAll
-      logTimeProfile(profile)
-    picked
+      logTimeProfile(profile, completedNodes)
+    picked.map(move => SearchResult(move, lastScoreCp, completedDepth, completedNodes))
 
   private def searchRoot(
     state: GameState,
@@ -477,6 +499,7 @@ object AlphaBetaAgent:
         val old = stats(0)
         stats(0) = old.copy(
           betaCutoffs = old.betaCutoffs + 1,
+          heuristicCutoffs = old.heuristicCutoffs + (if isKiller || isCounter || hasHistory then 1 else 0),
           killerCutoffs = old.killerCutoffs + (if isKiller then 1 else 0),
           counterCutoffs = old.counterCutoffs + (if isCounter then 1 else 0),
           historyCutoffs = old.historyCutoffs + (if hasHistory then 1 else 0)
@@ -677,7 +700,13 @@ object AlphaBetaAgent:
     val captureScore =
       if isCapture(boardArr, state.enPassantTarget, move) then 100_000 + (10 * victimValue) - attackerValue
       else 0
-    val promotionScore = if move.promotion.isDefined then 30_000 else 0
+    val promotionScore = move.promotion match
+      case Some(PieceType.Queen) => 39_000
+      case Some(PieceType.Rook) => 35_000
+      case Some(PieceType.Bishop) => 33_000
+      case Some(PieceType.Knight) => 34_000
+      case Some(PieceType.Pawn | PieceType.King) => 30_000
+      case None => 0
 
     val d = depth.max(0).min(MaxSearchDepth)
     val killerScore =
@@ -1114,23 +1143,35 @@ object AlphaBetaAgent:
     if isNn then profile.evalNnNs += elapsed else profile.evalHceNs += elapsed
     out
 
-  private def logTimeProfile(p: TimeProfile): Unit =
-    val total = math.max(1L, p.totalNs)
-    def pct(ns: Long): Long = math.round((ns.toDouble * 100.0) / total)
-    val searchPct = pct(p.searchNs)
-    val evalPct = pct(p.evalNs)
-    val evalNnPct = pct(p.evalNnNs)
-    val evalHcePct = pct(p.evalHceNs)
-    val orderPct = pct(p.orderMovesNs)
-    val openingPct = pct(p.openingLookupNs)
-    val tablebasePct = pct(p.tablebaseLookupNs)
-    val moveGenPct = pct(p.moveGenNs)
-    val applyMovePct = pct(p.applyMoveNs)
-    val statusPct = pct(p.statusNs)
-    val ttPct = pct(p.ttNs)
-    val heurPct = pct(p.heuristicNs)
+  private def mergeStats(a: SearchStats, b: SearchStats): SearchStats =
+    SearchStats(
+      betaCutoffs = a.betaCutoffs + b.betaCutoffs,
+      heuristicCutoffs = a.heuristicCutoffs + b.heuristicCutoffs,
+      killerCutoffs = a.killerCutoffs + b.killerCutoffs,
+      counterCutoffs = a.counterCutoffs + b.counterCutoffs,
+      historyCutoffs = a.historyCutoffs + b.historyCutoffs
+    )
+
+  private def logSearchHeuristicSavings(nodes: Long, stats: SearchStats): Unit =
+    val heuristicPct =
+      if nodes > 0 then (stats.heuristicCutoffs.toDouble * 100.0) / nodes.toDouble
+      else 0.0
+    val heuristicPctText = f"$heuristicPct%.2f"
     println(
-      s"[AI][TIME] totalMs=${total / 1000000L} search=${searchPct}% eval=${evalPct}% evalNN=${evalNnPct}% evalHCE=${evalHcePct}% order=${orderPct}% moveGen=${moveGenPct}% applyMove=${applyMovePct}% status=${statusPct}% tt=${ttPct}% heuristics=${heurPct}% openingDb=${openingPct}% tablebaseDb=${tablebasePct}%"
+      s"[AI][SEARCH-HEURISTICS] nodes=$nodes betaCutoffs=${stats.betaCutoffs} heuristicCuts=${stats.heuristicCutoffs} heuristicCutPct=$heuristicPctText"
+    )
+
+  private def logTimeProfile(p: TimeProfile, nodes: Long): Unit =
+    val total = math.max(1L, p.totalNs)
+    val timePerNodeUs =
+      if nodes > 0 then f"${total.toDouble / nodes.toDouble / 1000.0}%.3f"
+      else "n/a"
+    def ms(ns: Long): String = f"${ns.toDouble / 1000000.0}%.3f"
+    println(
+      s"[AI][TIME] totalMs=${ms(total)} nodes=$nodes timePerNodeUs=$timePerNodeUs " +
+      s"searchMs=${ms(p.searchNs)} evalMs=${ms(p.evalNs)} evalNNMs=${ms(p.evalNnNs)} evalHCEMs=${ms(p.evalHceNs)} " +
+      s"orderMs=${ms(p.orderMovesNs)} moveGenMs=${ms(p.moveGenNs)} applyMoveMs=${ms(p.applyMoveNs)} statusMs=${ms(p.statusNs)} " +
+      s"ttMs=${ms(p.ttNs)} heuristicsMs=${ms(p.heuristicNs)} openingDbMs=${ms(p.openingLookupNs)} tablebaseDbMs=${ms(p.tablebaseLookupNs)}"
     )
 
   private def evictIfNeeded[T](

@@ -21,6 +21,14 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
     baseFen: String,
     expectedMove: String,
     expectedFen: String,
+    plannedReply: Option[String],
+    depth: Int,
+    warmedNodes: Long
+  )
+  private final case class PonderOutcome(
+    status: String,
+    warmedNodes: Long,
+    expectedMove: String,
     plannedReply: Option[String]
   )
   private val ponderCache = TrieMap.empty[String, PonderBundle]
@@ -150,21 +158,22 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
               if (currentState.activeColor == ourColor) println(s"OpponentGone=true und Bot am Zug => warte auf Rueckkehr ($gameId)")
             } else if (currentState.activeColor == ourColor) {
               val timeLimit = calculateTimeLimit(currentState, lichessState)
-              ponderCache.get(gameId) match {
+              val ponderOutcome = ponderCache.get(gameId) match {
                 case Some(bundle) if bundle.baseMoveCount + 1 == moveCount && bundle.expectedFen == currentState.toFen =>
-                  val reply = bundle.plannedReply.map(r => s" planned=$r").getOrElse("")
-                  println(s"[AI][PONDER] game=$gameId hit opponent=${bundle.expectedMove}$reply => continue search")
-                case Some(bundle) if bundle.baseMoveCount < moveCount =>
-                  println(s"[AI][PONDER] game=$gameId miss expected=${bundle.expectedMove} actualPly=$moveCount")
                   ponderCache.remove(gameId)
-                case _ => ()
+                  Some(PonderOutcome("hit", bundle.warmedNodes, bundle.expectedMove, bundle.plannedReply))
+                case Some(bundle) if bundle.baseMoveCount < moveCount =>
+                  ponderCache.remove(gameId)
+                  Some(PonderOutcome("miss", bundle.warmedNodes, bundle.expectedMove, bundle.plannedReply))
+                case _ => None
               }
               println(s"Bot am Zug ($gameId [Zug $moveCount])...")
-              val chosenMove = AlphaBetaAgent.bestMove(currentState, timeLimit)
+              val chosenSearch = AlphaBetaAgent.bestMoveWithStats(currentState, timeLimit)
+              logPonderOutcome(gameId, ponderOutcome, chosenSearch.map(_.nodes).getOrElse(0L))
 
-              chosenMove match {
-                case Some(bestMove) =>
-                  val moveUci = bestMove.toInputString
+              chosenSearch match {
+                case Some(result) =>
+                  val moveUci = result.move.toInputString
                   client.makeMove(gameId, moveUci).onComplete {
                     case Success(true) => ()
                     case Success(false) => println(s"Zug $moveUci wurde von Lichess abgelehnt (400).")
@@ -211,18 +220,34 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
           val expectedMove = result.expectedOpponentMove.toInputString
           val plannedReply = result.plannedReply.map(_.toInputString)
           if activeGames.get(gameId).exists(_._3 == moveCount) then
-            ponderCache.put(gameId, PonderBundle(moveCount, fen, expectedMove, result.expectedFen, plannedReply))
-            val reply = plannedReply.map(r => s" reply=$r").getOrElse("")
-            println(s"[AI][PONDER] game=$gameId warmed=true basePly=$moveCount expected=$expectedMove$reply")
+            ponderCache.put(
+              gameId,
+              PonderBundle(moveCount, fen, expectedMove, result.expectedFen, plannedReply, result.depth, result.warmedNodes)
+            )
         case None =>
-          println(s"[AI][PONDER] game=$gameId warmed=false basePly=$moveCount")
+          ()
       }
       ponderInFlight.remove(gameId, fen)
     }.recover { case e =>
       ponderInFlight.remove(gameId, fen)
-      println(s"[AI][PONDER] game=$gameId failed=${e.getMessage}")
+      println(s"[AI][PONDER-ERROR] failed=${e.getMessage}")
     }
     ()
+  }
+
+  private def logPonderOutcome(gameId: String, outcome: Option[PonderOutcome], searchNodes: Long): Unit = {
+    outcome.foreach { o =>
+      val totalRelevantNodes = o.warmedNodes + searchNodes
+      val savedPct =
+        if (o.status == "hit" && totalRelevantNodes > 0) then
+          (o.warmedNodes.toDouble * 100.0) / totalRelevantNodes.toDouble
+        else 0.0
+      val savedPctText = f"$savedPct%.2f"
+      val reply = o.plannedReply.map(r => s" reply=$r").getOrElse("")
+      println(
+        s"[AI][PONDER-RESULT] ponder=${o.status} warmednodes=${o.warmedNodes} searchnodes=$searchNodes savedPct=$savedPctText expected=${o.expectedMove}$reply"
+      )
+    }
   }
 
   private def captureOrderingScore(state: GameState, move: Move): Int = 0
