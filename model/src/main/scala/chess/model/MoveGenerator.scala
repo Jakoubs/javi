@@ -2,10 +2,11 @@ package chess.model
 
 object MoveGenerator:
 
-  private def bishopDirections: Array[(Int, Int)] = Array((1, 1), (1, -1), (-1, 1), (-1, -1))
-  private def rookDirections: Array[(Int, Int)] = Array((1, 0), (-1, 0), (0, 1), (0, -1))
-  private def knightDeltas: Array[(Int, Int)] = Array((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
-  private def kingDirections: Array[(Int, Int)] = Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
+  private val bishopDirections: Array[(Int, Int)] = Array((1, 1), (1, -1), (-1, 1), (-1, -1))
+  private val rookDirections: Array[(Int, Int)] = Array((1, 0), (-1, 0), (0, 1), (0, -1))
+  private val queenDirections: Array[(Int, Int)] = bishopDirections ++ rookDirections
+  private val knightDeltas: Array[(Int, Int)] = Array((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
+  private val kingDirections: Array[(Int, Int)] = Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
 
   def legalMoves(state: GameState): List[Move] =
     val pseudo = pseudoLegalMoves(state)
@@ -41,13 +42,11 @@ object MoveGenerator:
       case Some(pos) => isAttackedBy(state.board, pos, color.opposite)
 
   private def pseudoLegalMoves(state: GameState): List[Move] =
-    val pieces = state.board.allPiecesOf(state.activeColor)
     val moves = scala.collection.mutable.ArrayBuffer.empty[Move]
-    var index = 0
-    while index < pieces.length do
-      val (pos, piece) = pieces(index)
-      addPseudoMovesForPiece(moves, state, pos, piece)
-      index += 1
+    state.board.pieces.foreach { case (pos, piece) =>
+      if piece.color == state.activeColor then
+        addPseudoMovesForPiece(moves, state, pos, piece)
+    }
     moves.toList
 
   private def addPseudoMovesForPiece(
@@ -136,7 +135,7 @@ object MoveGenerator:
       dirIndex += 1
 
   private def queenMoves(out: scala.collection.mutable.ArrayBuffer[Move], state: GameState, pos: Pos, color: Color): Unit =
-    slidingMoves(out, state, pos, color, Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)))
+    slidingMoves(out, state, pos, color, queenDirections)
 
   private def kingMoves(out: scala.collection.mutable.ArrayBuffer[Move], state: GameState, pos: Pos, color: Color): Unit =
     val directions = kingDirections
@@ -147,17 +146,21 @@ object MoveGenerator:
       if to.isValid && !state.board.isOccupiedBy(to, color) then
         out += Move(pos, to)
       index += 1
-    out ++= castlingMoves(state, pos, color)
+    addCastlingMoves(out, state, pos, color)
 
   // $COVERAGE-OFF$
-  private def castlingMoves(state: GameState, kingPos: Pos, color: Color): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
+  private def addCastlingMoves(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    kingPos: Pos,
+    color: Color
+  ): Unit =
     val board = state.board
     val rights = state.castlingRights
     val row = if color == Color.White then 0 else 7
 
     if isAttackedBy(board, kingPos, color.opposite) then
-      return Nil
+      return
 
     val kingSideAllowed = if color == Color.White then rights.whiteKingSide else rights.blackKingSide
     if kingSideAllowed &&
@@ -167,7 +170,7 @@ object MoveGenerator:
       !isAttackedBy(board, Pos(5, row), color.opposite) &&
       !isAttackedBy(board, Pos(6, row), color.opposite)
     then
-      moves += Move(kingPos, Pos(6, row))
+      out += Move(kingPos, Pos(6, row))
 
     val queenSideAllowed = if color == Color.White then rights.whiteQueenSide else rights.blackQueenSide
     if queenSideAllowed &&
@@ -178,9 +181,7 @@ object MoveGenerator:
       !isAttackedBy(board, Pos(3, row), color.opposite) &&
       !isAttackedBy(board, Pos(4, row), color.opposite)
     then
-      moves += Move(kingPos, Pos(2, row))
-
-    moves.toList
+      out += Move(kingPos, Pos(2, row))
 
   def isAttackedBy(board: Board, pos: Pos, attacker: Color): Boolean = {
     val pawnDir = if attacker == Color.White then 1 else -1

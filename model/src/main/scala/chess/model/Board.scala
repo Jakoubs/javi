@@ -30,7 +30,11 @@ case class Board(pieces: Map[Pos, Piece]):
     pieces.collectFirst { case (pos, Piece(c, PieceType.King)) if c == color => pos }
 
   def allPiecesOf(color: Color): List[(Pos, Piece)] =
-    pieces.toList.filter(_._2.color == color)
+    val out = scala.collection.mutable.ListBuffer.empty[(Pos, Piece)]
+    pieces.foreach { entry =>
+      if entry._2.color == color then out += entry
+    }
+    out.toList
 
   def toFenPlacement: String =
     val ranks = scala.collection.mutable.ListBuffer.empty[String]
