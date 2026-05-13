@@ -227,16 +227,45 @@ object HceBootstrappedPolicyValueNet:
     scoreForColor(state, Color.White, endgame) - scoreForColor(state, Color.Black, endgame)
 
   private def scoreForColor(state: GameState, color: Color, endgame: Boolean): Int =
-    val own = state.board.allPiecesOf(color)
-    val opp = state.board.allPiecesOf(color.opposite)
-    val ownPawns = own.collect { case (p, Piece(_, PieceType.Pawn)) => p }
-    val oppPawns = opp.collect { case (p, Piece(_, PieceType.Pawn)) => p }
+    val ownBuffer = scala.collection.mutable.ListBuffer.empty[(Pos, Piece)]
+    val oppBuffer = scala.collection.mutable.ListBuffer.empty[(Pos, Piece)]
+    val ownPawnBuffer = scala.collection.mutable.ListBuffer.empty[Pos]
+    val oppPawnBuffer = scala.collection.mutable.ListBuffer.empty[Pos]
+    val ownByFileCounts = Array.fill(8)(0)
+    val homeRow = if color == Color.White then 0 else 7
+    val oppHomeRow = if color == Color.White then 7 else 0
+    var ownDevelopedMinors = 0
+    var oppDevelopedMinors = 0
+    var ownBishopCount = 0
+
+    state.board.foreachPiece { (pos, piece) =>
+      if piece.color == color then
+        ownBuffer += pos -> piece
+        piece.pieceType match
+          case PieceType.Pawn =>
+            ownPawnBuffer += pos
+            ownByFileCounts(pos.col) += 1
+          case PieceType.Bishop =>
+            ownBishopCount += 1
+            if pos.row != homeRow then ownDevelopedMinors += 1
+          case PieceType.Knight =>
+            if pos.row != homeRow then ownDevelopedMinors += 1
+          case _ => ()
+      else
+        oppBuffer += pos -> piece
+        piece.pieceType match
+          case PieceType.Pawn =>
+            oppPawnBuffer += pos
+          case PieceType.Bishop | PieceType.Knight =>
+            if pos.row != oppHomeRow then oppDevelopedMinors += 1
+          case _ => ()
+    }
+
+    val own = ownBuffer.toList
+    val opp = oppBuffer.toList
+    val ownPawns = ownPawnBuffer.toList
+    val oppPawns = oppPawnBuffer.toList
     val ownPawnSet = ownPawns.toSet
-    val ownByFile = ownPawns.groupBy(_.col).view.mapValues(_.size).toMap
-    val ownKnightCount = own.count(_._2.pieceType == PieceType.Knight)
-    val ownBishopCount = own.count(_._2.pieceType == PieceType.Bishop)
-    val ownDevelopedMinors = developedMinorCount(own, color)
-    val oppDevelopedMinors = developedMinorCount(opp, color.opposite)
 
     var score = 0
 
@@ -244,18 +273,23 @@ object HceBootstrappedPolicyValueNet:
       if isConnectedPawn(p, ownPawnSet, color) then score += (if endgame then 8 else 10)
       if isPassedPawn(p, color, oppPawns) then score += passedPawnBonus(state, p, color, own, opp, endgame)
     }
-    ownByFile.values.foreach { cnt =>
+    var file = 0
+    while file < 8 do
+      val cnt = ownByFileCounts(file)
       if cnt > 1 then score -= (cnt - 1) * (if endgame then 10 else 14)
-    }
+      file += 1
 
     score += developmentScore(own, color, endgame)
     score += earlyQueenPenalty(own, color, ownDevelopedMinors)
     score += openingCoordinationScore(state, own, color, endgame, ownDevelopedMinors)
     score += kingSafetyScore(state, own, opp, ownPawns, oppPawns, color, endgame)
     score += initiativePressureScore(state, own, opp, ownPawns, oppPawns, color, endgame, ownDevelopedMinors, oppDevelopedMinors)
+    score += endgameKingActivityScore(state, own, opp, ownPawns, oppPawns, color, endgame)
+    score += pawnRaceScore(state, own, opp, ownPawns, ownPawnSet, oppPawns, color, endgame)
 
     if ownBishopCount >= 2 then score += 22
-    score += rookFileActivity(own, ownByFile, oppPawns, color, endgame)
+    score += rookFileActivity(own, ownByFileCounts, oppPawns, color, endgame)
+    score += rookEndgameScore(own, opp, ownPawns, oppPawns, color, endgame)
 
     score
 
@@ -308,6 +342,79 @@ object HceBootstrappedPolicyValueNet:
 
   private def chebyshevDistance(a: chess.model.Pos, b: chess.model.Pos): Int =
     math.max(math.abs(a.col - b.col), math.abs(a.row - b.row))
+
+  private def promotionSquare(pawn: Pos, color: Color): Pos =
+    Pos(pawn.col, if color == Color.White then 7 else 0)
+
+  private def stopSquare(pawn: Pos, color: Color): Pos =
+    val forward = if color == Color.White then 1 else -1
+    Pos(pawn.col, (pawn.row + forward).max(0).min(7))
+
+  private def isBehindPawn(piece: Pos, pawn: Pos, pawnColor: Color): Boolean =
+    piece.col == pawn.col && (if pawnColor == Color.White then piece.row < pawn.row else piece.row > pawn.row)
+
+  private def centrality(pos: Pos): Int =
+    val fileDistance = math.min(math.abs(pos.col - 3), math.abs(pos.col - 4))
+    val rankDistance = math.min(math.abs(pos.row - 3), math.abs(pos.row - 4))
+    6 - (fileDistance + rankDistance)
+
+  private def endgameKingActivityScore(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    opp: List[(Pos, Piece)],
+    ownPawns: List[Pos],
+    oppPawns: List[Pos],
+    color: Color,
+    endgame: Boolean
+  ): Int =
+    if !endgame then 0
+    else
+      val ownKingOpt = own.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+      val oppKingOpt = opp.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+      (ownKingOpt, oppKingOpt) match
+        case (Some(ownKing), Some(_)) =>
+          val ownPassers = ownPawns.filter(isPassedPawn(_, color, oppPawns))
+          val oppPassers = oppPawns.filter(isPassedPawn(_, color.opposite, ownPawns))
+          val center = centrality(ownKing) * 5
+          val supportOwnPassers = ownPassers.map { pawn =>
+            val target = stopSquare(pawn, color)
+            (7 - chebyshevDistance(ownKing, target)).max(0) * 7
+          }.sum
+          val stopEnemyPassers = oppPassers.map { pawn =>
+            val target = stopSquare(pawn, color.opposite)
+            (7 - chebyshevDistance(ownKing, target)).max(0) * 8
+          }.sum
+          center + supportOwnPassers + stopEnemyPassers
+        case _ => 0
+
+  private def pawnRaceScore(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    opp: List[(Pos, Piece)],
+    ownPawns: List[Pos],
+    ownPawnSet: Set[Pos],
+    oppPawns: List[Pos],
+    color: Color,
+    endgame: Boolean
+  ): Int =
+    if !endgame then 0
+    else
+      val oppKingOpt = opp.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+      val ownKingOpt = own.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+      (ownKingOpt, oppKingOpt) match
+        case (Some(ownKing), Some(oppKing)) =>
+          ownPawns.filter(isPassedPawn(_, color, oppPawns)).map { pawn =>
+            val rankFromStart = if color == Color.White then pawn.row else 7 - pawn.row
+            val promotion = promotionSquare(pawn, color)
+            val pawnMoves = 7 - rankFromStart
+            val opponentTooLate = chebyshevDistance(oppKing, promotion) > pawnMoves + 1
+            val ownKingSupports = chebyshevDistance(ownKing, stopSquare(pawn, color)) <= 2
+            val connected = isConnectedPawn(pawn, ownPawnSet, color)
+            (if opponentTooLate then 85 else 0) +
+              (if ownKingSupports then 28 else 0) +
+              (if connected && rankFromStart >= 4 then 34 else 0)
+          }.sum
+        case _ => 0
 
   private def developmentScore(own: List[(chess.model.Pos, Piece)], color: Color, endgame: Boolean): Int =
     if endgame then 0
@@ -540,14 +647,14 @@ object HceBootstrappedPolicyValueNet:
 
   private def rookFileActivity(
     own: List[(chess.model.Pos, Piece)],
-    ownByFile: Map[Int, Int],
+    ownByFile: Array[Int],
     oppPawns: List[chess.model.Pos],
     color: Color,
     endgame: Boolean
   ): Int =
     val rooks = own.collect { case (p, Piece(_, PieceType.Rook)) => p }
     rooks.foldLeft(0) { (acc, r) =>
-      val ownPawnOnFile = ownByFile.getOrElse(r.col, 0) > 0
+      val ownPawnOnFile = ownByFile(r.col) > 0
       val oppPawnOnFile = oppPawns.exists(_.col == r.col)
       val fileBonus =
         if !ownPawnOnFile && !oppPawnOnFile then (if endgame then 14 else 10)
@@ -557,3 +664,33 @@ object HceBootstrappedPolicyValueNet:
       val rankBonus = if r.row == targetRank then 8 else 0
       acc + fileBonus + rankBonus
     }
+
+  private def rookEndgameScore(
+    own: List[(Pos, Piece)],
+    opp: List[(Pos, Piece)],
+    ownPawns: List[Pos],
+    oppPawns: List[Pos],
+    color: Color,
+    endgame: Boolean
+  ): Int =
+    if !endgame then 0
+    else
+      val rooks = own.collect { case (p, Piece(_, PieceType.Rook)) => p }
+      if rooks.isEmpty then 0
+      else
+        val ownPassers = ownPawns.filter(isPassedPawn(_, color, oppPawns))
+        val oppPassers = oppPawns.filter(isPassedPawn(_, color.opposite, ownPawns))
+        val oppKingOpt = opp.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+        rooks.map { rook =>
+          val behindOwn = ownPassers.count(pawn => isBehindPawn(rook, pawn, color)) * 38
+          val behindEnemy = oppPassers.count(pawn => isBehindPawn(rook, pawn, color.opposite)) * 32
+          val sideOrBackChecks =
+            oppKingOpt.map { king =>
+              val sameRank = rook.row == king.row
+              val sameFile = rook.col == king.col
+              if sameRank || sameFile then 12 else 0
+            }.getOrElse(0)
+          val passivePenalty =
+            if ownPassers.nonEmpty && !ownPassers.exists(pawn => isBehindPawn(rook, pawn, color)) then 10 else 0
+          behindOwn + behindEnemy + sideOrBackChecks - passivePenalty
+        }.sum

@@ -412,6 +412,12 @@ object AlphaBetaAgent:
     if repetitionCountForCurrentPosition(state) >= 3 then
       boundary.break(0.0)
 
+    if state.board.pieceCount <= SyzygyProbe.maxPieces then
+      val tbStart = System.nanoTime()
+      val tbScore = SyzygyProbe.probeWdl(state).map(tablebaseScore)
+      profile.tablebaseLookupNs += (System.nanoTime() - tbStart)
+      tbScore.foreach(score => boundary.break(score))
+
     val legalKey = positionHash(state)
     val positionKey = searchHash(state)
     val ttStart = System.nanoTime()
@@ -455,8 +461,7 @@ object AlphaBetaAgent:
     if allowNullMove &&
       depth >= 3 &&
       !inCheck &&
-      state.board.pieceCount > 6 &&
-      hasNonPawnMaterial(state, state.activeColor)
+      allowNullMovePruningInPosition(state)
     then
       val nullState = makeNullMoveState(state)
       val r = NullMoveReduction
@@ -1070,11 +1075,32 @@ object AlphaBetaAgent:
         GameState.white(b, cr, None, nextHalf, fm + 1, Nil, positionHash = nextHash, repetitionCounts = nextRepetitionCounts)
 
   private def hasNonPawnMaterial(state: GameState, color: Color): Boolean =
-    state.board.allPiecesOf(color).exists { case (_, p) =>
-      p.pieceType match
-        case PieceType.King | PieceType.Pawn => false
-        case _ => true
-    }
+    val board = state.board
+    (board.bitboardOf(color, PieceType.Knight) |
+      board.bitboardOf(color, PieceType.Bishop) |
+      board.bitboardOf(color, PieceType.Rook) |
+      board.bitboardOf(color, PieceType.Queen)) != 0L
+
+  private def allowNullMovePruningInPosition(state: GameState): Boolean =
+    val pieces = state.board.pieceCount
+    if pieces <= 6 || !hasNonPawnMaterial(state, state.activeColor) then false
+    else if pieces <= 10 && isZugzwangProneEndgame(state) then false
+    else true
+
+  private def isZugzwangProneEndgame(state: GameState): Boolean =
+    val board = state.board
+    val queens =
+      java.lang.Long.bitCount(board.bitboardOf(Color.White, PieceType.Queen) | board.bitboardOf(Color.Black, PieceType.Queen))
+    val rooks =
+      java.lang.Long.bitCount(board.bitboardOf(Color.White, PieceType.Rook) | board.bitboardOf(Color.Black, PieceType.Rook))
+    val minors =
+      java.lang.Long.bitCount(
+        board.bitboardOf(Color.White, PieceType.Bishop) |
+          board.bitboardOf(Color.Black, PieceType.Bishop) |
+          board.bitboardOf(Color.White, PieceType.Knight) |
+          board.bitboardOf(Color.Black, PieceType.Knight)
+      )
+    queens == 0 && rooks == 0 && minors <= 2
 
   // Search-internal move application without growing history list on every node.
   // This keeps functional game rules equivalent for search while reducing allocation pressure.
@@ -1259,6 +1285,13 @@ object AlphaBetaAgent:
   private def matedScore(plyFromRoot: Int): Double =
     -(MATE_SCORE.toDouble - plyFromRoot.toDouble)
 
+  private def tablebaseScore(hit: SyzygyProbe.WdlResult): Double =
+    val distance = hit.dtm.orElse(hit.dtz).map(v => math.abs(v)).getOrElse(0)
+    math.signum(hit.wdl) match
+      case 1 => sanitizeScore(100_000.0 - distance.toDouble)
+      case -1 => sanitizeScore(-100_000.0 + distance.toDouble)
+      case _ => 0.0
+
   private def isMateScore(score: Double): Boolean =
     math.abs(score) >= MateScoreThreshold
 
@@ -1286,13 +1319,14 @@ object AlphaBetaAgent:
       case _ => false
 
   private def materialLeadCpFor(state: GameState, color: Color): Int =
-    var own = 0
-    var opp = 0
-    state.board.foreachPiece { (_, p) =>
-      val v = PieceType.pieceValue(p.pieceType) * 100
-      if p.color == color then own += v else opp += v
-    }
-    own - opp
+    materialCpFor(state.board, color) - materialCpFor(state.board, color.opposite)
+
+  private def materialCpFor(board: Board, color: Color): Int =
+    java.lang.Long.bitCount(board.bitboardOf(color, PieceType.Pawn)) * PieceType.pieceValue(PieceType.Pawn) * 100 +
+      java.lang.Long.bitCount(board.bitboardOf(color, PieceType.Knight)) * PieceType.pieceValue(PieceType.Knight) * 100 +
+      java.lang.Long.bitCount(board.bitboardOf(color, PieceType.Bishop)) * PieceType.pieceValue(PieceType.Bishop) * 100 +
+      java.lang.Long.bitCount(board.bitboardOf(color, PieceType.Rook)) * PieceType.pieceValue(PieceType.Rook) * 100 +
+      java.lang.Long.bitCount(board.bitboardOf(color, PieceType.Queen)) * PieceType.pieceValue(PieceType.Queen) * 100
 
   private def plyFromState(state: GameState): Int =
     // fullMoveNumber starts at 1; White to move at ply 0, Black at ply 1.

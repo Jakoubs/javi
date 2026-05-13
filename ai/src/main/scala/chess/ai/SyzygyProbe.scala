@@ -1,19 +1,31 @@
 package chess.ai
 
-import chess.model.GameState
-import chess.model.Move
+import chess.model.{GameRules, GameState, Move, MoveGenerator}
 import chess.util.parser.{CoordinateMoveParser, SanMoveParser}
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.jdk.CollectionConverters.*
 
 object SyzygyProbe:
 
   final case class ProbeResult(
     move: Move,
+    wdl: Int,
+    dtz: Option[Int],
+    dtm: Option[Int],
+    provider: String
+  )
+
+  final case class WdlResult(
+    wdl: Int,
+    dtz: Option[Int],
+    dtm: Option[Int],
+    provider: String
+  )
+
+  private final case class PositionProbe(
     wdl: Int,
     dtz: Option[Int],
     dtm: Option[Int],
@@ -34,22 +46,48 @@ object SyzygyProbe:
     sys.env.get("CHESS_SYZYGY_TIMEOUT_MS").flatMap(_.toLongOption).getOrElse(1500L).max(50L)
 
   private val cache = new ConcurrentHashMap[String, ProbeResult | Null]()
+  private val positionCache = new ConcurrentHashMap[String, PositionProbe | Null]()
   private val unavailableLogged = new AtomicBoolean(false)
+  private val availableLogged = new AtomicBoolean(false)
 
   def maxPieces: Int = MaxPieces
+
+  def probeWdl(state: GameState): Option[WdlResult] =
+    if !Enabled || state.board.pieceCount > MaxPieces then None
+    else
+      probePosition(state).map(p => WdlResult(p.wdl, p.dtz, p.dtm, p.provider))
 
   def probe(state: GameState): Option[ProbeResult] =
     if !Enabled || state.board.pieceCount > MaxPieces then None
     else
       val fen = state.toFen
-      Option(cache.get(fen)) match
-        case some @ Some(_) => some
-        case None =>
-          val resolved = probeUncached(state)
-          cache.put(fen, resolved.orNull)
-          resolved
+      val cached = cache.get(fen)
+      if cached != null then Some(cached)
+      else
+        val resolved = probeUncached(state)
+        resolved.foreach(cache.put(fen, _))
+        resolved
 
   private def probeUncached(state: GameState): Option[ProbeResult] =
+    val fen = state.toFen
+    probeOutput(state).flatMap { output =>
+      val pos = parsePositionInfo(output)
+      positionCache.put(fen, pos)
+      val directMoves = extractPreferredMoves(output, state).getOrElse(Nil)
+      chooseBestMoveByChildProbe(state, if directMoves.nonEmpty then directMoves else MoveGenerator.legalMoves(state), pos)
+        .orElse(directMoves.headOption.map(move => ProbeResult(move, pos.wdl, pos.dtz, pos.dtm, pos.provider)))
+    }
+
+  private def probePosition(state: GameState): Option[PositionProbe] =
+    val fen = state.toFen
+    val cached = positionCache.get(fen)
+    if cached != null then Some(cached)
+    else
+      val resolved = probeOutput(state).map(parsePositionInfo)
+      resolved.foreach(positionCache.put(fen, _))
+      resolved
+
+  private def probeOutput(state: GameState): Option[String] =
     val tbPath = Paths.get(PathSetting)
     if !Files.isDirectory(tbPath) then
       logUnavailableOnce(s"directory_not_found path=$PathSetting")
@@ -65,8 +103,8 @@ object SyzygyProbe:
         else if process.exitValue() != 0 then
           None
         else
-          val output = scala.io.Source.fromInputStream(process.getInputStream).mkString
-          parseOutput(output, state)
+          logAvailableOnce(tbPath)
+          Some(scala.io.Source.fromInputStream(process.getInputStream).mkString)
       catch
         case _: IOException =>
           logUnavailableOnce(s"command_not_available cmd=$ProbeCommand")
@@ -79,12 +117,14 @@ object SyzygyProbe:
       case _ =>
         List(ProbeCommand, s"--path=${path.toString}", fen)
 
-  private def parseOutput(output: String, state: GameState): Option[ProbeResult] =
+  private def parsePositionInfo(output: String): PositionProbe =
     val wdl = parseWdl(output)
     val dtz = parseSignedInt(output, "(?im)^\\s*DTZ(?:50)?\\s*[:=]\\s*(-?\\d+)\\b")
       .orElse(parseSignedInt(output, "(?im)^\\s*DTZ50\\s*=\\s*(-?\\d+)\\b"))
     val dtm = parseSignedInt(output, "(?im)^\\s*DTM\\s*[:=]\\s*(-?\\d+)\\b")
+    PositionProbe(wdl, dtz, dtm, s"syzygy-$ProbeKind")
 
+  private def extractPreferredMoves(output: String, state: GameState): Option[List[Move]] =
     val preferredMoves =
       extractCandidateMoves(output, "WinningMoves")
         .orElse(extractCandidateMoves(output, "DrawingMoves"))
@@ -92,10 +132,37 @@ object SyzygyProbe:
         .orElse(extractPrincipalVariationMove(output))
         .getOrElse(Nil)
 
-    preferredMoves.iterator
+    val moves = preferredMoves.iterator
       .flatMap(token => parseMove(token, state).iterator)
-      .find(_ => true)
-      .map(move => ProbeResult(move, wdl, dtz, dtm, s"syzygy-$ProbeKind"))
+      .toList
+      .distinct
+    Option.when(moves.nonEmpty)(moves)
+
+  private def chooseBestMoveByChildProbe(
+    state: GameState,
+    candidateMoves: List[Move],
+    current: PositionProbe
+  ): Option[ProbeResult] =
+    val legal = MoveGenerator.legalMoves(state)
+    val candidates = candidateMoves.distinct.filter(legal.contains)
+    val evaluated = candidates.flatMap { move =>
+      val child = GameRules.applyMove(state, move)
+      probePosition(child).map { childProbe =>
+        val parentWdl = -childProbe.wdl.sign
+        val distance = childProbe.dtm.orElse(childProbe.dtz).map(v => math.abs(v) + 1)
+        (move, parentWdl, distance, childProbe)
+      }
+    }
+    if evaluated.isEmpty then None
+    else
+      val bestWdl = evaluated.map(_._2).max
+      val sameOutcome = evaluated.filter(_._2 == bestWdl)
+      val selected =
+        if bestWdl > 0 then sameOutcome.minBy { case (_, _, distance, _) => distance.getOrElse(Int.MaxValue) }
+        else if bestWdl < 0 then sameOutcome.maxBy { case (_, _, distance, _) => distance.getOrElse(0) }
+        else sameOutcome.minBy { case (_, _, distance, _) => distance.getOrElse(Int.MaxValue) }
+      val (move, _, _, _) = selected
+      Some(ProbeResult(move, current.wdl, current.dtz, current.dtm, current.provider))
 
   private def extractCandidateMoves(output: String, label: String): Option[List[String]] =
     val regex = (s"(?im)^\\s*$label\\s*[:=]\\s*(.+)$$").r
@@ -138,9 +205,12 @@ object SyzygyProbe:
         .getOrElse("")
         .toLowerCase
 
-    if line.contains("cursed") || line.matches(""".*\b1\b.*""") || line.contains("win") then 1
-    else if line.contains("blessed") || line.matches(""".*\b-1\b.*""") || line.contains("loss") then -1
-    else 0
+    val numeric = """(?<!\d)-?\d+(?!\d)""".r.findFirstIn(line).flatMap(_.toIntOption)
+    numeric match
+      case Some(v) => math.signum(v)
+      case None if line.contains("loss") || line.contains("blessed") => -1
+      case None if line.contains("win") || line.contains("cursed") => 1
+      case _ => 0
 
   private def parseSignedInt(output: String, pattern: String): Option[Int] =
     pattern.r.findFirstMatchIn(output).flatMap(m => m.group(1).toIntOption)
@@ -148,3 +218,7 @@ object SyzygyProbe:
   private def logUnavailableOnce(reason: String): Unit =
     if unavailableLogged.compareAndSet(false, true) then
       println(s"[AI][SYZYGY] unavailable reason=$reason")
+
+  private def logAvailableOnce(path: Path): Unit =
+    if availableLogged.compareAndSet(false, true) then
+      println(s"[AI][SYZYGY] available cmd=$ProbeCommand kind=$ProbeKind path=${path.toString} maxPieces=$MaxPieces")
