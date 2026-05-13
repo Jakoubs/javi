@@ -43,7 +43,7 @@ object AlphaBetaAgent:
   private val MaxQuiescenceDepth =
     sys.env.get("CHESS_QS_MAX_DEPTH").flatMap(_.toIntOption).getOrElse(3).max(0)
   private val QuiescenceChecksDepth =
-    sys.env.get("CHESS_QS_CHECK_DEPTH").flatMap(_.toIntOption).getOrElse(0).max(0)
+    sys.env.get("CHESS_QS_CHECK_DEPTH").flatMap(_.toIntOption).getOrElse(1).max(0)
   private val NullMoveReduction = 2
   private val LmrReduction = 1
   private val AspirationInitialWindow = 1.2
@@ -343,7 +343,7 @@ object AlphaBetaAgent:
     val started = System.currentTimeMillis()
     val nodes = Array(0L)
     val stats = Array(SearchStats())
-    val ttMoveRoot = Option(tt.get(positionHash(state))).flatMap(_.best)
+    val ttMoveRoot = Option(tt.get(searchHash(state))).flatMap(_.best)
     val ordered = orderMoves(state, legalMoves, depth, None, ttMoveRoot, profile)
     var alpha = startAlpha
     val beta = startBeta
@@ -357,14 +357,13 @@ object AlphaBetaAgent:
       else ordered.map(_ => false)
     val rootDrawScore = drawScoreForRoot(rootStaticScore(state, legalMoves, profile))
 
-    var idx = 0
-    for move <- ordered do
+    for (move, idx) <- ordered.zipWithIndex do
       if System.currentTimeMillis() >= deadline then boundary.break(None)
       val isRepetitionMove = repetitionFlags(idx)
       val isStalemateMove = stalemateFlags(idx)
-      idx += 1
       val score =
-        if isRepetitionMove || isStalemateMove then rootDrawScore
+        if isRepetitionMove || isStalemateMove then
+          rootDrawScore
         else
           val amStart = System.nanoTime()
           val child = fastApplyMove(state, move)
@@ -387,7 +386,7 @@ object AlphaBetaAgent:
         else 0
       val ttPutStart = System.nanoTime()
       putTt(
-        positionHash(state),
+        searchHash(state),
         TTEntry(scoreToTt(rootScore, plyFromRoot = 0), depth, bound, Some(move), ttStamp.incrementAndGet())
       )
       profile.ttNs += (System.nanoTime() - ttPutStart)
@@ -410,7 +409,11 @@ object AlphaBetaAgent:
     nodes(0) += 1
     if System.currentTimeMillis() >= deadline then boundary.break(sanitizeScore(alpha))
 
-    val positionKey = positionHash(state)
+    if repetitionCountForCurrentPosition(state) >= 3 then
+      boundary.break(0.0)
+
+    val legalKey = positionHash(state)
+    val positionKey = searchHash(state)
     val ttStart = System.nanoTime()
     val ttHit = tt.get(positionKey)
     profile.ttNs += (System.nanoTime() - ttStart)
@@ -428,7 +431,7 @@ object AlphaBetaAgent:
     if depth <= 0 then
       boundary.break(quiescence(state, a, beta, deadline, nodes, profile, plyFromRoot, qDepth = 0))
 
-    val legalMoves = cachedLegalMoves(state, positionKey, profile)
+    val legalMoves = cachedLegalMoves(state, legalKey, profile)
 
     if legalMoves.isEmpty then
       cachedStatus(state, statusHash(state), profile) match
@@ -590,10 +593,10 @@ object AlphaBetaAgent:
     nodes(0) += 1
     if System.currentTimeMillis() >= deadline then boundary.break(sanitizeScore(alpha))
 
-    if state.halfMoveClock >= 100 then
-      cachedStatus(state, statusHash(state), profile) match
-        case GameStatus.Draw(_) => boundary.break(0.0)
-        case _ => ()
+    cachedStatus(state, statusHash(state), profile) match
+      case GameStatus.Checkmate(_) => boundary.break(matedScore(plyFromRoot))
+      case GameStatus.Stalemate | GameStatus.Draw(_) => boundary.break(0.0)
+      case _ => ()
 
     val inCheck = MoveGenerator.isInCheck(state, state.activeColor)
     var currentAlpha = alpha
@@ -1304,6 +1307,9 @@ object AlphaBetaAgent:
     var h = positionHash(state)
     if state.halfMoveClock >= 100 then h ^= statusFiftyMoveZobrist
     h ^ statusRepetitionZobrist(repetitionBucket)
+
+  private def searchHash(state: GameState): Long =
+    statusHash(state)
 
   private def evalHash(state: GameState, cacheNamespace: String): Long =
     positionHash(state) ^ evalNamespaceZobrist.getOrElse(cacheNamespace, 0L)

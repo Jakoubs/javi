@@ -315,10 +315,10 @@ object HceBootstrappedPolicyValueNet:
       val homeRow = if color == Color.White then 0 else 7
       own.foldLeft(0) { case (acc, (p, piece)) =>
         piece.pieceType match
-          case PieceType.Knight | PieceType.Bishop => if p.row != homeRow then acc + 12 else acc
+          case PieceType.Knight | PieceType.Bishop => if p.row != homeRow then acc + 16 else acc
           case PieceType.Rook =>
             val onStartSquare = (p.row == homeRow) && (p.col == 0 || p.col == 7)
-            if onStartSquare then acc else acc + 4
+            if onStartSquare then acc else acc - 6
           case _ => acc
       }
 
@@ -348,20 +348,24 @@ object HceBootstrappedPolicyValueNet:
       val homeRow = if color == Color.White then 0 else 7
       val rooks = own.collect { case (p, Piece(_, PieceType.Rook)) => p }
       val kingPos = own.collectFirst { case (p, Piece(_, PieceType.King)) => p }.getOrElse(Pos(4, homeRow))
+      def isCastledRook(p: Pos): Boolean =
+        (kingPos == Pos(6, homeRow) && p == Pos(5, homeRow)) ||
+          (kingPos == Pos(2, homeRow) && p == Pos(3, homeRow))
       val rooksMovedEarlyPenalty =
-        if ownDevelopedMinors <= 2 then
-          rooks.count(p => !(p.row == homeRow && (p.col == 0 || p.col == 7))) * 18
+        if ownDevelopedMinors <= 3 then
+          rooks.count(p => !(p.row == homeRow && (p.col == 0 || p.col == 7)) && !isCastledRook(p)) * 55
         else 0
       val kingCentralPenalty =
-        if kingPos.row == homeRow && kingPos.col >= 3 && kingPos.col <= 5 && ownDevelopedMinors <= 2 then 18
+        if kingPos.row == homeRow && kingPos.col >= 3 && kingPos.col <= 5 && ownDevelopedMinors <= 3 then 45
         else 0
       val castlingRights = state.castlingRights
+      val hasKingSideRight = if color == Color.White then castlingRights.whiteKingSide else castlingRights.blackKingSide
+      val hasQueenSideRight = if color == Color.White then castlingRights.whiteQueenSide else castlingRights.blackQueenSide
+      val lostKingSidePenalty =
+        if !hasKingSideRight && kingPos == Pos(4, homeRow) && ownDevelopedMinors <= 3 then 55 else 0
       val lostCastlingPenalty =
-        if color == Color.White then
-          if !castlingRights.whiteKingSide && !castlingRights.whiteQueenSide && ownDevelopedMinors <= 2 then 18 else 0
-        else
-          if !castlingRights.blackKingSide && !castlingRights.blackQueenSide && ownDevelopedMinors <= 2 then 18 else 0
-      -(rooksMovedEarlyPenalty + kingCentralPenalty + lostCastlingPenalty)
+        if !hasKingSideRight && !hasQueenSideRight && ownDevelopedMinors <= 3 then 80 else 0
+      -(rooksMovedEarlyPenalty + kingCentralPenalty + lostKingSidePenalty + lostCastlingPenalty)
 
   private def kingSafetyScore(
     state: GameState,
@@ -383,8 +387,12 @@ object HceBootstrappedPolicyValueNet:
 
     var s = 0
     val castled = kingPos == chess.model.Pos(6, row) || kingPos == chess.model.Pos(2, row)
-    if castled then s += (if endgame then 10 else 34)
-    else if !hasKingSideRight && !hasQueenSideRight then s -= (if endgame then 10 else 34)
+    if castled then s += (if endgame then 10 else 70)
+    else
+      val centralKing = kingPos.row == row && kingPos.col >= 3 && kingPos.col <= 5
+      if !endgame && centralKing && !hasKingSideRight then s -= 60
+      if !hasKingSideRight && !hasQueenSideRight then s -= (if endgame then 10 else 80)
+      else if hasKingSideRight || hasQueenSideRight then s += (if endgame then 0 else 12)
 
     if !endgame then
       val shieldSquares =
@@ -393,7 +401,7 @@ object HceBootstrappedPolicyValueNet:
         else Nil
       val ownPawnSet = ownPawns.toSet
       shieldSquares.foreach { sq =>
-        if ownPawnSet.contains(sq) then s += 8 else s -= 16
+        if ownPawnSet.contains(sq) then s += 12 else s -= 24
       }
       s -= kingFilePressureScore(kingPos, ownPawns, oppPawns, opp, color)
       s -= advancedShieldPawnExposure(kingPos, ownPawns, color)

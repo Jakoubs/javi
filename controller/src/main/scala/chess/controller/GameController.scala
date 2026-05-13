@@ -423,10 +423,35 @@ object GameController extends Observable[AppState]:
     app.clock match
       case None => app.aiThinkingTime.toLong
       case Some(c) =>
-        val remaining = c.activeMillis(app.game.activeColor)
-        // Simple heuristic: 1/30th of remaining time + 80% of increment
-        val limit = (remaining / 30) + (c.incrementMillis * 0.8).toLong
-        Math.max(100L, Math.min(5000L, limit))
+        searchBudgetMs(app.game, app.liveMillis(app.game.activeColor), c.incrementMillis, maxCapMs = 5000L)
+
+  private def searchBudgetMs(state: GameState, timeLeftMs: Long, incrementMs: Long, maxCapMs: Long): Long =
+    val safeTimeLeft = math.max(0L, timeLeftMs - 750L)
+    if safeTimeLeft <= 0L then 1L
+    else
+      val ply = ((state.fullMoveNumber - 1) * 2) + (if state.activeColor == Color.White then 0 else 1)
+      val pieces = state.board.pieceCount
+      val movesToGo =
+        if ply < 20 then 34L
+        else if pieces <= 10 then 18L
+        else if ply < 60 then 26L
+        else 22L
+      val base = safeTimeLeft / movesToGo
+      val incrementSpend =
+        if safeTimeLeft < 5000L then incrementMs / 3L
+        else if pieces <= 10 then incrementMs / 2L
+        else (incrementMs.toDouble * 0.75).toLong
+      val raw = base + incrementSpend
+      val clockCap =
+        if safeTimeLeft < 1000L then 80L
+        else if safeTimeLeft < 3000L then 180L
+        else if safeTimeLeft < 10000L then 650L
+        else if pieces <= 10 then 2500L
+        else 8000L
+      val safetyCeiling = if safeTimeLeft <= 300L then math.max(1L, safeTimeLeft / 3L) else safeTimeLeft - 150L
+      val ceiling = List(maxCapMs, clockCap, safetyCeiling).min.max(1L)
+      val floor = if safeTimeLeft < 1000L then 20L else if safeTimeLeft < 5000L then 50L else 100L
+      math.max(1L, math.min(ceiling, math.max(floor, raw)))
 
   // ── Show legal moves for a square ─────────────────────────────────────────
 

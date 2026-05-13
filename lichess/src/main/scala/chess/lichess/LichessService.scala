@@ -220,8 +220,37 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
   private def calculateTimeLimit(state: GameState, lichess: LichessGameState): Long = {
     val timeLeft = if (state.activeColor == Color.White) lichess.wtime else lichess.btime
     val inc = if (state.activeColor == Color.White) lichess.winc else lichess.binc
-    val safeTimeLeft = math.max(0L, timeLeft - 500L)
-    Math.max(1L, Math.min(10000L, (safeTimeLeft / 20) + inc))
+    searchBudgetMs(state, timeLeft, inc, maxCapMs = 10000L)
+  }
+
+  private def searchBudgetMs(state: GameState, timeLeftMs: Long, incrementMs: Long, maxCapMs: Long): Long = {
+    val safeTimeLeft = math.max(0L, timeLeftMs - 750L)
+    if (safeTimeLeft <= 0L) 1L
+    else {
+      val ply = ((state.fullMoveNumber - 1) * 2) + (if (state.activeColor == Color.White) 0 else 1)
+      val pieces = state.board.pieceCount
+      val movesToGo =
+        if (ply < 20) 34L
+        else if (pieces <= 10) 18L
+        else if (ply < 60) 26L
+        else 22L
+      val base = safeTimeLeft / movesToGo
+      val incrementSpend =
+        if (safeTimeLeft < 5000L) incrementMs / 3L
+        else if (pieces <= 10) incrementMs / 2L
+        else ((incrementMs.toDouble * 0.75).toLong)
+      val raw = base + incrementSpend
+      val clockCap =
+        if (safeTimeLeft < 1000L) 80L
+        else if (safeTimeLeft < 3000L) 180L
+        else if (safeTimeLeft < 10000L) 650L
+        else if (pieces <= 10) 2500L
+        else 8000L
+      val safetyCeiling = if (safeTimeLeft <= 300L) math.max(1L, safeTimeLeft / 3L) else safeTimeLeft - 150L
+      val ceiling = List(maxCapMs, clockCap, safetyCeiling).min.max(1L)
+      val floor = if (safeTimeLeft < 1000L) 20L else if (safeTimeLeft < 5000L) 50L else 100L
+      math.max(1L, math.min(ceiling, math.max(floor, raw)))
+    }
   }
 
   private def startPonderIfNeeded(gameId: String, moveCount: Int, state: GameState, ourColor: Color, totalBudgetMs: Long): Unit = {
