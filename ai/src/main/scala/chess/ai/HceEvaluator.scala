@@ -1,22 +1,19 @@
-package chess.ai.nn
+package chess.ai
 
-import chess.model.{Color, GameState, Move, Piece, PieceType, Pos}
+import chess.model.{Color, GameState, MoveGenerator, Piece, PieceType, Pos}
 
-class HceBootstrappedPolicyValueNet(
+class HceEvaluator(
   includePositionalHeuristics: Boolean = true
-) extends PolicyValueNet:
-  override def evaluate(state: GameState, legalMoves: List[Move]): PolicyValueEvaluation =
-    val normalized = if legalMoves.nonEmpty then 1.0 / legalMoves.size.toDouble else 0.0
-    val priors = legalMoves.iterator.map(m => m -> normalized).toMap
-    val cp = HceBootstrappedPolicyValueNet.taperedEvalCp(state, includePositionalHeuristics)
+) :
+  def evaluate(state: GameState): Double =
+    val cp = HceEvaluator.taperedEvalCp(state, includePositionalHeuristics)
     val side = if state.activeColor == Color.White then 1.0 else -1.0
     // Unified scale: 1.0 == one pawn.
-    val value = math.max(-20.0, math.min(20.0, (cp * side) / 100.0))
-    PolicyValueEvaluation(priors = priors, value = value, uncertainty = 0.2)
+    math.max(-20.0, math.min(20.0, (cp * side) / 100.0))
 
-object HceBootstrappedPolicyValueNet:
-  val default: HceBootstrappedPolicyValueNet = new HceBootstrappedPolicyValueNet()
-  val fast: HceBootstrappedPolicyValueNet = new HceBootstrappedPolicyValueNet(includePositionalHeuristics = false)
+object HceEvaluator:
+  val default: HceEvaluator = new HceEvaluator()
+  val fast: HceEvaluator = new HceEvaluator(includePositionalHeuristics = false)
 
   private val mgValue: Map[PieceType, Int] = Map(
     PieceType.Pawn -> 82,
@@ -284,6 +281,7 @@ object HceBootstrappedPolicyValueNet:
     score += openingCoordinationScore(state, own, color, endgame, ownDevelopedMinors)
     score += kingSafetyScore(state, own, opp, ownPawns, oppPawns, color, endgame)
     score += initiativePressureScore(state, own, opp, ownPawns, oppPawns, color, endgame, ownDevelopedMinors, oppDevelopedMinors)
+    score += tacticalVulnerabilityScore(state, own, opp, color)
     score += endgameKingActivityScore(state, own, opp, ownPawns, oppPawns, color, endgame)
     score += pawnRaceScore(state, own, opp, ownPawns, ownPawnSet, oppPawns, color, endgame)
 
@@ -510,10 +508,8 @@ object HceBootstrappedPolicyValueNet:
       shieldSquares.foreach { sq =>
         if ownPawnSet.contains(sq) then s += 12 else s -= 24
       }
-      s -= kingFilePressureScore(kingPos, ownPawns, oppPawns, opp, color)
       s -= advancedShieldPawnExposure(kingPos, ownPawns, color)
-      s -= enemyHeavyPiecePressure(kingPos, opp)
-      s -= enemyKnightOutpostPressure(state, kingPos, ownPawns, opp, color)
+      s -= kingDangerScore(state, own, opp, ownPawns, oppPawns, color)
     s
 
   private def initiativePressureScore(
@@ -532,13 +528,279 @@ object HceBootstrappedPolicyValueNet:
       val oppKingPosOpt = opp.collectFirst { case (p, Piece(_, PieceType.King)) => p }
       if oppKingPosOpt.isEmpty then 0
       else
-        val oppKingPos = oppKingPosOpt.get
-        val heavyPressure = enemyHeavyPiecePressure(oppKingPos, own)
-        val knightPressure = enemyKnightOutpostPressure(state, oppKingPos, oppPawns, own, color.opposite)
-        val filePressure = kingFilePressureScore(oppKingPos, oppPawns, ownPawns, own, color.opposite)
         val developmentLead = (ownDevelopedMinors - oppDevelopedMinors).max(0)
-        val initiativeBase = (heavyPressure / 2) + (knightPressure / 2) + (filePressure / 2)
+        val initiativeBase = kingDangerScore(state, opp, own, oppPawns, ownPawns, color.opposite) / 2
         initiativeBase + (developmentLead * 8)
+
+  private val KingZoneDirections: Array[(Int, Int)] =
+    Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
+
+  private def kingDangerScore(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    enemy: List[(Pos, Piece)],
+    ownPawns: List[Pos],
+    enemyPawns: List[Pos],
+    color: Color
+  ): Int =
+    val kingOpt = own.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+    if kingOpt.isEmpty then 0
+    else
+      val king = kingOpt.get
+      val zone = kingZone(king)
+      val zoneSet = zone.toSet
+      val attackUnits = enemyAttackUnits(state, enemy, zoneSet, king)
+      val linePressure = kingFilePressureScore(king, ownPawns, enemyPawns, enemy, color)
+      val directHeavyPressure = enemyHeavyPiecePressure(king, enemy)
+      val knightPressure = enemyKnightOutpostPressure(state, king, ownPawns, enemy, color)
+      val missingDefenders = missingKingDefendersPenalty(state, own, zoneSet, king)
+      val sacrificePressure = nearKingSacrificePressure(state, enemy, zoneSet, king, color.opposite)
+      attackUnits + linePressure + directHeavyPressure + knightPressure + missingDefenders + sacrificePressure
+
+  private def kingZone(king: Pos): List[Pos] =
+    val out = scala.collection.mutable.ListBuffer(king)
+    var i = 0
+    while i < KingZoneDirections.length do
+      val (dc, dr) = KingZoneDirections(i)
+      val p = Pos(king.col + dc, king.row + dr)
+      if p.isValid then out += p
+      i += 1
+    out.toList
+
+  private def enemyAttackUnits(
+    state: GameState,
+    enemy: List[(Pos, Piece)],
+    zone: Set[Pos],
+    king: Pos
+  ): Int =
+    enemy.map { case (pos, piece) =>
+      val hits = zone.count(square => pieceAttacksSquare(state, pos, piece, square))
+      if hits == 0 then 0
+      else
+        val weight = piece.pieceType match
+          case PieceType.Queen => 28
+          case PieceType.Rook => 20
+          case PieceType.Bishop => 15
+          case PieceType.Knight => 17
+          case PieceType.Pawn => 7
+          case PieceType.King => 0
+        val closeBonus =
+          if piece.pieceType != PieceType.Pawn && chebyshevDistance(pos, king) <= 2 then 12 else 0
+        val checkLineBonus =
+          if canGiveNearKingCheck(state, pos, piece, king) then 18 else 0
+        (hits * weight) + closeBonus + checkLineBonus
+    }.sum
+
+  private def missingKingDefendersPenalty(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    zone: Set[Pos],
+    king: Pos
+  ): Int =
+    val defenders = own.count {
+      case (pos, Piece(_, PieceType.King)) => false
+      case (pos, piece) =>
+        !isPinnedToKing(state, pos, piece, king) &&
+          (chebyshevDistance(pos, king) <= 2 || zone.exists(square => pieceAttacksSquare(state, pos, piece, square)))
+    }
+    val pawnDefenders = own.count {
+      case (pos, Piece(_, PieceType.Pawn)) => chebyshevDistance(pos, king) <= 2
+      case _ => false
+    }
+    val expected = if pawnDefenders >= 2 then 3 else 4
+    (expected - defenders).max(0) * 18
+
+  private def tacticalVulnerabilityScore(
+    state: GameState,
+    own: List[(Pos, Piece)],
+    opp: List[(Pos, Piece)],
+    color: Color
+  ): Int =
+    val ownKing = own.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+    val oppKing = opp.collectFirst { case (p, Piece(_, PieceType.King)) => p }
+    val ownPenalty = own.map {
+      case (pos, piece) if piece.pieceType != PieceType.King =>
+        pieceVulnerability(state, pos, piece, color.opposite, own, ownKing, reward = false)
+      case _ => 0
+    }.sum
+    val oppBonus = opp.map {
+      case (pos, piece) if piece.pieceType != PieceType.King =>
+        pieceVulnerability(state, pos, piece, color, opp, oppKing, reward = true)
+      case _ => 0
+    }.sum
+    oppBonus - ownPenalty
+
+  private def pieceVulnerability(
+    state: GameState,
+    pos: Pos,
+    piece: Piece,
+    attackerColor: Color,
+    defenders: List[(Pos, Piece)],
+    defenderKing: Option[Pos],
+    reward: Boolean
+  ): Int =
+    val attacked = MoveGenerator.isAttackedBy(state.board, pos, attackerColor)
+    val reliablyDefended = hasReliableDefender(state, pos, defenders, defenderKing)
+    val pieceValue = tacticalPieceValue(piece.pieceType)
+    val loose =
+      if attacked && !reliablyDefended then
+        val base = if reward then 14 else 18
+        val divisor = if reward then 7 else 5
+        base + (pieceValue / divisor).min(if reward then 120 else 150)
+      else 0
+    val lowAttacker =
+      lowestAttackerValue(state, pos, attackerColor) match
+        case Some(attackerValue) if attackerValue < pieceValue =>
+          val base = if reward then 10 else 12
+          val divisor = if reward then 12 else 10
+          base + ((pieceValue - attackerValue) / divisor).min(if reward then 70 else 85)
+        case _ => 0
+    val pin =
+      if defenderKing.exists(isPinnedToKing(state, pos, piece, _)) then
+        piece.pieceType match
+          case PieceType.Queen => if reward then 40 else 55
+          case PieceType.Rook => if reward then 28 else 36
+          case PieceType.Bishop | PieceType.Knight => if reward then 20 else 28
+          case PieceType.Pawn => if reward then 8 else 10
+          case PieceType.King => 0
+      else 0
+    loose + lowAttacker + pin
+
+  private def hasReliableDefender(
+    state: GameState,
+    target: Pos,
+    defenders: List[(Pos, Piece)],
+    defenderKing: Option[Pos]
+  ): Boolean =
+    defenders.exists {
+      case (pos, Piece(_, PieceType.King)) =>
+        pos != target && chebyshevDistance(pos, target) <= 1
+      case (pos, piece) =>
+        pos != target &&
+          !defenderKing.exists(isPinnedToKing(state, pos, piece, _)) &&
+          pieceAttacksSquare(state, pos, piece, target)
+    }
+
+  private def lowestAttackerValue(state: GameState, target: Pos, attackerColor: Color): Option[Int] =
+    var best = Int.MaxValue
+    state.board.foreachPieceOf(attackerColor) { (pos, piece) =>
+      if pos != target && pieceAttacksSquare(state, pos, piece, target) then
+        best = best.min(tacticalPieceValue(piece.pieceType))
+    }
+    if best == Int.MaxValue then None else Some(best)
+
+  private def isPinnedToKing(state: GameState, pos: Pos, piece: Piece, king: Pos): Boolean =
+    if piece.pieceType == PieceType.King || !sliderCompatible(PieceType.Queen, pos, king) then false
+    else
+      val dc = Integer.signum(pos.col - king.col)
+      val dr = Integer.signum(pos.row - king.row)
+      var cur = Pos(king.col + dc, king.row + dr)
+      var reachedPiece = false
+      var pinned = false
+      var done = false
+      while cur.isValid && !done do
+        if cur == pos then reachedPiece = true
+        else if state.board.isOccupied(cur) then
+          if !reachedPiece then done = true
+          else
+            pinned = state.board.get(cur).exists { attacker =>
+              attacker.color == piece.color.opposite && sliderAttacksAlong(attacker.pieceType, dc, dr)
+            }
+            done = true
+        cur = Pos(cur.col + dc, cur.row + dr)
+      pinned
+
+  private def sliderAttacksAlong(pieceType: PieceType, dc: Int, dr: Int): Boolean =
+    val diagonal = dc != 0 && dr != 0
+    pieceType match
+      case PieceType.Queen => true
+      case PieceType.Bishop => diagonal
+      case PieceType.Rook => !diagonal
+      case _ => false
+
+  private def tacticalPieceValue(pieceType: PieceType): Int =
+    pieceType match
+      case PieceType.Pawn => 100
+      case PieceType.Knight => 320
+      case PieceType.Bishop => 330
+      case PieceType.Rook => 500
+      case PieceType.Queen => 900
+      case PieceType.King => 20000
+
+  private def nearKingSacrificePressure(
+    state: GameState,
+    enemy: List[(Pos, Piece)],
+    zone: Set[Pos],
+    king: Pos,
+    attackerColor: Color
+  ): Int =
+    enemy.map {
+      case (pos, piece @ Piece(_, PieceType.Knight | PieceType.Bishop | PieceType.Rook | PieceType.Queen)) =>
+        val hitsZone = zone.exists(square => pieceAttacksSquare(state, pos, piece, square))
+        val protectedAttacker = MoveGenerator.isAttackedBy(state.board, pos, attackerColor)
+        if hitsZone && protectedAttacker && chebyshevDistance(pos, king) <= 3 then
+          piece.pieceType match
+            case PieceType.Queen => 16
+            case PieceType.Rook => 18
+            case PieceType.Bishop | PieceType.Knight => 22
+            case _ => 0
+        else 0
+      case _ => 0
+    }.sum
+
+  private def canGiveNearKingCheck(
+    state: GameState,
+    pos: Pos,
+    piece: Piece,
+    king: Pos
+  ): Boolean =
+    piece.pieceType match
+      case PieceType.Queen | PieceType.Rook | PieceType.Bishop =>
+        sliderCompatible(piece.pieceType, pos, king) && blockersBetween(state, pos, king) <= 1
+      case PieceType.Knight =>
+        knightAttacks(pos).exists(t => chebyshevDistance(t, king) <= 1)
+      case _ => false
+
+  private def pieceAttacksSquare(state: GameState, from: Pos, piece: Piece, target: Pos): Boolean =
+    piece.pieceType match
+      case PieceType.Pawn =>
+        val dir = if piece.color == Color.White then 1 else -1
+        target.row - from.row == dir && math.abs(target.col - from.col) == 1
+      case PieceType.Knight =>
+        val dc = math.abs(target.col - from.col)
+        val dr = math.abs(target.row - from.row)
+        (dc == 1 && dr == 2) || (dc == 2 && dr == 1)
+      case PieceType.Bishop =>
+        math.abs(target.col - from.col) == math.abs(target.row - from.row) &&
+          blockersBetween(state, from, target) == 0
+      case PieceType.Rook =>
+        (target.col == from.col || target.row == from.row) &&
+          blockersBetween(state, from, target) == 0
+      case PieceType.Queen =>
+        sliderCompatible(PieceType.Queen, from, target) &&
+          blockersBetween(state, from, target) == 0
+      case PieceType.King =>
+        chebyshevDistance(from, target) <= 1
+
+  private def sliderCompatible(pieceType: PieceType, from: Pos, target: Pos): Boolean =
+    pieceType match
+      case PieceType.Bishop => math.abs(target.col - from.col) == math.abs(target.row - from.row)
+      case PieceType.Rook => target.col == from.col || target.row == from.row
+      case PieceType.Queen =>
+        target.col == from.col ||
+          target.row == from.row ||
+          math.abs(target.col - from.col) == math.abs(target.row - from.row)
+      case _ => false
+
+  private def blockersBetween(state: GameState, from: Pos, target: Pos): Int =
+    val dc = Integer.signum(target.col - from.col)
+    val dr = Integer.signum(target.row - from.row)
+    var cur = Pos(from.col + dc, from.row + dr)
+    var blockers = 0
+    while cur.isValid && cur != target do
+      if state.board.isOccupied(cur) then blockers += 1
+      cur = Pos(cur.col + dc, cur.row + dr)
+    blockers
 
   private def kingFilePressureScore(
     kingPos: Pos,

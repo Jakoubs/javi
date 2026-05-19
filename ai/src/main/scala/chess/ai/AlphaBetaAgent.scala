@@ -1,14 +1,13 @@
 package chess.ai
 
 import cats.effect.unsafe.implicits.global
-import chess.ai.nn.{HceBootstrappedPolicyValueNet, OnnxValueNet, PolicyValueEvaluation, PolicyValueNet}
 import chess.model.*
 import chess.persistence.PersistenceModule
 import chess.util.parser.CoordinateMoveParser
 import java.util.SplittableRandom
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.{AtomicLong, AtomicReferenceArray}
 
 import scala.util.Try
 import scala.util.boundary
@@ -16,8 +15,8 @@ import scala.util.boundary
 /**
  * Minimal Alpha-Beta engine with:
  * - opening DB shortcut
- * - NN static evaluation
- * - NN priors for move ordering
+ * - HCE static evaluation
+ * - heuristic move ordering
  */
 object AlphaBetaAgent:
 
@@ -32,9 +31,6 @@ object AlphaBetaAgent:
   private enum SearchMode:
     case Search, PonderPredict, PonderReply
 
-  private enum EvalMode:
-    case Hce, Nn, Blend, RootNnTieBreak
-
   private val MATE_SCORE = 1_000_000
   private val ScoreCap = MATE_SCORE.toDouble
   private val MateScoreThreshold = MATE_SCORE.toDouble - 10_000.0
@@ -46,6 +42,16 @@ object AlphaBetaAgent:
     sys.env.get("CHESS_QS_CHECK_DEPTH").flatMap(_.toIntOption).getOrElse(1).max(0)
   private val NullMoveReduction = 2
   private val LmrReduction = 1
+  private val ReverseFutilityMaxDepth = 3
+  private val RazoringMaxDepth = 2
+  private val FutilityMaxDepth = 2
+  private val LateMovePruningMaxDepth = 3
+  private val SeeQuietPruningMaxDepth = 2
+  private val TacticalOrderingMinDepth =
+    sys.env.get("CHESS_TACTICAL_ORDERING_MIN_DEPTH").flatMap(_.toIntOption).getOrElse(3).max(0)
+  private val DefensiveOrderingMinDepth =
+    sys.env.get("CHESS_DEFENSIVE_ORDERING_MIN_DEPTH").flatMap(_.toIntOption).getOrElse(3).max(0)
+  private val PvsNullWindow = 0.0001
   private val AspirationInitialWindow = 1.2
   private val MaxOpeningBookPly =
     sys.env.get("CHESS_OPENING_MAX_PLY").flatMap(_.toIntOption).getOrElse(16)
@@ -66,22 +72,13 @@ object AlphaBetaAgent:
     sys.env.get("CHESS_PONDER_REPLY_MIN_MS").flatMap(_.toLongOption).getOrElse(20L).max(1L)
   private val PonderReplyMaxMs =
     sys.env.get("CHESS_PONDER_REPLY_MAX_MS").flatMap(_.toLongOption).filter(_ > 0L)
-  private val NnBlendWeight =
-    sys.env.get("CHESS_NN_BLEND_WEIGHT").flatMap(_.toDoubleOption).getOrElse(0.2).max(0.0).min(1.0)
-  private val RootNnTieBreakWindow =
-    sys.env.get("CHESS_ROOT_NN_TIEBREAK_WINDOW").flatMap(_.toDoubleOption).getOrElse(0.35).max(0.0)
-  private val EvalModeSetting =
-    sys.env.get("CHESS_EVAL_MODE").map(_.trim.toLowerCase) match
-      case Some("nn") => EvalMode.Nn
-      case Some("blend") => EvalMode.Blend
-      case Some(mode) if Set("root-nn", "nn-root", "root-tiebreak", "nn-tiebreak").contains(mode) =>
-        EvalMode.RootNnTieBreak
-      case _ => EvalMode.Hce
-  private val tt = new ConcurrentHashMap[Long, TTEntry]()
-  private val ttEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val ttStamp = new AtomicLong(0L)
-  private val ttCount = new AtomicLong(0L)
-  private val MaxTtEntries = 300_000
+  private val TTClusterSize = 4
+  private val TTClusterCount =
+    nextPowerOfTwo(sys.env.get("CHESS_TT_CLUSTERS").flatMap(_.toIntOption).getOrElse(1 << 18).max(1024).min(1 << 21))
+  private val TTClusterMask = TTClusterCount - 1
+  private val ttSlots = new AtomicReferenceArray[TTEntry](TTClusterCount * TTClusterSize)
+  private val ttLocks = Array.fill(4096)(new Object)
   private val statusCache = new ConcurrentHashMap[Long, GameStatus]()
   private val statusEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val statusCount = new AtomicLong(0L)
@@ -90,22 +87,26 @@ object AlphaBetaAgent:
   private val moveEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val moveCount = new AtomicLong(0L)
   private val MaxMoveEntries = 300_000
-  private val evalCache = new ConcurrentHashMap[Long, PolicyValueEvaluation]()
+  private val evalCache = new ConcurrentHashMap[Long, java.lang.Double]()
   private val evalEvictionQueue = new ConcurrentLinkedQueue[Long]()
   private val evalCount = new AtomicLong(0L)
   private val MaxEvalEntries = 300_000
 
-  private final case class TTEntry(score: Double, depth: Int, bound: Int, best: Option[Move], stamp: Long)
+  private final case class TTEntry(key: Long, score: Double, depth: Int, bound: Int, best: Option[Move], stamp: Long)
   private val killers: Array[Array[Move | Null]] = Array.fill(MaxSearchDepth + 1, 2)(null)
   private val history: Array[Array[Array[Int]]] = Array.fill(2, 64, 64)(0)
   private val counterMoves: Array[Array[Array[Move | Null]]] = Array.fill(2, 64, 64)(null)
+  private val continuationHistory: Array[Array[Array[Int]]] = Array.fill(2, 64, 64)(0)
+  private val captureHistory: Array[Array[Array[Array[Int]]]] = Array.fill(2, 6, 64, 6)(0)
   private final case class SearchStats(
     betaCutoffs: Long = 0L,
     heuristicCutoffs: Long = 0L,
     heuristicSavedNodesEstimate: Double = 0.0,
     killerCutoffs: Long = 0L,
     counterCutoffs: Long = 0L,
-    historyCutoffs: Long = 0L
+    historyCutoffs: Long = 0L,
+    continuationCutoffs: Long = 0L,
+    captureHistoryCutoffs: Long = 0L
   )
   private final case class TimeProfile(
     var totalNs: Long = 0L,
@@ -114,7 +115,6 @@ object AlphaBetaAgent:
     var searchNs: Long = 0L,
     var orderMovesNs: Long = 0L,
     var evalNs: Long = 0L,
-    var evalNnNs: Long = 0L,
     var evalHceNs: Long = 0L,
     var moveGenNs: Long = 0L,
     var applyMoveNs: Long = 0L,
@@ -127,6 +127,15 @@ object AlphaBetaAgent:
   private final case class AspirationStats(hit: Boolean, failLow: Int, failHigh: Int, retries: Int)
   private final case class OpeningHit(move: Move, weight: Int)
   private final case class TablebaseHit(move: Move, wdl: Int, dtz: Option[Int], dtm: Option[Int], source: String)
+  private final case class OrderingContext(
+    activeColor: Color,
+    activeColorIndex: Int,
+    depthIndex: Int,
+    ownKing: Option[Pos],
+    ownKingDanger: Int,
+    useTacticalOrdering: Boolean,
+    useDefensiveOrdering: Boolean
+  )
 
   private val zobristRandom = new SplittableRandom(0x1A2B3C4D5E6F7788L)
   private def nextZobrist(): Long =
@@ -136,11 +145,9 @@ object AlphaBetaAgent:
   private val statusFiftyMoveZobrist: Long = nextZobrist()
   private val statusRepetitionZobrist: Array[Long] = Array.fill(4)(nextZobrist())
   private val evalNamespaceZobrist: Map[String, Long] = Map(
-    "nn" -> nextZobrist(),
     "hce" -> nextZobrist(),
     "hce_fast" -> nextZobrist(),
-    "root_hce" -> nextZobrist(),
-    "root_nn" -> nextZobrist()
+    "root_hce" -> nextZobrist()
   )
 
   private lazy val persistenceOpt =
@@ -148,25 +155,10 @@ object AlphaBetaAgent:
       PersistenceModule.build().unsafeRunSync()
     }.toOption
 
-  private lazy val policyNet: PolicyValueNet =
-    loadPolicyNet()
-  private lazy val hceNet: PolicyValueNet =
-    HceBootstrappedPolicyValueNet.default
-  private lazy val fastHceNet: PolicyValueNet =
-    HceBootstrappedPolicyValueNet.fast
-
-  private def loadPolicyNet(): PolicyValueNet =
-    val defaultPath = "D:\\SoftwareArchitektur\\javi\\data\\nexus_nano.onnx"
-    val path = sys.env.getOrElse("CHESS_NN_MODEL_PATH", defaultPath)
-    Try {
-      println(s"[AI][NN] loading model from '$path'")
-      OnnxValueNet.fromPath(path)
-    }.fold(
-      err =>
-        println(s"[AI][NN] load failed for '$path' -> fallback HCE net (${err.getMessage})")
-        HceBootstrappedPolicyValueNet.default,
-      identity
-    )
+  private lazy val hceEvaluator: HceEvaluator =
+    HceEvaluator.default
+  private lazy val fastHceEvaluator: HceEvaluator =
+    HceEvaluator.fast
 
   def bestMove(state: GameState, timeLimitMs: Long): Option[Move] =
     bestMoveWithStats(state, timeLimitMs).map(_.move)
@@ -203,14 +195,14 @@ object AlphaBetaAgent:
   private def runSearch(state: GameState, timeLimitMs: Long, mode: SearchMode, logFinalMove: Boolean): Option[SearchResult] =
     val searchState =
       if state.history.isEmpty then state
-      else state.copy(history = Nil, repetitionCounts = state.repetitionCounts)
+      else state.copy(history = Vector.empty, repetitionCounts = state.repetitionCounts)
     val profile = TimeProfile()
     val startedAll = System.nanoTime()
     val legalMoves = cachedLegalMoves(searchState, positionHash(searchState), profile)
     if legalMoves.isEmpty then return None
     if legalMoves.size == 1 then return legalMoves.headOption.map(move => SearchResult(move, 0.0, 0, 0L))
 
-    if searchState.board.pieceCount <= SyzygyProbe.maxPieces then
+    if canUseTablebase(searchState) then
       val tbStart = System.nanoTime()
       val tablebaseMove = lookupTablebaseMove(searchState, legalMoves)
       profile.tablebaseLookupNs += (System.nanoTime() - tbStart)
@@ -343,26 +335,30 @@ object AlphaBetaAgent:
     val started = System.currentTimeMillis()
     val nodes = Array(0L)
     val stats = Array(SearchStats())
-    val ttMoveRoot = Option(tt.get(searchHash(state))).flatMap(_.best)
+    val rootKey = searchHash(state)
+    val ttMoveRoot = Option(getTt(rootKey)).flatMap(_.best)
     val ordered = orderMoves(state, legalMoves, depth, None, ttMoveRoot, profile)
     var alpha = startAlpha
     val beta = startBeta
     var bestMove: Option[Move] = None
     var bestScore = Double.NegativeInfinity
-    val rootScores = scala.collection.mutable.ListBuffer.empty[(Move, Double)]
     val repetitionFlags = ordered.map(m => wouldCauseImmediateThreefold(state, m))
     val materialLeadCp = materialLeadCpFor(state, state.activeColor)
     val stalemateFlags =
       if materialLeadCp >= StalemateAvoidMaterialCp then ordered.map(m => wouldCauseImmediateStalemate(state, m))
       else ordered.map(_ => false)
-    val rootDrawScore = drawScoreForRoot(rootStaticScore(state, legalMoves, profile))
+    val immediateMateFlags = ordered.map(m => wouldAllowImmediateMate(state, m))
+    val rootDrawScore = drawScoreForRoot(rootStaticScore(state, profile))
 
     for (move, idx) <- ordered.zipWithIndex do
       if System.currentTimeMillis() >= deadline then boundary.break(None)
       val isRepetitionMove = repetitionFlags(idx)
       val isStalemateMove = stalemateFlags(idx)
+      val allowsImmediateMate = immediateMateFlags(idx)
       val score =
-        if isRepetitionMove || isStalemateMove then
+        if allowsImmediateMate then
+          matedScore(plyFromRoot = 2)
+        else if isRepetitionMove || isStalemateMove then
           rootDrawScore
         else
           val amStart = System.nanoTime()
@@ -373,12 +369,9 @@ object AlphaBetaAgent:
         bestScore = score
         bestMove = Some(move)
       if score > alpha then alpha = score
-      rootScores += move -> score
 
     val elapsed = System.currentTimeMillis() - started
-    val picked = rootNnTieBreak(state, rootScores.toList, bestScore, deadline, profile).orElse(bestMove)
-    picked.map { move =>
-      val pickedScore = rootScores.find(_._1 == move).map(_._2).getOrElse(bestScore)
+    bestMove.map { move =>
       val rootScore = sanitizeScore(bestScore)
       val bound =
         if rootScore <= startAlpha then 2
@@ -386,11 +379,14 @@ object AlphaBetaAgent:
         else 0
       val ttPutStart = System.nanoTime()
       putTt(
-        searchHash(state),
-        TTEntry(scoreToTt(rootScore, plyFromRoot = 0), depth, bound, Some(move), ttStamp.incrementAndGet())
+        rootKey,
+        scoreToTt(rootScore, plyFromRoot = 0),
+        depth,
+        bound,
+        Some(move)
       )
       profile.ttNs += (System.nanoTime() - ttPutStart)
-      RootSearch(move, sanitizeScore(pickedScore), nodes(0), elapsed, stats(0))
+      RootSearch(move, rootScore, nodes(0), elapsed, stats(0))
     }
 
   private def negamax(
@@ -412,7 +408,7 @@ object AlphaBetaAgent:
     if repetitionCountForCurrentPosition(state) >= 3 then
       boundary.break(0.0)
 
-    if state.board.pieceCount <= SyzygyProbe.maxPieces then
+    if canUseTablebase(state) then
       val tbStart = System.nanoTime()
       val tbScore = SyzygyProbe.probeWdl(state).map(tablebaseScore)
       profile.tablebaseLookupNs += (System.nanoTime() - tbStart)
@@ -421,7 +417,7 @@ object AlphaBetaAgent:
     val legalKey = positionHash(state)
     val positionKey = searchHash(state)
     val ttStart = System.nanoTime()
-    val ttHit = tt.get(positionKey)
+    val ttHit = getTt(positionKey)
     profile.ttNs += (System.nanoTime() - ttStart)
     var a = alpha
     if ttHit != null && ttHit.depth >= depth then
@@ -456,8 +452,27 @@ object AlphaBetaAgent:
           boundary.break(0.0)
         case _ => ()
 
-    // Null-move pruning (safe guards to reduce zugzwang/pathological risk).
     val inCheck = MoveGenerator.isInCheck(state, state.activeColor)
+    lazy val staticScore = staticEvalCp(state, profile, depth)
+    val canUseStaticPruning =
+      !inCheck &&
+        !isMateScore(a) &&
+        !isMateScore(beta) &&
+        state.board.pieceCount > SyzygyProbe.maxPieces
+
+    if canUseStaticPruning &&
+      depth <= ReverseFutilityMaxDepth &&
+      staticScore - reverseFutilityMargin(depth) >= beta
+    then
+      boundary.break(sanitizeScore(beta))
+
+    if canUseStaticPruning &&
+      depth <= RazoringMaxDepth &&
+      staticScore + razoringMargin(depth) <= a
+    then
+      boundary.break(quiescence(state, a, beta, deadline, nodes, profile, plyFromRoot, qDepth = 0))
+
+    // Null-move pruning (safe guards to reduce zugzwang/pathological risk).
     if allowNullMove &&
       depth >= 3 &&
       !inCheck &&
@@ -483,29 +498,38 @@ object AlphaBetaAgent:
 
     val originalAlpha = a
     var currentAlpha = a
-    val ordered = orderMoves(state, legalMoves, depth, prevMove, Option(ttHit).flatMap(_.best), profile)
+    val ttBest = Option(ttHit).flatMap(_.best)
+    val ordered = orderMoves(state, legalMoves, depth, prevMove, ttBest, profile)
     val nodeStartAtThisPosition = nodes(0)
     var bestSeen: Option[Move] = None
     var moveIndex = 0
+    var searchedMoveCount = 0
 
     for move <- ordered do
       if System.currentTimeMillis() >= deadline then boundary.break(currentAlpha)
-      val amStart = System.nanoTime()
-      val child = fastApplyMove(state, move)
-      profile.applyMoveNs += (System.nanoTime() - amStart)
-      val quietMove = !isCapture(state, move) && move.promotion.isEmpty
-      val useLmr =
-        depth >= 3 &&
-        moveIndex >= 3 &&
+      val isCaptureMove = isCapture(state, move)
+      val quietMove = !isCaptureMove && move.promotion.isEmpty
+      val skipMove =
         quietMove &&
-        !inCheck
-      val score =
-        if useLmr then
-          val reducedDepth = (depth - 1 - LmrReduction).max(0)
-          val reduced = sanitizeScore(-negamax(
+          canUseStaticPruning &&
+          shouldPruneQuietMove(state, move, depth, moveIndex, currentAlpha, staticScore, inCheck, prevMove, ttBest)
+      if !skipMove then
+        val amStart = System.nanoTime()
+        val child = fastApplyMove(state, move)
+        profile.applyMoveNs += (System.nanoTime() - amStart)
+        val useLmr =
+          depth >= 3 &&
+          moveIndex >= 3 &&
+          quietMove &&
+          !inCheck
+        val fullDepth = depth - 1
+        def fullWindowSearch(): Double =
+          sanitizeScore(-negamax(child, fullDepth, -beta, -currentAlpha, deadline, nodes, stats, Some(move), profile, allowNullMove = true, plyFromRoot = plyFromRoot + 1))
+        def nullWindowSearch(searchDepth: Int): Double =
+          sanitizeScore(-negamax(
             child,
-            reducedDepth,
-            -currentAlpha - 1,
+            searchDepth,
+            -currentAlpha - PvsNullWindow,
             -currentAlpha,
             deadline,
             nodes,
@@ -515,53 +539,66 @@ object AlphaBetaAgent:
             allowNullMove = true,
             plyFromRoot = plyFromRoot + 1
           ))
-          if reduced > currentAlpha then
-            sanitizeScore(-negamax(child, depth - 1, -beta, -currentAlpha, deadline, nodes, stats, Some(move), profile, allowNullMove = true, plyFromRoot = plyFromRoot + 1))
-          else reduced
-        else
-          sanitizeScore(-negamax(child, depth - 1, -beta, -currentAlpha, deadline, nodes, stats, Some(move), profile, allowNullMove = true, plyFromRoot = plyFromRoot + 1))
-      if score > currentAlpha then
-        currentAlpha = score
-        bestSeen = Some(move)
-      if currentAlpha >= beta then
-        val c = colorIndex(state.activeColor)
-        val from = squareIndex(move.from)
-        val to = squareIndex(move.to)
-        val d = depth.max(0).min(MaxSearchDepth)
-        val isKiller =
-          !isCapture(state, move) && ((killers(d)(0) != null && killers(d)(0) == move) || (killers(d)(1) != null && killers(d)(1) == move))
-        val isCounter =
-          !isCapture(state, move) && prevMove.exists { pm =>
-            val pFrom = squareIndex(pm.from)
-            val pTo = squareIndex(pm.to)
-            val cm = counterMoves(c)(pFrom)(pTo)
-            cm != null && cm == move
-          }
-        val hasHistory = !isCapture(state, move) && history(c)(from)(to) > 0
-        val isHeuristicCutoff = isKiller || isCounter || hasHistory
-        val searchedMoves = moveIndex + 1
-        val skippedMoves = (ordered.length - searchedMoves).max(0)
-        val nodesSpentHere = (nodes(0) - nodeStartAtThisPosition).max(1L)
-        val avgNodesPerTriedMove = nodesSpentHere.toDouble / searchedMoves.toDouble
-        val savedNodesEstimate =
-          if isHeuristicCutoff then skippedMoves.toDouble * avgNodesPerTriedMove
-          else 0.0
-        val old = stats(0)
-        stats(0) = old.copy(
-          betaCutoffs = old.betaCutoffs + 1,
-          heuristicCutoffs = old.heuristicCutoffs + (if isHeuristicCutoff then 1 else 0),
-          heuristicSavedNodesEstimate = old.heuristicSavedNodesEstimate + savedNodesEstimate,
-          killerCutoffs = old.killerCutoffs + (if isKiller then 1 else 0),
-          counterCutoffs = old.counterCutoffs + (if isCounter then 1 else 0),
-          historyCutoffs = old.historyCutoffs + (if hasHistory then 1 else 0)
-        )
-        val heuStart = System.nanoTime()
-        if !isCapture(state, move) then
-          updateKillers(depth, move)
-          updateHistory(state.activeColor, move, depth)
-          updateCounterMove(state.activeColor, prevMove, move)
-        profile.heuristicNs += (System.nanoTime() - heuStart)
-        boundary.break(currentAlpha)
+        val score =
+          if searchedMoveCount == 0 then
+            fullWindowSearch()
+          else
+            val probeDepth = if useLmr then (fullDepth - LmrReduction).max(0) else fullDepth
+            val probe = nullWindowSearch(probeDepth)
+            if probe > currentAlpha && (useLmr || probe < beta) then
+              fullWindowSearch()
+            else probe
+        searchedMoveCount += 1
+        if score > currentAlpha then
+          currentAlpha = score
+          bestSeen = Some(move)
+        if currentAlpha >= beta then
+          val c = colorIndex(state.activeColor)
+          val from = squareIndex(move.from)
+          val to = squareIndex(move.to)
+          val d = depth.max(0).min(MaxSearchDepth)
+          val isKiller =
+            !isCaptureMove && ((killers(d)(0) != null && killers(d)(0) == move) || (killers(d)(1) != null && killers(d)(1) == move))
+          val isCounter =
+            !isCaptureMove && prevMove.exists { pm =>
+              val pFrom = squareIndex(pm.from)
+              val pTo = squareIndex(pm.to)
+              val cm = counterMoves(c)(pFrom)(pTo)
+              cm != null && cm == move
+            }
+          val hasHistory = !isCaptureMove && history(c)(from)(to) > 0
+          val hasContinuation =
+            !isCaptureMove && prevMove.exists(pm => continuationHistory(c)(squareIndex(pm.to))(to) > 0)
+          val hasCaptureHistory = isCaptureMove && captureHistoryScore(state, state.board, move) > 0
+          val isHeuristicCutoff = isKiller || isCounter || hasHistory || hasContinuation || hasCaptureHistory
+          val searchedMoves = moveIndex + 1
+          val skippedMoves = (ordered.length - searchedMoves).max(0)
+          val nodesSpentHere = (nodes(0) - nodeStartAtThisPosition).max(1L)
+          val avgNodesPerTriedMove = nodesSpentHere.toDouble / searchedMoves.toDouble
+          val savedNodesEstimate =
+            if isHeuristicCutoff then skippedMoves.toDouble * avgNodesPerTriedMove
+            else 0.0
+          val old = stats(0)
+          stats(0) = old.copy(
+            betaCutoffs = old.betaCutoffs + 1,
+            heuristicCutoffs = old.heuristicCutoffs + (if isHeuristicCutoff then 1 else 0),
+            heuristicSavedNodesEstimate = old.heuristicSavedNodesEstimate + savedNodesEstimate,
+            killerCutoffs = old.killerCutoffs + (if isKiller then 1 else 0),
+            counterCutoffs = old.counterCutoffs + (if isCounter then 1 else 0),
+            historyCutoffs = old.historyCutoffs + (if hasHistory then 1 else 0),
+            continuationCutoffs = old.continuationCutoffs + (if hasContinuation then 1 else 0),
+            captureHistoryCutoffs = old.captureHistoryCutoffs + (if hasCaptureHistory then 1 else 0)
+          )
+          val heuStart = System.nanoTime()
+          if isCaptureMove then
+            updateCaptureHistory(state, move, depth)
+          else
+            updateKillers(depth, move)
+            updateHistory(state.activeColor, move, depth)
+            updateCounterMove(state.activeColor, prevMove, move)
+            updateContinuationHistory(state.activeColor, prevMove, move, depth)
+          profile.heuristicNs += (System.nanoTime() - heuStart)
+          boundary.break(currentAlpha)
       moveIndex += 1
 
     currentAlpha = sanitizeScore(currentAlpha)
@@ -570,20 +607,16 @@ object AlphaBetaAgent:
       else if currentAlpha >= beta then 1
       else 0
     val ttPutStart = System.nanoTime()
-    putTt(positionKey, TTEntry(scoreToTt(sanitizeScore(currentAlpha), plyFromRoot), depth, bound, bestSeen, ttStamp.incrementAndGet()))
+    putTt(positionKey, scoreToTt(sanitizeScore(currentAlpha), plyFromRoot), depth, bound, bestSeen)
     profile.ttNs += (System.nanoTime() - ttPutStart)
     currentAlpha
 
   private def staticEvalCp(
     state: GameState,
-    legalMoves: List[Move],
     profile: TimeProfile,
-    depth: Int,
-    alpha: Double,
-    beta: Double
+    depth: Int
   ): Double =
-    val eval = selectiveEvaluate(state, legalMoves, profile, depth, alpha, beta)
-    eval.value * ValueScale
+    hceEvaluate(state, profile, depth) * ValueScale
 
   private def quiescence(
     state: GameState,
@@ -605,8 +638,10 @@ object AlphaBetaAgent:
 
     val inCheck = MoveGenerator.isInCheck(state, state.activeColor)
     var currentAlpha = alpha
+    var standPatScore = Double.NegativeInfinity
     if !inCheck then
-      val standPat = staticEvalCp(state, Nil, profile, -qDepth, alpha, beta)
+      val standPat = staticEvalCp(state, profile, -qDepth)
+      standPatScore = standPat
       if standPat >= beta then boundary.break(beta)
       if standPat > currentAlpha then currentAlpha = standPat
       if qDepth >= MaxQuiescenceDepth then boundary.break(sanitizeScore(currentAlpha))
@@ -616,10 +651,10 @@ object AlphaBetaAgent:
         val legalMoves = cachedLegalMoves(state, positionHash(state), profile)
         if legalMoves.isEmpty then boundary.break(matedScore(plyFromRoot))
         if qDepth >= MaxQuiescenceDepth then
-          boundary.break(staticEvalCp(state, legalMoves, profile, -qDepth, alpha, beta))
+          boundary.break(staticEvalCp(state, profile, -qDepth))
         legalMoves
       else
-        val noisy = noisyMoves(state, profile)
+        val noisy = noisyMoves(state, profile).filter(move => shouldSearchNoisyMove(state, move, currentAlpha, standPatScore))
         if qDepth < QuiescenceChecksDepth then
           val checks = cachedLegalMoves(state, positionHash(state), profile).filter { move =>
             !isCapture(state, move) && move.promotion.isEmpty && givesCheck(state, move)
@@ -641,83 +676,25 @@ object AlphaBetaAgent:
 
   private def rootStaticScore(
     state: GameState,
-    legalMoves: List[Move],
     profile: TimeProfile
   ): Double =
-    safeNetEvaluate(hceNet, state, legalMoves, profile, isNn = false, cacheNamespace = "root_hce").value * ValueScale
+    safeHceEvaluate(hceEvaluator, state, profile, cacheNamespace = "root_hce") * ValueScale
 
   private def drawScoreForRoot(rootScore: Double): Double =
     if rootScore > RootDrawPolicyThreshold then -RootDrawPolicyBias
     else if rootScore < -RootDrawPolicyThreshold then RootDrawPolicyBias
     else 0.0
 
-  private def rootNnTieBreak(
-    state: GameState,
-    rootScores: List[(Move, Double)],
-    bestScore: Double,
-    deadline: Long,
-    profile: TimeProfile
-  ): Option[Move] =
-    if EvalModeSetting != EvalMode.RootNnTieBreak || rootScores.size <= 1 then None
-    else
-      val candidates = rootScores.filter { case (_, score) =>
-        bestScore - score <= RootNnTieBreakWindow
-      }
-      if candidates.size <= 1 then None
-      else
-        var bestMove: Option[Move] = None
-        var bestNnScore = Double.NegativeInfinity
-        candidates.foreach { case (move, _) =>
-          if System.currentTimeMillis() < deadline then
-            val child = fastApplyMove(state, move)
-            val nnScore = -safeNetEvaluate(policyNet, child, Nil, profile, isNn = true, cacheNamespace = "root_nn").value
-            if nnScore > bestNnScore then
-              bestNnScore = nnScore
-              bestMove = Some(move)
-        }
-        bestMove
-
-  private def selectiveEvaluate(
-    state: GameState,
-    legalMoves: List[Move],
-    profile: TimeProfile,
-    depth: Int,
-    alpha: Double,
-    beta: Double
-  ): PolicyValueEvaluation =
-    EvalModeSetting match
-      case EvalMode.Hce | EvalMode.RootNnTieBreak =>
-        hceEvaluate(state, legalMoves, profile, depth)
-      case EvalMode.Nn =>
-        safeNetEvaluate(policyNet, state, legalMoves, profile, isNn = true, cacheNamespace = "nn")
-      case EvalMode.Blend =>
-        blendedEvaluate(state, legalMoves, profile, depth)
-
   private def hceEvaluate(
     state: GameState,
-    legalMoves: List[Move],
     profile: TimeProfile,
     depth: Int
-  ): PolicyValueEvaluation =
+  ): Double =
     val inCheck = MoveGenerator.isInCheck(state, state.activeColor)
     val pieceCount = state.board.pieceCount
     val useFastHce = depth <= FastHceAtOrBelowDepth && pieceCount > 10 && !inCheck
-    val net = if useFastHce then fastHceNet else hceNet
-    safeNetEvaluate(net, state, legalMoves, profile, isNn = false, cacheNamespace = if useFastHce then "hce_fast" else "hce")
-
-  private def blendedEvaluate(
-    state: GameState,
-    legalMoves: List[Move],
-    profile: TimeProfile,
-    depth: Int
-  ): PolicyValueEvaluation =
-    val hce = hceEvaluate(state, legalMoves, profile, depth)
-    val nn = safeNetEvaluate(policyNet, state, legalMoves, profile, isNn = true, cacheNamespace = "nn")
-    hce.copy(
-      priors = if nn.priors.nonEmpty then nn.priors else hce.priors,
-      value = ((1.0 - NnBlendWeight) * hce.value) + (NnBlendWeight * nn.value),
-      uncertainty = math.max(hce.uncertainty, nn.uncertainty)
-    )
+    val evaluator = if useFastHce then fastHceEvaluator else hceEvaluator
+    safeHceEvaluate(evaluator, state, profile, cacheNamespace = if useFastHce then "hce_fast" else "hce")
 
   private def orderMoves(
     state: GameState,
@@ -730,7 +707,21 @@ object AlphaBetaAgent:
     val started = System.nanoTime()
     if legalMoves.size <= 1 then legalMoves
     else
-      val out = legalMoves.sortBy(m => -moveOrderingScore(state, state.board, m, depth, prevMove, ttMove))
+      val board = state.board
+      val activeColor = state.activeColor
+      val useTacticalOrdering = depth >= TacticalOrderingMinDepth
+      val useDefensiveOrdering = depth >= DefensiveOrderingMinDepth
+      val ownKing = state.kingPos(activeColor)
+      val context = OrderingContext(
+        activeColor = activeColor,
+        activeColorIndex = colorIndex(activeColor),
+        depthIndex = depth.max(0).min(MaxSearchDepth),
+        ownKing = ownKing,
+        ownKingDanger = if useDefensiveOrdering then ownKing.map(kingDangerForOrdering(board, _, activeColor)).getOrElse(0) else 0,
+        useTacticalOrdering = useTacticalOrdering,
+        useDefensiveOrdering = useDefensiveOrdering
+      )
+      val out = legalMoves.sortBy(m => -moveOrderingScore(state, board, m, depth, prevMove, ttMove, context))
       profile.orderMovesNs += (System.nanoTime() - started)
       out
 
@@ -740,41 +731,47 @@ object AlphaBetaAgent:
     move: Move,
     depth: Int,
     prevMove: Option[Move],
-    ttMove: Option[Move]
+    ttMove: Option[Move],
+    context: OrderingContext
   ): Int =
     val ttScore = if ttMove.contains(move) then 200_000 else 0
     val attacker = board.pieceAtOrNull(move.from)
-    val victim = board.pieceAtOrNull(move.to)
-    val attackerValue = if attacker == null then 0 else PieceType.pieceValue(attacker.pieceType)
-    val victimValue = if victim == null then 0 else PieceType.pieceValue(victim.pieceType)
-    val captureScore =
-      if isCapture(board, state.enPassantTarget, move) then 100_000 + (10 * victimValue) - attackerValue
+    val isCaptureMove = isCapture(board, state.enPassantTarget, move)
+    val victim = capturedPieceForMove(state, board, move, attacker)
+    val attackerValue = if attacker == null then 0 else seePieceValueCp(attacker.pieceType)
+    val victimValue = if victim == null then 0 else seePieceValueCp(victim.pieceType)
+    val seeCp =
+      if depth > 0 && (isCaptureMove || move.promotion.nonEmpty) then staticExchangeEval(state, move)
       else 0
-    val promotionScore = move.promotion match
-      case Some(PieceType.Queen) => 39_000
-      case Some(PieceType.Rook) => 35_000
-      case Some(PieceType.Bishop) => 33_000
-      case Some(PieceType.Knight) => 34_000
-      case Some(PieceType.Pawn | PieceType.King) => 30_000
-      case None => 0
+    val captureScore =
+      if isCaptureMove then
+        val seeBucket =
+          if seeCp >= 0 then 8_000 + seeCp
+          else seeCp * 4
+        100_000 + seeBucket + captureHistoryScoreFor(attacker, victim, move.to) + victimValue - (attackerValue / 20)
+      else 0
+    val checkScore =
+      if context.useTacticalOrdering || move.promotion.nonEmpty then
+        checkOrderingScore(state, board, move, attacker, isCaptureMove, seeCp)
+      else 0
+    val promotionScore = promotionOrderingScore(move, isCaptureMove, checkScore > 0)
 
-    val d = depth.max(0).min(MaxSearchDepth)
     val killerScore =
-      if !isCapture(state, move) then
-        val k1 = killers(d)(0)
-        val k2 = killers(d)(1)
+      if !isCaptureMove then
+        val k1 = killers(context.depthIndex)(0)
+        val k2 = killers(context.depthIndex)(1)
         if k1 != null && move == k1 then 20_000
         else if k2 != null && move == k2 then 15_000
         else 0
       else 0
 
-    val c = colorIndex(state.activeColor)
+    val c = context.activeColorIndex
     val from = squareIndex(move.from)
     val to = squareIndex(move.to)
-    val historyScore = history(c)(from)(to).min(12_000)
+    val historyScore = if isCaptureMove then 0 else history(c)(from)(to).min(12_000)
 
     val counterScore =
-      if !isCapture(state, move) then
+      if !isCaptureMove then
         prevMove match
           case Some(pm) =>
             val pFrom = squareIndex(pm.from)
@@ -783,23 +780,36 @@ object AlphaBetaAgent:
             if cm != null && move == cm then 25_000 else 0
           case None => 0
       else 0
+    val continuationScore =
+      if !isCaptureMove then
+        prevMove.map(pm => continuationHistory(c)(squareIndex(pm.to))(to).min(10_000)).getOrElse(0)
+      else 0
+    val threatScore =
+      if context.useTacticalOrdering && !isCaptureMove && move.promotion.isEmpty then
+        threatMoveScore(state, board, move, attacker, checkScore > 0)
+      else 0
 
-    val defensiveScore = defensiveModeOrderingScore(state, board, move, attacker, captureScore > 0)
+    val defensiveScore =
+      if context.useDefensiveOrdering then defensiveModeOrderingScore(state, board, move, attacker, isCaptureMove, checkScore > 0, context)
+      else 0
 
-    ttScore + captureScore + promotionScore + killerScore + counterScore + historyScore + defensiveScore
+    ttScore + captureScore + promotionScore + checkScore + threatScore +
+      killerScore + counterScore + historyScore + continuationScore + defensiveScore
 
   private def defensiveModeOrderingScore(
     state: GameState,
     board: Board,
     move: Move,
     attacker: Piece | Null,
-    isCaptureMove: Boolean
+    isCaptureMove: Boolean,
+    isCheckingMove: Boolean,
+    context: OrderingContext
   ): Int =
-    val ownKingPosOpt = state.kingPos(state.activeColor)
+    val ownKingPosOpt = context.ownKing
     if ownKingPosOpt.isEmpty then 0
     else
       val ownKingPos = ownKingPosOpt.get
-      val danger = kingDangerForOrdering(board, ownKingPos, state.activeColor)
+      val danger = context.ownKingDanger
       if danger < 18 then 0
       else
         val quietQueenMove =
@@ -807,7 +817,7 @@ object AlphaBetaAgent:
           attacker.pieceType == PieceType.Queen &&
           !isCaptureMove &&
           move.promotion.isEmpty &&
-          !givesCheck(state, move)
+          !isCheckingMove
         val queenWanderPenalty =
           if quietQueenMove && chebyshevDistance(move.to, ownKingPos) > chebyshevDistance(move.from, ownKingPos) then 14_000
           else if quietQueenMove then 9_000
@@ -833,9 +843,9 @@ object AlphaBetaAgent:
         val attackerCaptureBonus =
           if isCaptureMove then
             board.pieceAtOrNull(move.to) match
-              case Piece(enemyColor, PieceType.Queen | PieceType.Rook | PieceType.Knight) if enemyColor == state.activeColor.opposite =>
+              case Piece(enemyColor, PieceType.Queen | PieceType.Rook | PieceType.Knight) if enemyColor == context.activeColor.opposite =>
                 8_000
-              case Piece(enemyColor, PieceType.Bishop) if enemyColor == state.activeColor.opposite && chebyshevDistance(move.to, ownKingPos) <= 2 =>
+              case Piece(enemyColor, PieceType.Bishop) if enemyColor == context.activeColor.opposite && chebyshevDistance(move.to, ownKingPos) <= 2 =>
                 4_500
               case _ => 0
           else 0
@@ -906,18 +916,18 @@ object AlphaBetaAgent:
     val out = scala.collection.mutable.ArrayBuffer.empty[Move]
     val legal = scala.collection.mutable.ArrayBuffer.empty[Move]
     val color = state.activeColor
-    state.board.foreachPiece {
-      case (pos, Piece(`color`, PieceType.Pawn)) =>
+    state.board.foreachPieceOf(color) {
+      case (pos, Piece(_, PieceType.Pawn)) =>
         addNoisyPawnMoves(out, state, pos, color)
-      case (pos, Piece(`color`, PieceType.Knight)) =>
+      case (pos, Piece(_, PieceType.Knight)) =>
         addNoisyKnightMoves(out, state, pos, color)
-      case (pos, Piece(`color`, PieceType.Bishop)) =>
+      case (pos, Piece(_, PieceType.Bishop)) =>
         addNoisySlidingMoves(out, state, pos, color, NoisyBishopDirections)
-      case (pos, Piece(`color`, PieceType.Rook)) =>
+      case (pos, Piece(_, PieceType.Rook)) =>
         addNoisySlidingMoves(out, state, pos, color, NoisyRookDirections)
-      case (pos, Piece(`color`, PieceType.Queen)) =>
+      case (pos, Piece(_, PieceType.Queen)) =>
         addNoisySlidingMoves(out, state, pos, color, NoisyQueenDirections)
-      case (pos, Piece(`color`, PieceType.King)) =>
+      case (pos, Piece(_, PieceType.King)) =>
         addNoisyKingMoves(out, state, pos, color)
       case _ =>
         ()
@@ -940,6 +950,390 @@ object AlphaBetaAgent:
     Array((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
   private val NoisyKingDirections: Array[(Int, Int)] =
     Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
+  private val BadCaptureSeePruneCp = -90
+
+  private def reverseFutilityMargin(depth: Int): Double =
+    0.85 * depth.max(1).toDouble
+
+  private def razoringMargin(depth: Int): Double =
+    if depth <= 1 then 1.25 else 2.15
+
+  private def futilityMargin(depth: Int): Double =
+    if depth <= 1 then 0.95 else 1.75
+
+  private def lateMovePruneThreshold(depth: Int): Int =
+    depth match
+      case d if d <= 1 => 7
+      case 2 => 10
+      case _ => 14
+
+  private def shouldPruneQuietMove(
+    state: GameState,
+    move: Move,
+    depth: Int,
+    moveIndex: Int,
+    currentAlpha: Double,
+    staticScore: Double,
+    inCheck: Boolean,
+    prevMove: Option[Move],
+    ttMove: Option[Move]
+  ): Boolean =
+    if inCheck || ttMove.contains(move) || hasQuietOrderingSupport(state, move, depth, prevMove) then false
+    else
+      val attacker = state.board.pieceAtOrNull(move.from)
+      val checkingMove =
+        attacker != null &&
+          isPotentialCheckCandidate(state, state.board, move, attacker) &&
+          givesCheck(state, move)
+      if checkingMove then false
+      else if depth <= SeeQuietPruningMaxDepth && staticExchangeEval(state, move) < -80 then true
+      else if depth <= LateMovePruningMaxDepth && moveIndex >= lateMovePruneThreshold(depth) then true
+      else depth <= FutilityMaxDepth && staticScore + futilityMargin(depth) <= currentAlpha
+
+  private def hasQuietOrderingSupport(
+    state: GameState,
+    move: Move,
+    depth: Int,
+    prevMove: Option[Move]
+  ): Boolean =
+    val c = colorIndex(state.activeColor)
+    val from = squareIndex(move.from)
+    val to = squareIndex(move.to)
+    val d = depth.max(0).min(MaxSearchDepth)
+    val isKiller =
+      (killers(d)(0) != null && killers(d)(0) == move) ||
+        (killers(d)(1) != null && killers(d)(1) == move)
+    val isCounter =
+      prevMove.exists { pm =>
+        val cm = counterMoves(c)(squareIndex(pm.from))(squareIndex(pm.to))
+        cm != null && cm == move
+      }
+    val historySupport = history(c)(from)(to) >= 384
+    val continuationSupport =
+      prevMove.exists(pm => continuationHistory(c)(squareIndex(pm.to))(to) >= 384)
+    isKiller || isCounter || historySupport || continuationSupport
+
+  private def shouldSearchNoisyMove(state: GameState, move: Move, currentAlpha: Double, standPat: Double): Boolean =
+    if move.promotion.nonEmpty then true
+    else if !isCapture(state, move) then true
+    else
+      val see = staticExchangeEval(state, move)
+      if see < BadCaptureSeePruneCp then false
+      else
+        val maxGain = deltaPruningGain(state, move)
+        if standPat + maxGain + 1.25 <= currentAlpha then
+          val attacker = state.board.pieceAtOrNull(move.from)
+          attacker != null &&
+            isPotentialCheckCandidate(state, state.board, move, attacker) &&
+            givesCheck(state, move)
+        else true
+
+  private def deltaPruningGain(state: GameState, move: Move): Double =
+    val board = state.board
+    val attacker = board.pieceAtOrNull(move.from)
+    val victim = capturedPieceForMove(state, board, move, attacker)
+    val captured = if victim == null then 0 else seePieceValueCp(victim.pieceType)
+    val promotion = (attacker, move.promotion) match
+      case (p, Some(pt)) if p != null => seePieceValueCp(pt) - seePieceValueCp(p.pieceType)
+      case _ => 0
+    (captured + promotion.max(0)).toDouble / 100.0
+
+  private def promotionOrderingScore(move: Move, isCaptureMove: Boolean, isCheck: Boolean): Int =
+    move.promotion match
+      case Some(PieceType.Queen) => 48_000
+      case Some(PieceType.Knight) =>
+        if isCheck then 36_000 else if isCaptureMove then 24_000 else 8_000
+      case Some(PieceType.Rook) =>
+        if isCheck then 18_000 else if isCaptureMove then 16_000 else 5_000
+      case Some(PieceType.Bishop) =>
+        if isCheck then 16_000 else if isCaptureMove then 14_000 else 4_000
+      case Some(PieceType.Pawn | PieceType.King) => 0
+      case None => 0
+
+  private def checkOrderingScore(
+    state: GameState,
+    board: Board,
+    move: Move,
+    attacker: Piece | Null,
+    isCaptureMove: Boolean,
+    seeCp: Int
+  ): Int =
+    if attacker == null || !isPotentialCheckCandidate(state, board, move, attacker) then 0
+    else if !givesCheck(state, move) then 0
+    else
+      val base = if isCaptureMove then 18_000 else 15_000
+      val safety = if seeCp < -100 then -10_000 else 0
+      val promotion = if move.promotion.nonEmpty then 8_000 else 0
+      base + safety + promotion
+
+  private def threatMoveScore(
+    state: GameState,
+    board: Board,
+    move: Move,
+    attacker: Piece | Null,
+    alreadyGivesCheck: Boolean
+  ): Int =
+    if attacker == null then 0
+    else
+      val movedType = move.promotion.getOrElse(attacker.pieceType)
+      val materialThreat = bestMaterialThreatScore(board, move, attacker.color, movedType)
+      val kingThreat =
+        if alreadyGivesCheck then 0
+        else
+          state.kingPos(attacker.color.opposite).map { king =>
+            val distance = chebyshevDistance(move.to, king)
+            val piecePressure =
+              movedType match
+                case PieceType.Queen => 2_800
+                case PieceType.Rook => 2_200
+                case PieceType.Bishop | PieceType.Knight => 1_800
+                case PieceType.Pawn => 900
+                case PieceType.King => 0
+            if distance <= 2 then piecePressure + (2 - distance).max(0) * 700 else 0
+          }.getOrElse(0)
+      materialThreat + kingThreat
+
+  private def bestMaterialThreatScore(
+    board: Board,
+    move: Move,
+    color: Color,
+    pieceType: PieceType
+  ): Int =
+    var best = 0
+    def consider(targetPos: Pos): Unit =
+      if targetPos.isValid && targetPos != move.from then
+        val target = board.pieceAtOrNull(targetPos)
+        if target != null && target.color == color.opposite && target.pieceType != PieceType.King then
+          val victimValue = seePieceValueCp(target.pieceType)
+          val attackerValue = seePieceValueCp(pieceType)
+          val defended = MoveGenerator.isAttackedBy(board, targetPos, color.opposite)
+          val score =
+            if !defended then 6_000 + victimValue / 3
+            else if attackerValue < victimValue then 3_500 + (victimValue - attackerValue) / 2
+            else 0
+          if score > best then best = score
+
+    pieceType match
+      case PieceType.Pawn =>
+        val dir = if color == Color.White then 1 else -1
+        consider(Pos(move.to.col - 1, move.to.row + dir))
+        consider(Pos(move.to.col + 1, move.to.row + dir))
+      case PieceType.Knight =>
+        var i = 0
+        while i < NoisyKnightDeltas.length do
+          val (dc, dr) = NoisyKnightDeltas(i)
+          consider(Pos(move.to.col + dc, move.to.row + dr))
+          i += 1
+      case PieceType.Bishop =>
+        scanThreatRays(board, move, color, NoisyBishopDirections, consider)
+      case PieceType.Rook =>
+        scanThreatRays(board, move, color, NoisyRookDirections, consider)
+      case PieceType.Queen =>
+        scanThreatRays(board, move, color, NoisyQueenDirections, consider)
+      case PieceType.King =>
+        var i = 0
+        while i < NoisyKingDirections.length do
+          val (dc, dr) = NoisyKingDirections(i)
+          consider(Pos(move.to.col + dc, move.to.row + dr))
+          i += 1
+    best
+
+  private def scanThreatRays(
+    board: Board,
+    move: Move,
+    color: Color,
+    directions: Array[(Int, Int)],
+    consider: Pos => Unit
+  ): Unit =
+    var dirIndex = 0
+    while dirIndex < directions.length do
+      val (dc, dr) = directions(dirIndex)
+      var to = move.to + (dc, dr)
+      var blocked = false
+      while to.isValid && !blocked do
+        val target = if to == move.from then null else board.pieceAtOrNull(to)
+        if target == null then
+          to = to + (dc, dr)
+        else
+          if target.color == color.opposite then consider(to)
+          blocked = true
+      dirIndex += 1
+
+  private def staticExchangeEval(state: GameState, move: Move): Int =
+    val board = state.board
+    val movingPiece = board.pieceAtOrNull(move.from)
+    if movingPiece == null then 0
+    else
+      val capturedPiece = capturedPieceForMove(state, board, move, movingPiece)
+      val promotionDelta = move.promotion match
+        case Some(pt) => seePieceValueCp(pt) - seePieceValueCp(movingPiece.pieceType)
+        case None => 0
+      val enPassantCapturePos =
+        if movingPiece.pieceType == PieceType.Pawn && state.enPassantTarget.contains(move.to) then
+          val capturedRow = if movingPiece.color == Color.White then move.to.row - 1 else move.to.row + 1
+          Pos(move.to.col, capturedRow)
+        else null
+      val resultingPiece = move.promotion match
+        case Some(pt) => Piece(movingPiece.color, pt)
+        case None => movingPiece
+      val after =
+        board.applyMoveUnchecked(
+          from = move.from,
+          to = move.to,
+          movingPiece = movingPiece,
+          resultingPiece = resultingPiece,
+          enPassantCapturePos = enPassantCapturePos
+        )
+      val capturedGain = if capturedPiece == null then 0 else seePieceValueCp(capturedPiece.pieceType)
+      capturedGain + promotionDelta - staticExchangeRecapture(after, move.to, movingPiece.color.opposite)
+
+  private def staticExchangeRecapture(board: Board, target: Pos, color: Color): Int =
+    leastValuableAttacker(board, target, color) match
+      case None => 0
+      case Some((from, attacker)) =>
+        val captured = board.pieceAtOrNull(target)
+        if captured == null then 0
+        else
+          val resultingPiece =
+            if attacker.pieceType == PieceType.Pawn && (target.row == 0 || target.row == 7) then Piece(color, PieceType.Queen)
+            else attacker
+          val after =
+            board.applyMoveUnchecked(
+              from = from,
+              to = target,
+              movingPiece = attacker,
+              resultingPiece = resultingPiece
+            )
+          val gain = seePieceValueCp(captured.pieceType) - staticExchangeRecapture(after, target, color.opposite)
+          if gain > 0 then gain else 0
+
+  private def capturedPieceForMove(state: GameState, board: Board, move: Move, movingPiece: Piece | Null): Piece | Null =
+    if movingPiece != null && movingPiece.pieceType == PieceType.Pawn && state.enPassantTarget.contains(move.to) then
+      Piece(movingPiece.color.opposite, PieceType.Pawn)
+    else board.pieceAtOrNull(move.to)
+
+  private def seePieceValueCp(pieceType: PieceType): Int =
+    pieceType match
+      case PieceType.Pawn => 100
+      case PieceType.Knight => 320
+      case PieceType.Bishop => 330
+      case PieceType.Rook => 500
+      case PieceType.Queen => 900
+      case PieceType.King => 20_000
+
+  private def leastValuableAttacker(board: Board, target: Pos, color: Color): Option[(Pos, Piece)] =
+    findPawnAttacker(board, target, color)
+      .orElse(findJumpAttacker(board, target, color, PieceType.Knight, NoisyKnightDeltas))
+      .orElse(findSlidingAttacker(board, target, color, PieceType.Bishop, NoisyBishopDirections))
+      .orElse(findSlidingAttacker(board, target, color, PieceType.Rook, NoisyRookDirections))
+      .orElse(findSlidingAttacker(board, target, color, PieceType.Queen, NoisyQueenDirections))
+
+  private def findPawnAttacker(board: Board, target: Pos, color: Color): Option[(Pos, Piece)] =
+    val sourceRow = if color == Color.White then target.row - 1 else target.row + 1
+    val piece = Piece(color, PieceType.Pawn)
+    val left = Pos(target.col - 1, sourceRow)
+    if left.isValid && board.pieceAtOrNull(left) == piece then Some(left -> piece)
+    else
+      val right = Pos(target.col + 1, sourceRow)
+      if right.isValid && board.pieceAtOrNull(right) == piece then Some(right -> piece)
+      else None
+
+  private def findJumpAttacker(
+    board: Board,
+    target: Pos,
+    color: Color,
+    pieceType: PieceType,
+    deltas: Array[(Int, Int)]
+  ): Option[(Pos, Piece)] =
+    val piece = Piece(color, pieceType)
+    var found: Option[(Pos, Piece)] = None
+    var i = 0
+    while i < deltas.length && found.isEmpty do
+      val (dc, dr) = deltas(i)
+      val from = Pos(target.col + dc, target.row + dr)
+      if from.isValid && board.pieceAtOrNull(from) == piece then found = Some(from -> piece)
+      i += 1
+    found
+
+  private def findSlidingAttacker(
+    board: Board,
+    target: Pos,
+    color: Color,
+    pieceType: PieceType,
+    directions: Array[(Int, Int)]
+  ): Option[(Pos, Piece)] =
+    val piece = Piece(color, pieceType)
+    var found: Option[(Pos, Piece)] = None
+    var dirIndex = 0
+    while dirIndex < directions.length && found.isEmpty do
+      val (dc, dr) = directions(dirIndex)
+      var from = target + (dc, dr)
+      var blocked = false
+      while from.isValid && !blocked && found.isEmpty do
+        val current = board.pieceAtOrNull(from)
+        if current == null then from = from + (dc, dr)
+        else
+          if current == piece then found = Some(from -> piece)
+          blocked = true
+      dirIndex += 1
+    found
+
+  private def captureHistoryScore(state: GameState, board: Board, move: Move): Int =
+    val attacker = board.pieceAtOrNull(move.from)
+    val victim = capturedPieceForMove(state, board, move, attacker)
+    captureHistoryScoreFor(attacker, victim, move.to)
+
+  private def captureHistoryScoreFor(attacker: Piece | Null, victim: Piece | Null, to: Pos): Int =
+    if attacker == null || victim == null then 0
+    else
+      val c = colorIndex(attacker.color)
+      captureHistory(c)(pieceTypeIndex(attacker.pieceType))(squareIndex(to))(pieceTypeIndex(victim.pieceType)).min(16_000)
+
+  private def isPotentialCheckCandidate(state: GameState, board: Board, move: Move, attacker: Piece): Boolean =
+    state.kingPos(attacker.color.opposite).exists { king =>
+      val movedType = move.promotion.getOrElse(attacker.pieceType)
+      pieceAttacksSquareAfterMove(board, move.from, move.to, movedType, attacker.color, king) ||
+        sharesLine(move.from, king)
+    }
+
+  private def pieceAttacksSquareAfterMove(
+    board: Board,
+    from: Pos,
+    piecePos: Pos,
+    pieceType: PieceType,
+    color: Color,
+    target: Pos
+  ): Boolean =
+    pieceType match
+      case PieceType.Pawn =>
+        val dir = if color == Color.White then 1 else -1
+        target.row - piecePos.row == dir && math.abs(target.col - piecePos.col) == 1
+      case PieceType.Knight =>
+        val dc = math.abs(target.col - piecePos.col)
+        val dr = math.abs(target.row - piecePos.row)
+        (dc == 1 && dr == 2) || (dc == 2 && dr == 1)
+      case PieceType.Bishop =>
+        math.abs(target.col - piecePos.col) == math.abs(target.row - piecePos.row) &&
+          clearLineIgnoringFrom(board, from, piecePos, target)
+      case PieceType.Rook =>
+        (target.col == piecePos.col || target.row == piecePos.row) &&
+          clearLineIgnoringFrom(board, from, piecePos, target)
+      case PieceType.Queen =>
+        sharesLine(piecePos, target) && clearLineIgnoringFrom(board, from, piecePos, target)
+      case PieceType.King =>
+        chebyshevDistance(piecePos, target) <= 1
+
+  private def clearLineIgnoringFrom(board: Board, from: Pos, a: Pos, b: Pos): Boolean =
+    val dc = Integer.signum(b.col - a.col)
+    val dr = Integer.signum(b.row - a.row)
+    var pos = a + (dc, dr)
+    while pos.isValid && pos != b do
+      if pos != from && board.isOccupied(pos) then return false
+      pos = pos + (dc, dr)
+    true
+
+  private def sharesLine(a: Pos, b: Pos): Boolean =
+    a.row == b.row || a.col == b.col || math.abs(a.row - b.row) == math.abs(a.col - b.col)
 
   private def addNoisyPawnMoves(
     out: scala.collection.mutable.ArrayBuffer[Move],
@@ -980,11 +1374,12 @@ object AlphaBetaAgent:
     pos: Pos,
     color: Color
   ): Unit =
+    val board = state.board
     var i = 0
     while i < NoisyKnightDeltas.length do
       val (dc, dr) = NoisyKnightDeltas(i)
       val to = pos + (dc, dr)
-      if to.isValid && state.board.isOccupiedBy(to, color.opposite) then out += Move(pos, to)
+      if to.isValid && board.isOccupiedBy(to, color.opposite) then out += Move(pos, to)
       i += 1
 
   private def addNoisySlidingMoves(
@@ -994,19 +1389,20 @@ object AlphaBetaAgent:
     color: Color,
     directions: Array[(Int, Int)]
   ): Unit =
+    val board = state.board
     var dirIndex = 0
     while dirIndex < directions.length do
       val (dc, dr) = directions(dirIndex)
       var to = pos + (dc, dr)
       var blocked = false
       while to.isValid && !blocked do
-        state.board.get(to) match
-          case None =>
+        val target = board.pieceAtOrNull(to)
+        if target == null then
             to = to + (dc, dr)
-          case Some(Piece(c, _)) if c == color.opposite =>
+        else if target.color == color.opposite then
             out += Move(pos, to)
             blocked = true
-          case _ =>
+        else
             blocked = true
       dirIndex += 1
 
@@ -1016,15 +1412,17 @@ object AlphaBetaAgent:
     pos: Pos,
     color: Color
   ): Unit =
+    val board = state.board
     var i = 0
     while i < NoisyKingDirections.length do
       val (dc, dr) = NoisyKingDirections(i)
       val to = pos + (dc, dr)
-      if to.isValid && state.board.isOccupiedBy(to, color.opposite) then out += Move(pos, to)
+      if to.isValid && board.isOccupiedBy(to, color.opposite) then out += Move(pos, to)
       i += 1
 
   private def isLegalNoisyMove(state: GameState, move: Move): Boolean =
-    state.board.get(move.to).forall(_.pieceType != PieceType.King) &&
+    val target = state.board.pieceAtOrNull(move.to)
+    (target == null || target.pieceType != PieceType.King) &&
       !MoveGenerator.isInCheck(fastApplyMove(state, move), state.activeColor)
 
   private def givesCheck(state: GameState, move: Move): Boolean =
@@ -1056,6 +1454,40 @@ object AlphaBetaAgent:
           j += 1
         i += 1
 
+  private def updateContinuationHistory(color: Color, prevMove: Option[Move], reply: Move, depth: Int): Unit =
+    prevMove.foreach { pm =>
+      val c = colorIndex(color)
+      val prevTo = squareIndex(pm.to)
+      val to = squareIndex(reply.to)
+      val bonus = (depth.max(1) * depth.max(1)).min(256)
+      continuationHistory(c)(prevTo)(to) += bonus
+      if continuationHistory(c)(prevTo)(to) > 1_000_000 then
+        var i = 0
+        while i < 64 do
+          continuationHistory(c)(prevTo)(i) = continuationHistory(c)(prevTo)(i) / 2
+          i += 1
+    }
+
+  private def updateCaptureHistory(state: GameState, move: Move, depth: Int): Unit =
+    val board = state.board
+    val attacker = board.pieceAtOrNull(move.from)
+    val victim = capturedPieceForMove(state, board, move, attacker)
+    if attacker != null && victim != null then
+      val c = colorIndex(attacker.color)
+      val mover = pieceTypeIndex(attacker.pieceType)
+      val to = squareIndex(move.to)
+      val captured = pieceTypeIndex(victim.pieceType)
+      val bonus = (depth.max(1) * depth.max(1) * 2).min(512)
+      captureHistory(c)(mover)(to)(captured) += bonus
+      if captureHistory(c)(mover)(to)(captured) > 1_000_000 then
+        var sq = 0
+        while sq < 64 do
+          var pt = 0
+          while pt < 6 do
+            captureHistory(c)(mover)(sq)(pt) = captureHistory(c)(mover)(sq)(pt) / 2
+            pt += 1
+          sq += 1
+
   private def updateCounterMove(color: Color, prevMove: Option[Move], reply: Move): Unit =
     prevMove.foreach { pm =>
       val c = colorIndex(color)
@@ -1070,9 +1502,9 @@ object AlphaBetaAgent:
     val nextRepetitionCounts = GameState.advanceRepetitionCounts(state.repetitionCounts, nextHash, irreversible = false)
     state match
       case WhiteToMove(b, cr, _, _, fm, _, _, _, _, _, _) =>
-        GameState.black(b, cr, None, nextHalf, fm, Nil, positionHash = nextHash, repetitionCounts = nextRepetitionCounts)
+        GameState.black(b, cr, None, nextHalf, fm, Vector.empty, positionHash = nextHash, repetitionCounts = nextRepetitionCounts)
       case BlackToMove(b, cr, _, _, fm, _, _, _, _, _, _) =>
-        GameState.white(b, cr, None, nextHalf, fm + 1, Nil, positionHash = nextHash, repetitionCounts = nextRepetitionCounts)
+        GameState.white(b, cr, None, nextHalf, fm + 1, Vector.empty, positionHash = nextHash, repetitionCounts = nextRepetitionCounts)
 
   private def hasNonPawnMaterial(state: GameState, color: Color): Boolean =
     val board = state.board
@@ -1180,7 +1612,7 @@ object AlphaBetaAgent:
         newEP,
         newHalfClock,
         newFullMove,
-        Nil,
+        Vector.empty,
         positionHash = newPositionHash,
         repetitionCounts = newRepetitionCounts
       )
@@ -1191,7 +1623,7 @@ object AlphaBetaAgent:
         newEP,
         newHalfClock,
         newFullMove,
-        Nil,
+        Vector.empty,
         positionHash = newPositionHash,
         repetitionCounts = newRepetitionCounts
       )
@@ -1230,15 +1662,94 @@ object AlphaBetaAgent:
         while j < 64 do
           history(c)(i)(j) = 0
           counterMoves(c)(i)(j) = null
+          continuationHistory(c)(i)(j) = 0
           j += 1
         i += 1
       c += 1
 
-  private def putTt(key: Long, entry: TTEntry): Unit =
-    val previous = tt.put(key, entry)
-    if previous == null then ttCount.incrementAndGet()
-    ttEvictionQueue.add(key)
-    evictIfNeeded(tt, ttEvictionQueue, ttCount, MaxTtEntries)
+    c = 0
+    while c < 2 do
+      var pt = 0
+      while pt < 6 do
+        var sq = 0
+        while sq < 64 do
+          var captured = 0
+          while captured < 6 do
+            captureHistory(c)(pt)(sq)(captured) = 0
+            captured += 1
+          sq += 1
+        pt += 1
+      c += 1
+
+  private def getTt(key: Long): TTEntry | Null =
+    val base = ttBaseIndex(key)
+    var i = 0
+    while i < TTClusterSize do
+      val entry = ttSlots.get(base + i)
+      if entry != null && entry.key == key then return entry
+      i += 1
+    null
+
+  private def putTt(key: Long, score: Double, depth: Int, bound: Int, best: Option[Move]): Unit =
+    val entry = TTEntry(key, score, depth, bound, best, ttStamp.incrementAndGet())
+    val cluster = ttClusterIndex(key)
+    val base = cluster * TTClusterSize
+    val lock = ttLocks(cluster & (ttLocks.length - 1))
+    lock.synchronized {
+      var exactIdx = -1
+      var emptyIdx = -1
+      var victimIdx = base
+      var victimQuality = Int.MaxValue
+      var victimStamp = Long.MaxValue
+      var i = 0
+      while i < TTClusterSize do
+        val idx = base + i
+        val current = ttSlots.get(idx)
+        if current == null then
+          if emptyIdx < 0 then emptyIdx = idx
+        else if current.key == key then
+          exactIdx = idx
+        else
+          val quality = ttReplacementQuality(current)
+          if quality < victimQuality || (quality == victimQuality && current.stamp < victimStamp) then
+            victimIdx = idx
+            victimQuality = quality
+            victimStamp = current.stamp
+        i += 1
+
+      if exactIdx >= 0 then
+        val current = ttSlots.get(exactIdx)
+        val mergedBest = entry.best.orElse(Option(current).flatMap(_.best))
+        if current == null ||
+          entry.depth >= current.depth ||
+          entry.bound == 0 ||
+          current.bound != 0
+        then
+          ttSlots.set(exactIdx, entry.copy(best = mergedBest))
+        else if current.best.isEmpty && entry.best.nonEmpty then
+          ttSlots.set(exactIdx, current.copy(best = entry.best, stamp = entry.stamp))
+      else
+        val idx = if emptyIdx >= 0 then emptyIdx else victimIdx
+        ttSlots.set(idx, entry)
+    }
+
+  private def ttReplacementQuality(entry: TTEntry): Int =
+    (entry.depth.max(0) << 3) +
+      (if entry.bound == 0 then 4 else 0) +
+      (if entry.best.nonEmpty then 2 else 0)
+
+  private def ttClusterIndex(key: Long): Int =
+    val mixed = key ^ (key >>> 33) ^ (key << 11)
+    (mixed.toInt ^ (mixed >>> 32).toInt) & TTClusterMask
+
+  private def ttBaseIndex(key: Long): Int =
+    ttClusterIndex(key) * TTClusterSize
+
+  private def nextPowerOfTwo(value: Int): Int =
+    var n = 1
+    val target = value.max(1)
+    while n < target && n < (1 << 30) do n <<= 1
+    n
 
   private def cachedStatus(state: GameState, key: Long, profile: TimeProfile): GameStatus =
     val t0 = System.nanoTime()
@@ -1292,6 +1803,9 @@ object AlphaBetaAgent:
       case -1 => sanitizeScore(-100_000.0 + distance.toDouble)
       case _ => 0.0
 
+  private def canUseTablebase(state: GameState): Boolean =
+    state.board.pieceCount <= SyzygyProbe.maxPieces
+
   private def isMateScore(score: Double): Boolean =
     math.abs(score) >= MateScoreThreshold
 
@@ -1317,6 +1831,15 @@ object AlphaBetaAgent:
     GameRules.computeStatus(child) match
       case GameStatus.Stalemate => true
       case _ => false
+
+  private def wouldAllowImmediateMate(state: GameState, move: Move): Boolean =
+    val child = fastApplyMove(state, move)
+    val replies = MoveGenerator.legalMoves(child)
+    replies.exists { reply =>
+      val replyState = fastApplyMove(child, reply)
+      MoveGenerator.isInCheck(replyState, replyState.activeColor) &&
+        MoveGenerator.legalMoves(replyState).isEmpty
+    }
 
   private def materialLeadCpFor(state: GameState, color: Color): Int =
     materialCpFor(state.board, color) - materialCpFor(state.board, color.opposite)
@@ -1353,24 +1876,30 @@ object AlphaBetaAgent:
 
   private def squareIndex(pos: Pos): Int = pos.row * 8 + pos.col
   private def colorIndex(color: Color): Int = if color == Color.White then 0 else 1
+  private def pieceTypeIndex(pieceType: PieceType): Int =
+    pieceType match
+      case PieceType.Pawn => 0
+      case PieceType.Knight => 1
+      case PieceType.Bishop => 2
+      case PieceType.Rook => 3
+      case PieceType.Queen => 4
+      case PieceType.King => 5
 
-  private def safeNetEvaluate(
-    net: PolicyValueNet,
+  private def safeHceEvaluate(
+    evaluator: HceEvaluator,
     state: GameState,
-    legalMoves: List[Move],
     profile: TimeProfile,
-    isNn: Boolean,
     cacheNamespace: String
-  ): PolicyValueEvaluation =
+  ): Double =
     val started = System.nanoTime()
     val cacheKey = evalHash(state, cacheNamespace)
     val cached = evalCache.get(cacheKey)
     val out =
-      if cached != null then cached
+      if cached != null then cached.doubleValue()
       else
-        val computed = Try(net.evaluate(state, legalMoves)).getOrElse(hceNet.evaluate(state, legalMoves))
-        val existing = evalCache.putIfAbsent(cacheKey, computed)
-        if existing != null then existing
+        val computed = evaluator.evaluate(state)
+        val existing = evalCache.putIfAbsent(cacheKey, java.lang.Double.valueOf(computed))
+        if existing != null then existing.doubleValue()
         else
           evalCount.incrementAndGet()
           evalEvictionQueue.add(cacheKey)
@@ -1378,7 +1907,7 @@ object AlphaBetaAgent:
           computed
     val elapsed = System.nanoTime() - started
     profile.evalNs += elapsed
-    if isNn then profile.evalNnNs += elapsed else profile.evalHceNs += elapsed
+    profile.evalHceNs += elapsed
     out
 
   private def mergeStats(a: SearchStats, b: SearchStats): SearchStats =
@@ -1388,7 +1917,9 @@ object AlphaBetaAgent:
       heuristicSavedNodesEstimate = a.heuristicSavedNodesEstimate + b.heuristicSavedNodesEstimate,
       killerCutoffs = a.killerCutoffs + b.killerCutoffs,
       counterCutoffs = a.counterCutoffs + b.counterCutoffs,
-      historyCutoffs = a.historyCutoffs + b.historyCutoffs
+      historyCutoffs = a.historyCutoffs + b.historyCutoffs,
+      continuationCutoffs = a.continuationCutoffs + b.continuationCutoffs,
+      captureHistoryCutoffs = a.captureHistoryCutoffs + b.captureHistoryCutoffs
     )
 
   private def logSearchHeuristicSavings(nodes: Long, stats: SearchStats): Unit =
@@ -1403,7 +1934,9 @@ object AlphaBetaAgent:
     val savedNodesPctText = f"$savedNodesPct%.2f"
     println(
       s"[AI][SEARCH-HEURISTICS] nodes=$nodes betaCutoffs=${stats.betaCutoffs} heuristicCuts=${stats.heuristicCutoffs} " +
-      s"heuristicShareOfCutoffs=$heuristicShareText savedNodesEstimate=$savedNodesEstimate savedNodesPct=$savedNodesPctText"
+      s"heuristicShareOfCutoffs=$heuristicShareText savedNodesEstimate=$savedNodesEstimate savedNodesPct=$savedNodesPctText " +
+      s"killerCuts=${stats.killerCutoffs} counterCuts=${stats.counterCutoffs} historyCuts=${stats.historyCutoffs} " +
+      s"continuationCuts=${stats.continuationCutoffs} captureHistoryCuts=${stats.captureHistoryCutoffs}"
     )
 
   private def logTimeProfile(p: TimeProfile, nodes: Long): Unit =
@@ -1414,7 +1947,7 @@ object AlphaBetaAgent:
     def ms(ns: Long): String = f"${ns.toDouble / 1000000.0}%.3f"
     println(
       s"[AI][TIME] totalMs=${ms(total)} nodes=$nodes timePerNodeUs=$timePerNodeUs " +
-      s"searchMs=${ms(p.searchNs)} evalMs=${ms(p.evalNs)} evalNNMs=${ms(p.evalNnNs)} evalHCEMs=${ms(p.evalHceNs)} " +
+      s"searchMs=${ms(p.searchNs)} evalMs=${ms(p.evalNs)} evalHCEMs=${ms(p.evalHceNs)} " +
       s"orderMs=${ms(p.orderMovesNs)} moveGenMs=${ms(p.moveGenNs)} applyMoveMs=${ms(p.applyMoveNs)} statusMs=${ms(p.statusNs)} " +
       s"ttMs=${ms(p.ttNs)} heuristicsMs=${ms(p.heuristicNs)} openingDbMs=${ms(p.openingLookupNs)} tablebaseDbMs=${ms(p.tablebaseLookupNs)}"
     )
@@ -1443,15 +1976,17 @@ object AlphaBetaAgent:
       )
 
   private def lookupTablebaseMove(state: GameState, legalMoves: List[Move]): Option[TablebaseHit] =
-    SyzygyProbe.probe(state)
-      .map(hit => TablebaseHit(hit.move, hit.wdl, hit.dtz, hit.dtm, "SYZYGY"))
-      .filter(hit => legalMoves.contains(hit.move))
-      .orElse(
-        persistenceOpt
-          .flatMap(_.tablebaseDao.findEntryByFen(state.toFen).unsafeRunSync())
-          .flatMap(e =>
-            CoordinateMoveParser.parse(e.bestMove, state).toOption
-              .filter(legalMoves.contains)
-              .map(m => TablebaseHit(m, e.wdl, e.dtz, e.dtm, "TABLEBASE_DB"))
-          )
-      )
+    if !canUseTablebase(state) then None
+    else
+      SyzygyProbe.probe(state)
+        .map(hit => TablebaseHit(hit.move, hit.wdl, hit.dtz, hit.dtm, "SYZYGY"))
+        .filter(hit => legalMoves.contains(hit.move))
+        .orElse(
+          persistenceOpt
+            .flatMap(_.tablebaseDao.findEntryByFen(state.toFen).unsafeRunSync())
+            .flatMap(e =>
+              CoordinateMoveParser.parse(e.bestMove, state).toOption
+                .filter(legalMoves.contains)
+                .map(m => TablebaseHit(m, e.wdl, e.dtz, e.dtm, "TABLEBASE_DB"))
+            )
+        )

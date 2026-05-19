@@ -5,7 +5,6 @@ lazy val circeVersion   = "0.14.10"
 lazy val http4sVersion  = "0.23.23"
 lazy val slickVersion   = "3.5.1"
 lazy val mongoVersion   = "5.1.0"
-lazy val djlVersion     = "0.31.0"
 
 lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-Xmax-inlines", "64"),
@@ -47,11 +46,7 @@ lazy val ai = (project in file("ai"))
   .settings(
     commonSettings,
     name := "chess-ai",
-    coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|AiEngine|PassiveTrainer|Evaluator)",
-    libraryDependencies ++= Seq(
-      "ai.djl" % "api" % djlVersion,
-      "ai.djl.onnxruntime" % "onnxruntime-engine" % djlVersion
-    )
+    coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|AiEngine|PassiveTrainer|Evaluator)"
   )
 
 lazy val controller = (project in file("controller"))

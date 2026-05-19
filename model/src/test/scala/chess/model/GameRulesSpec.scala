@@ -24,7 +24,7 @@ class GameRulesSpec extends AnyFunSpec with Matchers {
         enPassantTarget = Some(Pos(3, 5)), // d6 square after black pawn double step
         halfMoveClock = 0,
         fullMoveNumber = 1,
-        history = Nil
+        history = Vector.empty
       )
       val move = Move(Pos(4, 4), Pos(3, 5)) // e5 captures d6 en‑passant
       val newState = GameRules.applyMove(state, move)

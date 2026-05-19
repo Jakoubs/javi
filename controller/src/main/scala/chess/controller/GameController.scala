@@ -81,7 +81,7 @@ extension (s: AppState)
     h.lift(s.viewIndex).getOrElse(s.game).toFen
 
   def historyFen: List[String] =
-    (s.game.history :+ s.game).map(_.toFen)
+    (s.game.history :+ s.game).map(_.toFen).toList
 
   def bottomPlayer: PlayerInfo =
     val info = s.game.materialInfo

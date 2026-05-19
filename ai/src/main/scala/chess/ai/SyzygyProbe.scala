@@ -41,7 +41,7 @@ object SyzygyProbe:
   private val ProbeKind =
     sys.env.get("CHESS_SYZYGY_PROBE_KIND").map(_.trim.toLowerCase).getOrElse("fathom")
   private val MaxPieces =
-    sys.env.get("CHESS_SYZYGY_MAX_PIECES").flatMap(_.toIntOption).getOrElse(5).max(2)
+    sys.env.get("CHESS_SYZYGY_MAX_PIECES").flatMap(_.toIntOption).getOrElse(5).max(2).min(5)
   private val TimeoutMs =
     sys.env.get("CHESS_SYZYGY_TIMEOUT_MS").flatMap(_.toLongOption).getOrElse(1500L).max(50L)
 

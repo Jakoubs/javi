@@ -489,7 +489,7 @@ sealed trait GameState:
   def enPassantTarget: Option[Pos]
   def halfMoveClock: Int
   def fullMoveNumber: Int
-  def history: List[GameState]
+  def history: Vector[GameState]
   protected def cachedPositionHashValue: Long
   protected def cachedHashBoard: Board | Null
   protected def cachedHashCastlingRights: CastlingRights | Null
@@ -525,7 +525,7 @@ extension (s: GameState)
     enPassantTarget: Option[Pos] = s.enPassantTarget,
     halfMoveClock: Int = s.halfMoveClock,
     fullMoveNumber: Int = s.fullMoveNumber,
-    history: List[GameState] = s.history,
+    history: Vector[GameState] = s.history,
     repetitionCounts: Map[Long, Int] = s.repetitionCounts
   ): GameState = s match
     case _: WhiteToMove => GameState.white(board, castlingRights, enPassantTarget, halfMoveClock, fullMoveNumber, history, repetitionCounts = repetitionCounts)
@@ -578,7 +578,7 @@ case class WhiteToMove(
   enPassantTarget: Option[Pos],
   halfMoveClock: Int,
   fullMoveNumber: Int,
-  history: List[GameState] = Nil,
+  history: Vector[GameState] = Vector.empty,
   protected val cachedPositionHashValue: Long = 0L,
   protected val cachedHashBoard: Board | Null = null,
   protected val cachedHashCastlingRights: CastlingRights | Null = null,
@@ -604,7 +604,7 @@ case class BlackToMove(
   enPassantTarget: Option[Pos],
   halfMoveClock: Int,
   fullMoveNumber: Int,
-  history: List[GameState] = Nil,
+  history: Vector[GameState] = Vector.empty,
   protected val cachedPositionHashValue: Long = 0L,
   protected val cachedHashBoard: Board | Null = null,
   protected val cachedHashCastlingRights: CastlingRights | Null = null,
@@ -635,7 +635,7 @@ object GameState:
     enPassantTarget: Option[Pos],
     halfMoveClock: Int,
     fullMoveNumber: Int,
-    history: List[GameState] = Nil,
+    history: Vector[GameState] = Vector.empty,
     positionHash: Long = NoCachedHash,
     repetitionCounts: Map[Long, Int] | Null = null
   ): WhiteToMove =
@@ -653,7 +653,7 @@ object GameState:
     enPassantTarget: Option[Pos],
     halfMoveClock: Int,
     fullMoveNumber: Int,
-    history: List[GameState] = Nil,
+    history: Vector[GameState] = Vector.empty,
     positionHash: Long = NoCachedHash,
     repetitionCounts: Map[Long, Int] | Null = null
   ): BlackToMove =
@@ -679,7 +679,7 @@ object GameState:
     enPassantTarget = None,
     halfMoveClock = 0,
     fullMoveNumber = 1,
-    history = Nil
+    history = Vector.empty
   )
 
   def fromFen(fen: String): Either[String, GameState] =
