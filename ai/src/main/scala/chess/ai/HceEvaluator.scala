@@ -14,6 +14,10 @@ class HceEvaluator(
 object HceEvaluator:
   val default: HceEvaluator = new HceEvaluator()
   val fast: HceEvaluator = new HceEvaluator(includePositionalHeuristics = false)
+  private val DangerousPasserBonusCp = 95
+  private val RookSupportedPasserBonusCp = 45
+  private val PawnHookAttackPenaltyCp = 150
+  private val WeakAdjacentShieldPenaltyCp = 55
 
   private val mgValue: Map[PieceType, Int] = Map(
     PieceType.Pawn -> 82,
@@ -331,12 +335,23 @@ object HceEvaluator:
     val outsideKingSquareBonus =
       if endgame && rankFromStart >= 4 && oppKingDistance > promotionDistance + 1 then 45
       else 0
+    val dangerousPasserBonus =
+      if endgame && rankFromStart >= 5 && !blocked && oppKingDistance > promotionDistance + 1 then
+        DangerousPasserBonusCp
+      else 0
+    val rookBehindBonus =
+      if endgame && rankFromStart >= 4 && own.exists({
+        case (rp, Piece(_, PieceType.Rook)) => isBehindPawn(rp, p, color)
+        case _ => false
+      })
+      then RookSupportedPasserBonusCp
+      else 0
     val supportBonus =
       if pawnSupported then (if endgame then 24 else 14) else 0
     val blockedPenalty =
       if blocked then (if endgame then 70 else 35) else 0
 
-    (table(rankFromStart) + supportBonus + outsideKingSquareBonus - blockedPenalty).max(0)
+    (table(rankFromStart) + supportBonus + outsideKingSquareBonus + dangerousPasserBonus + rookBehindBonus - blockedPenalty).max(0)
 
   private def chebyshevDistance(a: chess.model.Pos, b: chess.model.Pos): Int =
     math.max(math.abs(a.col - b.col), math.abs(a.row - b.row))
@@ -509,8 +524,47 @@ object HceEvaluator:
         if ownPawnSet.contains(sq) then s += 12 else s -= 24
       }
       s -= advancedShieldPawnExposure(kingPos, ownPawns, color)
+      s -= pawnHookAttackPenalty(state, kingPos, ownPawns, opp, color)
       s -= kingDangerScore(state, own, opp, ownPawns, oppPawns, color)
     s
+
+  private def pawnHookAttackPenalty(
+    state: GameState,
+    kingPos: Pos,
+    ownPawns: List[Pos],
+    attackers: List[(Pos, Piece)],
+    color: Color
+  ): Int =
+    val homeRow = if color == Color.White then 0 else 7
+    val kingsideKing = kingPos.row == homeRow && kingPos.col >= 5
+    if !kingsideKing then 0
+    else
+      val hookRow = if color == Color.White then 2 else 5
+      val baseRow = if color == Color.White then 1 else 6
+      val hHook = Pos(7, hookRow)
+      val gHook = Pos(6, hookRow)
+      val hHome = Pos(7, baseRow)
+      val gHome = Pos(6, baseRow)
+      val pawnSet = ownPawns.toSet
+      val hFilePressure = attackers.exists {
+        case (pos, Piece(_, PieceType.Rook | PieceType.Queen)) =>
+          pos.col == 7 && clearFileBetween(state, pos, hHook)
+        case _ => false
+      }
+      val queenNearHook = attackers.exists {
+        case (pos, Piece(_, PieceType.Queen)) =>
+          chebyshevDistance(pos, hHook) <= 4 || chebyshevDistance(pos, kingPos) <= 4
+        case _ => false
+      }
+      val hookPenalty =
+        if pawnSet.contains(hHook) && hFilePressure then
+          PawnHookAttackPenaltyCp + (if queenNearHook then 70 else 0)
+        else 0
+      val adjacentShieldPenalty =
+        if (pawnSet.contains(gHook) || !pawnSet.contains(gHome)) && hFilePressure then WeakAdjacentShieldPenaltyCp else 0
+      val missingHomePenalty =
+        if !pawnSet.contains(hHome) && hFilePressure then WeakAdjacentShieldPenaltyCp else 0
+      hookPenalty + adjacentShieldPenalty + missingHomePenalty
 
   private def initiativePressureScore(
     state: GameState,
@@ -801,6 +855,9 @@ object HceEvaluator:
       if state.board.isOccupied(cur) then blockers += 1
       cur = Pos(cur.col + dc, cur.row + dr)
     blockers
+
+  private def clearFileBetween(state: GameState, from: Pos, target: Pos): Boolean =
+    from.col == target.col && blockersBetween(state, from, target) == 0
 
   private def kingFilePressureScore(
     kingPos: Pos,

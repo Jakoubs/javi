@@ -53,11 +53,25 @@ object AlphaBetaAgent:
     sys.env.get("CHESS_DEFENSIVE_ORDERING_MIN_DEPTH").flatMap(_.toIntOption).getOrElse(3).max(0)
   private val PvsNullWindow = 0.0001
   private val AspirationInitialWindow = 1.2
+  private val DepthStartMinDepth =
+    sys.env.get("CHESS_DEPTH_START_MIN_DEPTH").flatMap(_.toIntOption).getOrElse(7).max(1)
+  private val DepthStartSafetyMultiplier =
+    sys.env.get("CHESS_DEPTH_START_SAFETY").flatMap(_.toDoubleOption).getOrElse(1.35).max(1.0)
+  private val DepthStartFallbackGrowth =
+    sys.env.get("CHESS_DEPTH_START_FALLBACK_GROWTH").flatMap(_.toDoubleOption).getOrElse(3.0).max(1.1)
+  private val DepthStartMinGrowth =
+    sys.env.get("CHESS_DEPTH_START_MIN_GROWTH").flatMap(_.toDoubleOption).getOrElse(1.6).max(1.0)
+  private val DepthStartMaxGrowth =
+    sys.env.get("CHESS_DEPTH_START_MAX_GROWTH").flatMap(_.toDoubleOption).getOrElse(5.0).max(DepthStartMinGrowth)
+  private val DepthStartReserveMs =
+    sys.env.get("CHESS_DEPTH_START_RESERVE_MS").flatMap(_.toLongOption).getOrElse(15L).max(0L)
   private val MaxOpeningBookPly =
     sys.env.get("CHESS_OPENING_MAX_PLY").flatMap(_.toIntOption).getOrElse(16)
   private val StalemateAvoidMaterialCp = 300
   private val RootDrawPolicyThreshold = 0.7
   private val RootDrawPolicyBias = 0.35
+  private val OpeningValidationMinGainCp = 300
+  private val OpeningValidationEvalSlack = 0.35
   private val FastHceAtOrBelowDepth =
     sys.env.get("CHESS_FAST_HCE_DEPTH").flatMap(_.toIntOption).getOrElse(-1)
   private val PonderTotalCapMs =
@@ -234,15 +248,20 @@ object AlphaBetaAgent:
         profile.openingLookupNs += (System.nanoTime() - obStart)
         bm
       else None
+    val validatedBookMove =
+      bookMove.filterNot(hit => isOpeningMoveTacticallyUnsafe(searchState, hit.move, profile))
     if mode == SearchMode.Search then
       bookMove.foreach { hit =>
-        println(s"[AI][MOVE] source=OPENING_DB move=${hit.move.toInputString} weight=${hit.weight}")
+        if validatedBookMove.isEmpty then
+          println(s"[AI][OPENING] rejected move=${hit.move.toInputString} reason=tactical_validation_failed")
+        else
+          println(s"[AI][MOVE] source=OPENING_DB move=${hit.move.toInputString} weight=${hit.weight}")
       }
-    if bookMove.nonEmpty then
+    if validatedBookMove.nonEmpty then
       if logFinalMove then
         profile.totalNs = System.nanoTime() - startedAll
         logTimeProfile(profile, nodes = 0L)
-      return bookMove.map(hit => SearchResult(hit.move, 0.0, 0, 0L))
+      return validatedBookMove.map(hit => SearchResult(hit.move, 0.0, 0, 0L))
 
     val start = System.currentTimeMillis()
     val deadline = start + math.max(1L, timeLimitMs)
@@ -253,12 +272,20 @@ object AlphaBetaAgent:
     var completedDepth = 0
     var completedNodes = 0L
     var completedStats = SearchStats()
+    var previousDepthElapsedMs = 0L
+    var lastDepthElapsedMs = 0L
     var depth = 1
 
     val searchStart = System.nanoTime()
     boundary:
       while depth <= MaxSearchDepth do
         if System.currentTimeMillis() >= deadline - 10 then boundary.break()
+        if !shouldStartDepth(depth, completedDepth, lastDepthElapsedMs, previousDepthElapsedMs, deadline) then
+          if mode == SearchMode.Search then
+            val remainingMs = (deadline - System.currentTimeMillis()).max(0L)
+            val estimateMs = estimateNextDepthMs(lastDepthElapsedMs, previousDepthElapsedMs)
+            println(s"[AI][SEARCH] skipDepth=$depth remainingMs=$remainingMs estimatedMs=$estimateMs reason=insufficient_time")
+          boundary.break()
         val useAspiration = depth >= 2 && best.nonEmpty
         val base = lastScoreCp
         var window = AspirationInitialWindow
@@ -269,6 +296,7 @@ object AlphaBetaAgent:
         var failHigh = 0
         var retries = 0
         var done = false
+        val depthStartedAt = System.currentTimeMillis()
         while !done do
           searchRoot(searchState, legalMoves, depth, deadline, profile, alphaWindow, betaWindow) match
             case Some(rs) =>
@@ -297,14 +325,17 @@ object AlphaBetaAgent:
           else AspirationStats(hit = false, failLow = 0, failHigh = 0, retries = 0)
         rootResult match
           case Some(rs) =>
+            val depthElapsedMs = (System.currentTimeMillis() - depthStartedAt).max(1L)
             best = Some(rs.move)
             lastComplete = Some(rs.move)
             lastScoreCp = rs.scoreCp
             completedDepth = depth
+            previousDepthElapsedMs = lastDepthElapsedMs
+            lastDepthElapsedMs = depthElapsedMs
             if mode == SearchMode.Search then
               val evalPawnsText = f"${rs.scoreCp}%.3f"
               println(
-                s"[AI][SEARCH] depth=$depth nodes=${rs.nodes} timeMs=${rs.elapsedMs} evalPawns=$evalPawnsText pv=${rs.move.toInputString} " +
+                s"[AI][SEARCH] depth=$depth nodes=${rs.nodes} timeMs=$depthElapsedMs evalPawns=$evalPawnsText pv=${rs.move.toInputString} " +
                 s"aspiration=${if useAspiration then (if aspStats.hit then "hit" else "miss") else "off"} failLow=${aspStats.failLow} failHigh=${aspStats.failHigh} retries=${aspStats.retries}"
               )
           case None =>
@@ -322,6 +353,28 @@ object AlphaBetaAgent:
       profile.totalNs = System.nanoTime() - startedAll
       logTimeProfile(profile, completedNodes)
     picked.map(move => SearchResult(move, lastScoreCp, completedDepth, completedNodes))
+
+  private def shouldStartDepth(
+    depth: Int,
+    completedDepth: Int,
+    lastDepthElapsedMs: Long,
+    previousDepthElapsedMs: Long,
+    deadline: Long
+  ): Boolean =
+    if depth < DepthStartMinDepth || completedDepth <= 0 || lastDepthElapsedMs <= 0L then true
+    else
+      val remainingMs = deadline - System.currentTimeMillis()
+      val estimatedMs = estimateNextDepthMs(lastDepthElapsedMs, previousDepthElapsedMs)
+      remainingMs >= math.ceil(estimatedMs.toDouble * DepthStartSafetyMultiplier).toLong + DepthStartReserveMs
+
+  private def estimateNextDepthMs(lastDepthElapsedMs: Long, previousDepthElapsedMs: Long): Long =
+    val growth =
+      if previousDepthElapsedMs > 0L then
+        (lastDepthElapsedMs.toDouble / previousDepthElapsedMs.toDouble)
+          .max(DepthStartMinGrowth)
+          .min(DepthStartMaxGrowth)
+      else DepthStartFallbackGrowth
+    math.ceil(lastDepthElapsedMs.toDouble * growth).toLong.max(1L)
 
   private def searchRoot(
     state: GameState,
@@ -1840,6 +1893,26 @@ object AlphaBetaAgent:
       MoveGenerator.isInCheck(replyState, replyState.activeColor) &&
         MoveGenerator.legalMoves(replyState).isEmpty
     }
+
+  private def isOpeningMoveTacticallyUnsafe(state: GameState, move: Move, profile: TimeProfile): Boolean =
+    if wouldAllowImmediateMate(state, move) then true
+    else
+      val before = rootStaticScore(state, profile)
+      val child = fastApplyMove(state, move)
+      val afterForMover = -rootStaticScore(child, profile)
+      val tacticalGain = opponentBestTacticalGainCp(child)
+      tacticalGain >= OpeningValidationMinGainCp &&
+        afterForMover <= before + OpeningValidationEvalSlack
+
+  private def opponentBestTacticalGainCp(state: GameState): Int =
+    val legalMoves = MoveGenerator.legalMoves(state)
+    var best = 0
+    legalMoves.foreach { reply =>
+      if isCapture(state, reply) || reply.promotion.nonEmpty then
+        val gain = staticExchangeEval(state, reply)
+        if gain > best then best = gain
+    }
+    best
 
   private def materialLeadCpFor(state: GameState, color: Color): Int =
     materialCpFor(state.board, color) - materialCpFor(state.board, color.opposite)
