@@ -102,7 +102,7 @@ link chess_model_TimeControl to chess_model_WhiteToMove--><!--MD5=[ea4d5f1d8d9aa
 link chess_model_PieceType to chess_view_GameStateResponse--><!--MD5=[93bbd0f8f36551b2388d15ac615c7345]
 link chess_view_GameStateResponse to chess_view_Gui--><!--MD5=[76689a567aa03d173a42abbeb704cbbb]
 link chess_view_Gui to chess_view_JaviClient--><!--MD5=[e0b79f508c40369e2d17d2db83525f39]
-link chess_view_JaviClient to chess_view_TerminalView--><!--MD5=[d201d44e4b9d4ab199c7a0ffc4fae3f4]
+link chess_view_JaviClient to chess_view_TerminalView--><!--MD5=[e5ed267e088205a6b0ce4f9fe6309ace]
 @startuml
 skinparam shadowing false
 hide empty members
@@ -195,7 +195,7 @@ PlantUML version 1.2020.02(Sun Mar 01 10:22:07 UTC 2020)
 (GPL source distribution)
 Java Runtime: OpenJDK Runtime Environment
 JVM: OpenJDK 64-Bit Server VM
-Java Version: 17.0.18+8
+Java Version: 17.0.19+10
 Operating System: Linux
 Default Encoding: UTF-8
 Language: en
