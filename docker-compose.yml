@@ -1,0 +1,182 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Chess Application – Docker Compose
+#
+# Services:
+#   postgres – PostgreSQL 16  (port 5432)  ← Slick backend
+#   mongo    – MongoDB 7      (port 27017) ← MongoDB backend
+#   rest     – Scala/http4s REST API (port 8080)
+#   webui    – Vue 3 / Vite frontend served by nginx (port 3000)
+#   lichess  – Lichess bot client (outbound only, opt-in profile)
+#
+# Quick start:
+#   docker compose up -d            # starts postgres + mongo + rest + webui
+#   docker compose --profile lichess up -d   # also starts the bot
+#
+# The `view` service (ScalaFX GUI) is intentionally omitted – run locally with
+#   sbt view/run
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: chess-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB:       ${CHESS_DB_NAME:-chess}
+      POSTGRES_USER:     ${CHESS_DB_USER:-chess}
+      POSTGRES_PASSWORD: ${CHESS_DB_PASSWORD:-chess}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CHESS_DB_USER:-chess} -d ${CHESS_DB_NAME:-chess}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── MongoDB ──────────────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: chess-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${CHESS_MONGO_DATABASE:-chess}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── Scala REST Service ──────────────────────────────────────────────────────
+  rest:
+    build:
+      context: .
+      dockerfile: rest/Dockerfile
+    container_name: chess-rest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_TYPE=postgres
+      - DB_URL=jdbc:postgresql://postgres:5432/chessdb
+      - DB_USER=chessuser
+      - DB_PASS=chesspass
+      - MONGO_URL=mongodb://chessuser:chesspass@mongo:27017/chessdb?authSource=admin
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - JVM_OPTS=-Xmx512m
+      - CHESS_PERSISTENCE_BACKEND=${CHESS_PERSISTENCE_BACKEND:-slick}
+      - CHESS_DB_URL=jdbc:postgresql://postgres:5432/${CHESS_DB_NAME:-chess}
+      - CHESS_DB_USER=${CHESS_DB_USER:-chess}
+      - CHESS_DB_PASSWORD=${CHESS_DB_PASSWORD:-chess}
+      - CHESS_MONGO_URI=mongodb://mongo:27017
+      - CHESS_MONGO_DATABASE=${CHESS_MONGO_DATABASE:-chess}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - EMAIL_FROM=${EMAIL_FROM}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/state"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ── Vue / nginx WebUI ────────────────────────────────────────────────────────
+  webui:
+    build:
+      context: webui
+      dockerfile: Dockerfile
+    container_name: chess-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    depends_on:
+      rest:
+        condition: service_healthy
+
+  # ── Kafka (Message Broker) ─────────────────────────────────────────────────
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: chess-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # ── Kafka UI (Redpanda Console) ──────────────────────────────────────────
+  kafka-ui:
+    image: redpandadata/console:latest
+    container_name: chess-kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # ── Lichess Bot (opt-in) ─────────────────────────────────────────────────────
+  lichess:
+    build:
+      context: .
+      dockerfile: lichess/Dockerfile
+    container_name: chess-lichess
+    restart: unless-stopped
+    environment:
+      - LICHESS_TOKEN=${LICHESS_TOKEN:-}   # set in .env or environment
+    depends_on:
+      rest:
+        condition: service_healthy
+    profiles:
+      - lichess   # opt-in: docker compose --profile lichess up
+
+  # ── Pekko Kafka Streams Processor ──────────────────────────────────────────
+  kafka-stream:
+    build:
+      context: .
+      dockerfile: lichess/Dockerfile
+    container_name: chess-kafka-stream
+    restart: unless-stopped
+    entrypoint: ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "app.jar", "chess.lichess.KafkaStreamMain", "5", "kafka:9092"]
+    environment:
+      - KAFKA_BOOTSTRAP=kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+
+# ── Named volumes (data survives container restarts) ─────────────────────────
+volumes:
+  postgres_data:
+  mongo_data:
