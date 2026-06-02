@@ -8,12 +8,92 @@ import TimeSettings from './components/TimeSettings.vue'
 import MoveHistory from './components/MoveHistory.vue'
 import PuzzleView from './components/PuzzleView.vue'
 import HomeView from './components/HomeView.vue'
+import AdminPanel from './components/AdminPanel.vue'
+import UserSettings from './components/UserSettings.vue'
 
 const activeView = ref('home') // 'home', 'game', or 'puzzles'
+const isSpectatorForced = ref(false)
 const showNewGameModal = ref(false)
+const showAdminPanel = ref(false)
+const showFriendsModal = ref(false)
+const showSettingsModal = ref(false)
+const showEmotePopover = ref(false)
+const incomingChallenges = ref([])
+const challengeFeedback = ref('')
+const challengeFeedbackError = ref(false)
+const processedChallenges = ref([])
+const isQueueing = ref(false)
 const showCustomInModal = ref(false)
 const customMin = ref(0)
 const customInc = ref(0)
+
+// ── User Settings ────────────────────────────────────────────────────────
+const DEFAULT_SETTINGS = { watchModeEnabled: true, showSpectatorCount: true, showEmotes: true, canSendEmotes: true }
+const savedSettings = JSON.parse(localStorage.getItem('chessUserSettings') || 'null')
+const userSettings = ref({ ...DEFAULT_SETTINGS, ...savedSettings })
+watch(userSettings, (val) => localStorage.setItem('chessUserSettings', JSON.stringify(val)), { deep: true })
+
+// ── Emotes ───────────────────────────────────────────────────────────────
+const EMOTES = ['👏', '🔥', '😮', '😂', '💀', '🎉', '😤', '❤️']
+const activeEmotes = ref([])  // [{ id, emoji, lane }]
+let emoteIdCounter = 0
+const lastSeenEmoteId = ref(0)
+
+const addEmoteDisplay = (emoji) => {
+  if (!userSettings.value.showEmotes) return
+  const id = ++emoteIdCounter
+  const lane = Math.floor(Math.random() * 5) // 0-4 vertical lanes
+  activeEmotes.value.push({ id, emoji, lane })
+  setTimeout(() => {
+    activeEmotes.value = activeEmotes.value.filter(e => e.id !== id)
+  }, 3500)
+}
+
+const sendEmote = (emoji) => {
+  if (!userSettings.value.canSendEmotes) return
+  addEmoteDisplay(emoji)
+  try {
+    watchChannel.postMessage({ type: 'emote', emoji, party: currentParty.value })
+  } catch (e) {}
+  
+  // Also send to server for global visibility
+  if (currentParty.value) {
+    sendCommand(`emote ${emoji}`)
+  }
+}
+
+// ── Spectator Count via BroadcastChannel ─────────────────────────────────
+const spectatorCount = ref(0)
+let watchChannel = null
+
+const initWatchChannel = () => {
+  try {
+    watchChannel = new BroadcastChannel('javi-chess-watch')
+    watchChannel.onmessage = (e) => {
+      const { type, party, emoji } = e.data || {}
+      if (party && party !== currentParty.value) return
+      if (type === 'spectator-join') spectatorCount.value++
+      else if (type === 'spectator-leave') spectatorCount.value = Math.max(0, spectatorCount.value - 1)
+      else if (type === 'emote') addEmoteDisplay(emoji)
+    }
+  } catch (e) { watchChannel = null }
+}
+
+watch(() => clientRole.value, (newRole, oldRole) => {
+  if (!watchChannel || !currentParty.value) return
+  if (newRole === 'spectator') {
+    watchChannel.postMessage({ type: 'spectator-join', party: currentParty.value })
+  }
+  if (oldRole === 'spectator') {
+    watchChannel.postMessage({ type: 'spectator-leave', party: currentParty.value })
+    spectatorCount.value = Math.max(0, spectatorCount.value - 1)
+  }
+})
+
+watch(() => currentParty.value, () => {
+  spectatorCount.value = 0
+  lastSeenEmoteId.value = 0
+})
 
 const timePresets = [
   { name: '1|0 Bullet', time: 60000, inc: 0 },
@@ -39,9 +119,15 @@ if (!localStorage.getItem('chessSessionId')) {
 const clientRole = ref(localStorage.getItem('chessClientRole') || 'white')
 
 const setRole = (role) => {
+  if (currentParty.value) return // Block switching in online games
   clientRole.value = role
   localStorage.setItem('chessClientRole', role)
 }
+
+// ── Local Play Mode ────────────────────────────────────────────────────────
+// null = online/party mode, '2player' = two people on one keyboard,
+// 'ai-white' = AI plays White (human is Black), 'ai-black' = AI plays Black (human is White)
+const localMode = ref(null)
 
 // ── User / Social State ──────────────────────────────────────────────────
 const currentUser = ref(JSON.parse(localStorage.getItem('chessUser')))
@@ -123,17 +209,57 @@ const fetchFriendRequests = async () => {
 
 
 const challengeFriend = async (friendId) => {
+  if (!currentUser.value) return
+  challengeFeedback.value = ''
+  challengeFeedbackError.value = false
   try {
-    const response = await fetch(`${serverUrl.value}/api/social/challenge`, {
+    const response = await fetch(`${serverUrl.value}/api/social/challenge?userId=${currentUser.value.id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ friendId })
     })
     if (response.ok) {
-      const { partyCode } = await response.json()
+      challengeFeedback.value = 'Challenge sent! Waiting for opponent...'
+      challengeFeedbackError.value = false
+    } else {
+      challengeFeedback.value = 'Failed to send challenge.'
+      challengeFeedbackError.value = true
+    }
+  } catch (e) {
+    challengeFeedback.value = 'Network error sending challenge.'
+    challengeFeedbackError.value = true
+  }
+}
+
+const acceptChallenge = async (partyCode) => {
+  if (!currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/challenge/accept?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partyCode })
+    })
+    if (response.ok) {
+      if (!processedChallenges.value.includes(partyCode)) {
+        processedChallenges.value.push(partyCode)
+      }
       partyCodeInput.value = partyCode
       joinParty()
+      activeView.value = 'game'
+      showFriendsModal.value = false
     }
+  } catch (e) {}
+}
+
+const declineChallenge = async (partyCode) => {
+  if (!currentUser.value) return
+  try {
+    await fetch(`${serverUrl.value}/api/social/challenge/decline?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partyCode })
+    })
+    incomingChallenges.value = incomingChallenges.value.filter(c => c.partyCode !== partyCode)
   } catch (e) {}
 }
 
@@ -202,10 +328,25 @@ const joinParty = () => {
   }
 }
 
-const leaveParty = () => {
+const leaveParty = async () => {
+  if (currentParty.value && currentUser.value) {
+    try {
+      await fetch(`${serverUrl.value}/api/party/leave?userId=${currentUser.value.id}&partyCode=${currentParty.value}`, { method: 'POST' })
+    } catch (e) {
+      console.error('Failed to notify server about leaving party', e)
+    }
+  }
   currentParty.value = ''
   localStorage.removeItem('chessPartyCode')
   fetchState()
+}
+
+const goToHome = () => {
+  if (currentParty.value) {
+    leaveParty()
+  }
+  activeView.value = 'home'
+  localMode.value = null
 }
 
 
@@ -293,7 +434,8 @@ const handleQuitModal = () => {
 
 const fetchState = async () => {
   try {
-    const response = await fetch(`${serverUrl.value}/api/state?sessionId=${effectiveSessionId.value}&t=${Date.now()}`)
+    const userQuery = currentUser.value ? `&username=${encodeURIComponent(currentUser.value.username)}` : ''
+    const response = await fetch(`${serverUrl.value}/api/state?sessionId=${effectiveSessionId.value}&t=${Date.now()}${userQuery}`)
     if (response.ok) {
       serverConnected.value = true
       const data = await response.json()
@@ -305,6 +447,87 @@ const fetchState = async () => {
         processedStatus.value = data.status
       } else if (!isGameOver.value) {
         processedStatus.value = null
+      }
+      // Handle server-side emotes with deduplication
+      if (data.recentEmotes && data.recentEmotes.length > 0) {
+        // If it's the first poll with emotes, just set the baseline ID
+        if (lastSeenEmoteId.value === 0) {
+          lastSeenEmoteId.value = Math.max(...data.recentEmotes.map(e => e.id))
+        } else {
+          data.recentEmotes.forEach(emote => {
+            if (emote.id > lastSeenEmoteId.value) {
+              addEmoteDisplay(emote.emoji)
+              if (emote.id > lastSeenEmoteId.value) lastSeenEmoteId.value = emote.id
+            }
+          })
+        }
+      }
+    }
+    
+    if (currentUser.value) {
+      if (isQueueing.value) {
+        try {
+          const qResp = await fetch(`${serverUrl.value}/api/queue/status?userId=${currentUser.value.id}`)
+          if (qResp.ok) {
+            const qData = await qResp.json()
+            if (qData && qData.partyCode) {
+              isQueueing.value = false
+              partyCodeInput.value = qData.partyCode
+              joinParty()
+              activeView.value = 'game'
+            }
+          }
+        } catch(e) {}
+      }
+
+      if (currentParty.value && !isSpectatorForced.value) {
+        try {
+          const roleResp = await fetch(`${serverUrl.value}/api/party/role?userId=${currentUser.value.id}&partyCode=${currentParty.value}`)
+          if (roleResp.ok) {
+            const roleData = await roleResp.json()
+            if (roleData.role && roleData.role !== 'spectator') {
+              clientRole.value = roleData.role
+            }
+          }
+        } catch(e) {}
+      }
+
+      try {
+        const respChall = await fetch(`${serverUrl.value}/api/social/challenges?userId=${currentUser.value.id}`)
+        if (respChall.ok) {
+          incomingChallenges.value = await respChall.json()
+        }
+        
+        const respOut = await fetch(`${serverUrl.value}/api/social/challenges/outgoing?userId=${currentUser.value.id}`)
+        if (respOut.ok) {
+          const outgoing = await respOut.json()
+          const acceptedMatch = outgoing.find(c => c.accepted)
+          if (acceptedMatch && activeView.value === 'home' && !processedChallenges.value.includes(acceptedMatch.partyCode)) {
+            processedChallenges.value.push(acceptedMatch.partyCode)
+            partyCodeInput.value = acceptedMatch.partyCode
+            joinParty()
+            activeView.value = 'game'
+            showFriendsModal.value = false
+            
+            await fetch(`${serverUrl.value}/api/social/challenge/decline?userId=${currentUser.value.id}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ partyCode: acceptedMatch.partyCode })
+            })
+          }
+        }
+        
+        const respFriends = await fetch(`${serverUrl.value}/api/social/friends?userId=${currentUser.value.id}`)
+        if (respFriends.ok) {
+          friends.value = await respFriends.json()
+        }
+        
+        const respReqs = await fetch(`${serverUrl.value}/api/social/friends/requests?userId=${currentUser.value.id}`)
+        if (respReqs.ok) {
+          friendRequests.value = await respReqs.json()
+        }
+      } catch (e) {
+        console.error('Failed to load friends/challenges state', e)
       }
     }
   } catch (e) {
@@ -326,13 +549,26 @@ const sendCommand = async (cmd) => {
     if (isGameOver.value && cmd !== 'undo') {
       return
     }
-    if (clientRole.value === 'spectator') {
-      return
-    }
-    const myTurn = (clientRole.value === 'white' && state.value.activeColor === 'White') ||
-                   (clientRole.value === 'black' && state.value.activeColor === 'Black')
-    if (!myTurn) {
-      return
+
+    if (localMode.value === '2player') {
+      // Both sides can always interact – no restriction needed
+    } else if (localMode.value === 'ai-white' || localMode.value === 'ai-black') {
+      // Determine which color the human controls
+      const humanColor = localMode.value === 'ai-white' ? 'Black' : 'White'
+      // Spectator-style block during AI turn
+      if (state.value.activeColor !== humanColor) {
+        return
+      }
+    } else {
+      // Online / party mode: original role-based gating
+      if (clientRole.value === 'spectator') {
+        return
+      }
+      const myTurn = (clientRole.value === 'white' && state.value.activeColor === 'White') ||
+                     (clientRole.value === 'black' && state.value.activeColor === 'Black')
+      if (!myTurn) {
+        return
+      }
     }
   }
 
@@ -342,7 +578,23 @@ const sendCommand = async (cmd) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command: cmd })
     })
-    fetchState()
+    await fetchState()
+
+    // In AI mode: after a human board interaction, let the AI respond automatically
+    if ((localMode.value === 'ai-white' || localMode.value === 'ai-black') && isBoardInteraction && !isGameOver.value) {
+      const humanColor = localMode.value === 'ai-white' ? 'Black' : 'White'
+      // If after our move it's now the AI's turn, trigger ai move
+      if (state.value.activeColor !== humanColor && !isGameOver.value) {
+        setTimeout(async () => {
+          await fetch(`${serverUrl.value}/api/command?sessionId=${effectiveSessionId.value}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: 'ai' })
+          })
+          fetchState()
+        }, 150)
+      }
+    }
   } catch (e) {
     console.error('Failed to send command', e)
   }
@@ -355,7 +607,60 @@ const handleStartWithTime = (time, inc) => {
   else sendCommand(`start ${time} ${inc}`)
 }
 
-const handleStartGameFromHome = (timeMs, incMs) => {
+const handleJoinQueue = async (timeMs, incMs) => {
+  if (!currentUser.value) {
+    showAuthModal.value = true
+    return
+  }
+  isSpectatorForced.value = false
+  isQueueing.value = true
+  try {
+    const response = await fetch(`${serverUrl.value}/api/queue/join?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timeMs, incMs })
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data.matched && data.partyCode) {
+        isQueueing.value = false
+        partyCodeInput.value = data.partyCode
+        joinParty()
+        activeView.value = 'game'
+      }
+      // else: in queue, polling via fetchState will pick up the match
+    } else {
+      isQueueing.value = false
+    }
+  } catch (e) {
+    console.error('Queue join failed', e)
+    isQueueing.value = false
+  }
+}
+
+const handleCancelQueue = async () => {
+  isQueueing.value = false
+  if (!currentUser.value) return
+  try {
+    await fetch(`${serverUrl.value}/api/queue/leave?userId=${currentUser.value.id}`, {
+      method: 'DELETE'
+    })
+  } catch (e) {
+    console.error('Queue leave failed', e)
+  }
+}
+
+const handleStartGameFromHome = (timeMs, incMs, mode = null) => {
+  isSpectatorForced.value = false
+  localMode.value = mode
+  // For AI modes set the role so the board flips correctly
+  if (mode === 'ai-black') {
+    clientRole.value = 'white'
+  } else if (mode === 'ai-white') {
+    clientRole.value = 'black'
+  } else if (mode === '2player') {
+    clientRole.value = 'white' // just use white perspective, flip is server-driven
+  }
   handleStartWithTime(timeMs, incMs)
   activeView.value = 'game'
   showNewGameModal.value = false
@@ -366,6 +671,17 @@ const handleSwitchParser = (event) => {
   sendCommand(`parser pgn ${variant}`)
 }
 
+const handleSpectateParty = (code) => {
+  if (code && code.trim()) {
+    currentParty.value = code.trim().toUpperCase()
+    localStorage.setItem('chessPartyCode', currentParty.value)
+    isSpectatorForced.value = true
+    clientRole.value = 'spectator'
+    localStorage.setItem('chessClientRole', 'spectator')
+    activeView.value = 'game'
+    fetchState()
+  }
+}
 
 let pollInterval
 let tickerInterval
@@ -374,6 +690,12 @@ onMounted(() => {
   fetchState()
   fetchFriends()
   fetchFriendRequests()
+  initWatchChannel()
+
+  // Announce spectator join if already in spectator role
+  if (clientRole.value === 'spectator' && currentParty.value) {
+    try { watchChannel?.postMessage({ type: 'spectator-join', party: currentParty.value }) } catch(e) {}
+  }
 
   pollInterval = setInterval(fetchState, 500)
   
@@ -391,6 +713,10 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(pollInterval)
   clearInterval(tickerInterval)
+  if (clientRole.value === 'spectator' && currentParty.value) {
+    try { watchChannel?.postMessage({ type: 'spectator-leave', party: currentParty.value }) } catch(e) {}
+  }
+  try { watchChannel?.close() } catch(e) {}
 })
 
 
@@ -433,6 +759,11 @@ const isViewingHistory = computed(() => {
 })
 
 const effectiveFlipped = computed(() => {
+  // In local AI mode: orient board from the human player's perspective
+  if (localMode.value === 'ai-white') return true   // human is Black → flip
+  if (localMode.value === 'ai-black') return false  // human is White → normal
+  if (localMode.value === '2player') return state.value.flipped // server-driven flip
+  // Online / party mode
   if (clientRole.value === 'white') return false
   if (clientRole.value === 'black') return true
   return state.value.flipped
@@ -443,7 +774,7 @@ const effectiveFlipped = computed(() => {
   <div class="app-container">
     <header class="glass">
       <div class="header-left">
-        <div class="brand-group clickable-brand" @click="activeView = 'home'">
+        <div class="brand-group clickable-brand" @click="goToHome">
           <h1>JAVI CHESS</h1>
           <div class="premium-tag">Premium Chess Experience</div>
         </div>
@@ -477,6 +808,16 @@ const effectiveFlipped = computed(() => {
         <div v-else class="party-active glass-pill">
           <span class="active-label">Party:</span>
           <span class="active-code">{{ currentParty }}</span>
+          <!-- Spectator Count Badge -->
+          <div class="spectator-group" v-if="userSettings.watchModeEnabled">
+            <span
+              v-if="userSettings.showSpectatorCount && (spectatorCount > 0 || (state.activeUsers && state.activeUsers.length > 0))"
+              class="spectator-badge"
+              :title="state.activeUsers ? 'Zuschauer: ' + state.activeUsers.join(', ') : 'Zuschauer'"
+            >
+              👁 {{ Math.max(spectatorCount, state.activeUsers ? state.activeUsers.length : 0) }}
+            </span>
+          </div>
           <button @click="leaveParty" class="server-reset-btn leave-btn" title="Leave Party">✕</button>
         </div>
       </div>
@@ -496,8 +837,8 @@ const effectiveFlipped = computed(() => {
         <button class="server-reset-btn" @click="resetServer" title="Reset to localhost">↺</button>
       </div>
 
-      <!-- Player Role Selector -->
-      <div class="role-selector glass-pill" v-show="activeView === 'game'">
+      <!-- Player Role Selector (only for online/party play) -->
+      <div class="role-selector glass-pill" v-show="activeView === 'game' && !localMode" :style="{ opacity: currentParty ? 0.6 : 1, pointerEvents: currentParty ? 'none' : 'auto' }">
         <button 
           v-for="role in ['white', 'black', 'spectator']" 
           :key="role"
@@ -509,6 +850,13 @@ const effectiveFlipped = computed(() => {
         </button>
       </div>
 
+      <!-- Local Mode Indicator (shown when playing locally) -->
+      <div v-if="activeView === 'game' && localMode" class="local-mode-badge glass-pill">
+        <span v-if="localMode === '2player'">👥 2 Spieler Lokal</span>
+        <span v-else-if="localMode === 'ai-black'">🤖 KI spielt Schwarz</span>
+        <span v-else-if="localMode === 'ai-white'">🤖 KI spielt Weiß</span>
+      </div>
+
       <!-- User Account -->
       <div class="user-account">
         <div v-if="!currentUser" class="auth-trigger" @click="showAuthModal = true">
@@ -517,16 +865,85 @@ const effectiveFlipped = computed(() => {
         </div>
         <div v-else class="user-profile glass-pill">
           <span class="username">{{ currentUser.username }}</span>
+          <button v-if="currentUser.username === 'admin'" @click="showAdminPanel = true" class="admin-nav-btn" style="background: rgba(255,255,255,0.1); border: none; color: #4ecca3; margin-right: 10px; cursor: pointer; font-size: 0.9rem;">⚙️ Admin</button>
+          <button @click="showSettingsModal = true" class="settings-trigger-btn" title="Einstellungen">⚙</button>
           <button @click="logout" class="logout-btn">Logout</button>
         </div>
+        <!-- Settings trigger when not logged in -->
+        <button v-if="!currentUser" @click="showSettingsModal = true" class="settings-trigger-btn standalone" title="Einstellungen">⚙</button>
       </div>
     </header>
 
     <!-- Home View -->
-    <main v-if="activeView === 'home'">
+    <main v-if="activeView === 'home'" class="home-main-container">
+      <!-- Friends Icon Trigger -->
+      <button v-if="currentUser" @click="showFriendsModal = true" class="friends-trigger-btn" style="position: fixed; left: 2rem; top: 120px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; font-size: 1.25rem; transition: background 0.2s, transform 0.2s; z-index: 10;" title="Friends">
+        👥
+        <span v-if="incomingChallenges.length > 0" style="position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: #ff6b6b; border-radius: 50%; border: 2px solid #1a1a2e; animation: pulse 2s infinite;"></span>
+      </button>
+
+      <!-- Friends Modal Overlay -->
+      <div v-if="showFriendsModal && currentUser" class="modal-overlay" @click.self="showFriendsModal = false" style="z-index: 100;">
+        <div class="modal-content glass friends-modal" style="max-width: 400px; padding: 2rem; position: relative; border-radius: 16px;">
+          <button class="close-x" @click="showFriendsModal = false" style="position: absolute; right: 1.25rem; top: 1.25rem; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.5rem; cursor: pointer; transition: color 0.2s;">&times;</button>
+          
+          <div class="sidebar-header" style="margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem 0; font-size: 1.5rem; color: #4ecca3;">Friends</h3>
+            <div class="add-friend-form" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+              <input v-model="newFriendName" placeholder="Username..." @keyup.enter="addFriend" class="glass-input" style="padding: 10px; border-radius: 8px; font-size: 0.9rem;">
+              <button @click="addFriend" class="add-btn" style="padding: 0 25px; border-radius: 8px; background: #4ecca3; color: #1a1a2e; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">Add</button>
+            </div>
+            <p v-if="friendFeedback" :style="{ color: friendFeedbackError ? '#ff6b6b' : '#4ecca3', fontSize: '0.85rem', marginTop: '6px', marginBottom: '0', textAlign: 'left', opacity: 0.9 }">
+              {{ friendFeedback }}
+            </p>
+          </div>
+
+          <!-- Friend Requests -->
+          <div class="friend-requests" v-if="friendRequests.length > 0" style="margin-bottom: 1.5rem;">
+            <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5);">Requests</h4>
+            <div v-for="req in friendRequests" :key="req.id" class="friend-item glass-pill incoming-req" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-radius: 12px; background: rgba(255,255,255,0.05); margin-bottom: 0.5rem;">
+              <span class="friend-name" style="font-weight: 600;">{{ req.username }}</span>
+              <button @click="acceptFriend(req.id)" class="accept-btn" style="background: rgba(78,204,163,0.2); color: #4ecca3; border: 1px solid rgba(78,204,163,0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">Accept</button>
+            </div>
+          </div>
+
+          <!-- Incoming Challenges -->
+          <div class="incoming-challenges" v-if="incomingChallenges.length > 0" style="margin-bottom: 1.5rem;">
+            <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: #f0a500;">Game Challenges</h4>
+            <div v-for="chal in incomingChallenges" :key="chal.partyCode" class="friend-item glass-pill incoming-challenge" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-radius: 12px; background: rgba(240,165,0,0.1); border: 1px solid rgba(240,165,0,0.2); margin-bottom: 0.5rem;">
+              <span class="friend-name" style="font-weight: 600;">{{ chal.challengerName }}</span>
+              <div style="display: flex; gap: 0.5rem;">
+                <button @click="acceptChallenge(chal.partyCode)" class="accept-btn" style="background: rgba(78,204,163,0.2); color: #4ecca3; border: 1px solid rgba(78,204,163,0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">Accept</button>
+                <button @click="declineChallenge(chal.partyCode)" class="decline-btn" style="background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">Decline</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Friends List -->
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5);">Your Friends</h4>
+          <p v-if="challengeFeedback" :style="{ color: challengeFeedbackError ? '#ff6b6b' : '#4ecca3', fontSize: '0.85rem', marginBottom: '10px', marginTop: '-5px', textAlign: 'left', opacity: 0.9 }">
+            {{ challengeFeedback }}
+          </p>
+          <div class="friends-list" style="max-height: 250px; overflow-y: auto;">
+            <div v-for="friend in friends" :key="friend.id" class="friend-item glass-pill" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 0.5rem;">
+              <span class="friend-name" style="font-weight: 600;">{{ friend.username }}</span>
+              <button @click="challengeFriend(friend.id)" class="challenge-btn" style="background: rgba(240,165,0,0.2); color: #f0a500; border: 1px solid rgba(240,165,0,0.3); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">Challenge</button>
+            </div>
+            <div v-if="friends.length === 0" class="no-friends" style="text-align: center; color: rgba(255,255,255,0.3); padding: 1.5rem 0;">
+              <p style="margin: 0;">No friends yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <HomeView 
+        :isQueueing="isQueueing"
+        :serverUrl="serverUrl"
         @start-game="handleStartGameFromHome" 
+        @join-queue="handleJoinQueue"
+        @cancel-queue="handleCancelQueue"
         @goto-puzzles="activeView = 'puzzles'" 
+        @spectate-party="handleSpectateParty"
       />
     </main>
 
@@ -537,40 +954,6 @@ const effectiveFlipped = computed(() => {
 
     <!-- Game View -->
     <main v-else>
-      <!-- Friends Sidebar -->
-      <aside class="social-sidebar glass" v-if="currentUser">
-        <div class="sidebar-header">
-          <h3>Friends</h3>
-          <div class="add-friend-form">
-            <input v-model="newFriendName" placeholder="Username..." @keyup.enter="addFriend" class="glass-input small">
-            <button @click="addFriend" class="add-btn">+</button>
-          </div>
-          <p v-if="friendFeedback" :style="{ color: friendFeedbackError ? '#ff6b6b' : '#4ecca3', fontSize: '0.75rem', marginTop: '4px', marginBottom: '8px', textAlign: 'left', opacity: 0.9 }">
-            {{ friendFeedback }}
-          </p>
-        </div>
-
-        <!-- Friend Requests -->
-        <div class="friend-requests" v-if="friendRequests.length > 0">
-          <h4>Requests</h4>
-          <div v-for="req in friendRequests" :key="req.id" class="friend-item glass-pill incoming-req">
-            <span class="friend-name">{{ req.username }}</span>
-            <button @click="acceptFriend(req.id)" class="accept-btn">Accept</button>
-          </div>
-        </div>
-
-
-        <div class="friends-list">
-          <div v-for="friend in friends" :key="friend.id" class="friend-item glass-pill">
-            <span class="friend-name">{{ friend.username }}</span>
-            <button @click="challengeFriend(friend.id)" class="challenge-btn">Challenge</button>
-          </div>
-          <div v-if="friends.length === 0" class="no-friends">
-            <p>No friends yet.</p>
-          </div>
-        </div>
-      </aside>
-
       <div class="left-panel">
         <GameStatus :state="state" />
         <MoveHistory 
@@ -619,7 +1002,32 @@ const effectiveFlipped = computed(() => {
         </div>
       </div>
 
-      <div class="right-panel">
+      <!-- Emote Bar (Compact Popover Version) -->
+      <div v-if="activeView === 'game' && userSettings.canSendEmotes" class="emote-popover-wrapper">
+        <button 
+          class="emote-trigger-btn glass" 
+          @click="showEmotePopover = !showEmotePopover"
+          title="Send Emote"
+        >
+          <span>😊</span>
+        </button>
+
+        <transition name="popover-fade">
+          <div v-if="showEmotePopover" class="emote-popover glass">
+            <div class="emote-popover-grid">
+              <button
+                v-for="emoji in EMOTES"
+                :key="emoji"
+                class="emote-pop-btn"
+                @click="sendEmote(emoji)"
+                :title="emoji"
+              >{{ emoji }}</button>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <div class="right-panel" v-if="clientRole !== 'spectator'">
 
         <ImportExport 
           :fen="state.fen" 
@@ -630,6 +1038,20 @@ const effectiveFlipped = computed(() => {
         <GameControls :state="state" @command="sendCommand" />
       </div>
     </main>
+
+    <!-- Emote Overlay (right edge) -->
+    <teleport to="body">
+      <div class="emote-overlay" v-if="activeView === 'game'">
+        <transition-group name="emote-pop" tag="div" class="emote-stream">
+          <div
+            v-for="e in activeEmotes"
+            :key="e.id"
+            class="emote-float"
+            :style="{ '--lane': e.lane }"
+          >{{ e.emoji }}</div>
+        </transition-group>
+      </div>
+    </teleport>
 
     <!-- Game Over Modal -->
     <div v-if="showGameOver" class="modal-overlay">
@@ -717,6 +1139,17 @@ const effectiveFlipped = computed(() => {
       </div>
     </div>
   </div>
+
+  <!-- Admin Panel Modal Overlay -->
+  <AdminPanel v-if="showAdminPanel" :token="currentUser ? currentUser.token : 'admin-token'" @close="showAdminPanel = false" />
+
+  <!-- User Settings Modal -->
+  <UserSettings
+    v-if="showSettingsModal"
+    :settings="userSettings"
+    @update:settings="userSettings = $event"
+    @close="showSettingsModal = false"
+  />
 </template>
 
 <style>
@@ -886,6 +1319,14 @@ main {
   padding: 1rem;
   gap: 1rem;
   overflow: hidden;
+}
+
+.home-main-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  overflow-y: auto !important;
 }
 
 .left-panel, .right-panel {
@@ -1171,6 +1612,17 @@ main {
     display: inline;
   }
 }
+
+.local-mode-badge {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4ecca3;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
 .party-mode {
   flex: 0 1 auto;
 }
@@ -1289,6 +1741,7 @@ main {
   margin-top: 1rem;
   display: flex;
   gap: 0.5rem;
+  align-content: center;
 }
 
 .add-friend-form .glass-input.small {
@@ -1302,7 +1755,7 @@ main {
   color: black;
   border: none;
   border-radius: 6px;
-  width: 28px;
+  width: 35px;
   height: 28px;
   font-weight: 900;
   cursor: pointer;
@@ -1467,4 +1920,161 @@ main {
 .full-width {
   width: 100%;
 }
+
+/* ── Settings Trigger ────────────────────────────────────────────────── */
+.settings-trigger-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.6);
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.settings-trigger-btn:hover {
+  background: rgba(78,204,163,0.15);
+  border-color: rgba(78,204,163,0.4);
+  color: #4ecca3;
+  transform: rotate(30deg);
+}
+.settings-trigger-btn.standalone {
+  margin-left: 0.5rem;
+}
+
+/* ── Spectator Badge ─────────────────────────────────────────────────── */
+.spectator-badge {
+  background: rgba(240,165,0,0.18);
+  border: 1px solid rgba(240,165,0,0.35);
+  color: #f0a500;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  animation: pulse-badge 2.5s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(240,165,0,0); }
+  50%       { opacity: 0.85; box-shadow: 0 0 8px 2px rgba(240,165,0,0.25); }
+}
+
+/* ── Emote Popover UI ─────────────────────────────────────────────────── */
+.emote-popover-wrapper {
+  position: absolute;
+  left: 20px;
+  bottom: 80px;
+  z-index: 100;
+}
+
+.emote-trigger-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.emote-trigger-btn:hover {
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.1);
+}
+
+.emote-popover {
+  position: absolute;
+  bottom: 55px;
+  left: 0;
+  background: rgba(30, 30, 50, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 10px;
+  width: 200px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.emote-popover-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.emote-pop-btn {
+  font-size: 1.4rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.1s;
+}
+
+.emote-pop-btn:hover {
+  background: rgba(255,255,255,0.15);
+  transform: scale(1.1);
+}
+
+.popover-fade-enter-active, .popover-fade-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.popover-fade-enter-from, .popover-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* ── Emote Overlay ───────────────────────────────────────────────────── */
+.emote-overlay {
+  position: fixed;
+  right: 0;
+  top: 80px;
+  bottom: 0;
+  width: 80px;
+  pointer-events: none;
+  z-index: 500;
+  overflow: hidden;
+}
+
+.emote-stream {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.emote-float {
+  position: absolute;
+  right: 12px;
+  font-size: 2rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  animation: emote-rise 3.5s ease-out forwards;
+  /* Distribute vertically by lane (0-4) */
+  top: calc(20% + var(--lane, 0) * 12%);
+}
+
+@keyframes emote-rise {
+  0%   { opacity: 0;   transform: translateX(60px) scale(0.3); }
+  12%  { opacity: 1;   transform: translateX(0)    scale(1.2); }
+  25%  { opacity: 1;   transform: translateX(0)    scale(1); }
+  70%  { opacity: 1;   transform: translateX(0)    translateY(-30px); }
+  100% { opacity: 0;   transform: translateX(0)    translateY(-60px) scale(0.8); }
+}
+
+.emote-pop-enter-active { animation: emote-rise 3.5s ease-out forwards; }
+.emote-pop-leave-active { animation: emote-rise 3.5s ease-out forwards; opacity: 0; }
 </style>

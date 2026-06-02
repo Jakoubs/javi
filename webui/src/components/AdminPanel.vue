@@ -4,7 +4,6 @@
       <!-- Header -->
       <div class="admin-header">
         <div class="admin-title">
-          <span class="admin-icon">⚙️</span>
           <h2>Admin Panel</h2>
         </div>
         <button class="close-btn" @click="$emit('close')">✕</button>
@@ -13,7 +12,7 @@
       <!-- Tabs -->
       <div class="tab-bar">
         <button v-for="t in tabs" :key="t.id" :class="['tab-btn', { active: activeTab === t.id }]" @click="activeTab = t.id">
-          {{ t.icon }} {{ t.label }}
+          {{ t.label }}
         </button>
       </div>
 
@@ -67,19 +66,19 @@
                 <td class="email-col">{{ u.email }}</td>
                 <td>
                   <span :class="['badge', u.isBanned ? 'badge-banned' : u.isVerified ? 'badge-ok' : 'badge-pending']">
-                    {{ u.isBanned ? '🔒 Gesperrt' : u.isVerified ? '✅ Verifiziert' : '⏳ Ausstehend' }}
+                    {{ u.isBanned ? 'Gesperrt' : u.isVerified ? 'Verifiziert' : 'Ausstehend' }}
                   </span>
                 </td>
                 <td class="date-col">{{ u.createdAt.split('T')[0] }}</td>
                 <td class="actions-col">
-                  <button class="act-btn edit" title="Bearbeiten" @click="openEdit(u)">✏️</button>
+                  <button class="act-btn edit" title="Bearbeiten" @click="openEdit(u)">Edit</button>
                   <button class="act-btn" :title="u.isVerified ? 'Deverifizieren' : 'Verifizieren'" @click="toggleVerify(u)">
-                    {{ u.isVerified ? '❌' : '✅' }}
+                    {{ u.isVerified ? 'Unverify' : 'Verify' }}
                   </button>
                   <button class="act-btn" :title="u.isBanned ? 'Entsperren' : 'Sperren'" @click="toggleBan(u)">
-                    {{ u.isBanned ? '🔓' : '🔒' }}
+                    {{ u.isBanned ? 'Unban' : 'Ban' }}
                   </button>
-                  <button class="act-btn delete" title="Löschen" @click="confirmDelete(u)">🗑️</button>
+                  <button class="act-btn delete" title="Löschen" @click="confirmDelete(u)">Delete</button>
                 </td>
               </tr>
               <tr v-if="filteredUsers.length === 0">
@@ -154,9 +153,9 @@ const headers = computed(() => ({
 }))
 
 const tabs = [
-  { id: 'stats', icon: '📊', label: 'Statistiken' },
-  { id: 'users', icon: '👥', label: 'Nutzerverwaltung' },
-  { id: 'games', icon: '🎮', label: 'Aktive Spiele' }
+  { id: 'stats', label: 'Statistiken' },
+  { id: 'users', label: 'Nutzerverwaltung' },
+  { id: 'games', label: 'Aktive Spiele' }
 ]
 const activeTab = ref('stats')
 
@@ -379,10 +378,11 @@ onMounted(() => loadStats())
 .actions-col { white-space: nowrap; }
 .act-btn {
   background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 1rem;
-  margin-right: 4px; transition: all 0.15s;
+  border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem;
+  margin-right: 4px; transition: all 0.15s; font-weight: 600;
+  color: rgba(255,255,255,0.85);
 }
-.act-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+.act-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); color: white; }
 .act-btn.delete:hover { background: rgba(255,107,107,0.2); border-color: #ff6b6b; }
 
 /* Games */
