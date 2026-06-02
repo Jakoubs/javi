@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rest
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: rest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: javi
+      app.kubernetes.io/component: rest
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: javi
+        app.kubernetes.io/component: rest
+    spec:
+      containers:
+        - name: rest
+          image: javi-rest:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: CHESS_PERSISTENCE_BACKEND
+              value: slick
+            - name: CHESS_DB_URL
+              value: jdbc:postgresql://postgres:5432/chess
+            - name: CHESS_DB_USER
+              value: chess
+            - name: CHESS_DB_PASSWORD
+              value: chess
+            - name: CHESS_MONGO_URI
+              value: mongodb://mongo:27017
+            - name: CHESS_MONGO_DATABASE
+              value: chess
+            - name: KAFKA_BOOTSTRAP
+              value: kafka:9092
+          readinessProbe:
+            httpGet:
+              path: /api/state
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/state
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rest
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: rest
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: rest
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

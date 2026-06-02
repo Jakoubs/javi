@@ -61,10 +61,11 @@ services:
     build:
       context: .
       dockerfile: rest/Dockerfile
+    image: javi-rest:local
     container_name: chess-rest
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       - DB_TYPE=postgres
       - DB_URL=jdbc:postgresql://postgres:5432/chessdb
@@ -103,10 +104,11 @@ services:
     build:
       context: webui
       dockerfile: Dockerfile
+    image: javi-webui:local
     container_name: chess-webui
     restart: unless-stopped
     ports:
-      - "3000:8080"
+      - "80:8080"
     depends_on:
       rest:
         condition: service_healthy

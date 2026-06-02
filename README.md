@@ -76,6 +76,38 @@ cd chess
 sbt run
 ```
 
+## Deploy with Docker Compose
+
+On a deployment server, pull the repository and start the stack:
+
+```bash
+git pull origin main
+docker compose up --build -d
+```
+
+The WebUI is published on port `80` and proxies `/api` to the internal REST
+service. The REST container is not published directly, so it does not conflict
+with another service already using host port `8080`.
+
+- WebUI: `http://<server-ip>/`
+- REST API through WebUI nginx: `http://<server-ip>/api/state`
+
+Useful checks:
+
+```bash
+docker compose ps
+curl http://localhost/api/state
+```
+
+For a local k3d deployment, build and import the local images, then apply the
+Kubernetes manifests:
+
+```bash
+docker compose build rest webui
+k3d image import javi-rest:local javi-webui:local -c javi
+kubectl apply -k k8s
+```
+
 ## Test
 
 ```bash

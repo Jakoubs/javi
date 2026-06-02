@@ -27,3 +27,7 @@ webui/.vite/
 
 # Agent data
 .gemini/
+
+# Local secrets
+.env
+*.token
