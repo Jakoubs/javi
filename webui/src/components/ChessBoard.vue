@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 
-const props = defineProps(['fen', 'flipped', 'highlights', 'selectedPos'])
+const props = defineProps(['fen', 'flipped', 'highlights', 'selectedPos', 'hintHighlights'])
 const emit = defineEmits(['square-click'])
 
 const showPromotion = ref(false)
@@ -76,11 +76,14 @@ const cancelPromotion = () => {
 }
 
 // SVG Piece mappings
-const getPieceSvg = (type, color) => {
-  const unicodeMap = {
-    p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚'
+// User-provided SVG Piece mappings (Vite Dynamic Assets)
+const getPieceUrl = (type, color) => {
+  const nameMap = {
+    p: 'pawn', r: 'rook', n: 'knight', b: 'bishop', q: 'queen', k: 'king'
   }
-  return unicodeMap[type] || ''
+  const suffix = color === 'white' ? 'w' : 'b'
+  // Use Vite's dynamic asset loading pattern
+  return new URL(`../assets/pieces/${nameMap[type]}-${suffix}.svg`, import.meta.url).href
 }
 
 const squareColor = (pos) => {
@@ -99,12 +102,13 @@ const squareColor = (pos) => {
         class="square" 
         :class="[squareColor(square.pos), { 
           selected: props.selectedPos === square.pos,
-          'is-highlight': props.highlights?.includes(square.pos)
+          'is-highlight': props.highlights?.includes(square.pos),
+          'is-hint': props.hintHighlights?.includes(square.pos)
         }]"
         @click="handleSquareClick(square)"
       >
         <div v-if="square.piece" class="piece" :class="square.color">
-          {{ getPieceSvg(square.type, square.color) }}
+          <img :src="getPieceUrl(square.type, square.color)" :alt="square.piece" class="piece-img" />
         </div>
         
         <!-- Target indicator (dot or ring) from backend highlights -->
@@ -128,7 +132,9 @@ const squareColor = (pos) => {
                 :class="promotionColor"
                 @click="handlePromoSelection(type)"
               >
-                <span class="promo-piece">{{ getPieceSvg(type, promotionColor) }}</span>
+                <span class="promo-piece">
+                  <img :src="getPieceUrl(type, promotionColor)" class="piece-img" />
+                </span>
                 <span class="promo-label">{{ type === 'q' ? 'Queen' : type === 'r' ? 'Rook' : type === 'b' ? 'Bishop' : 'Knight' }}</span>
               </div>
             </div>
@@ -146,7 +152,7 @@ const squareColor = (pos) => {
 
 .chessboard {
   display: grid;
-  --square-size: min(80px, 10vmin);
+  --square-size: var(--board-square-size, min(80px, 10vmin));
   grid-template-columns: repeat(8, var(--square-size));
   grid-template-rows: repeat(8, var(--square-size));
   border: 4px solid #2d3748;
@@ -185,6 +191,11 @@ const squareColor = (pos) => {
   filter: brightness(1.1);
 }
 
+.square.is-hint {
+  background-color: rgba(78, 204, 163, 0.6) !important;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+}
+
 .move-indicator {
   position: absolute;
   top: 0;
@@ -213,11 +224,21 @@ const squareColor = (pos) => {
 }
 
 .piece {
-  font-size: calc(var(--square-size) * 0.85);
+  width: 90%;
+  height: 90%;
   user-select: none;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
   z-index: 20;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.piece-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
 }
 
 .piece:hover {
@@ -225,13 +246,9 @@ const squareColor = (pos) => {
 }
 
 .piece.white {
-  color: #fff;
-  -webkit-text-stroke: 1.5px #000;
 }
 
 .piece.black {
-  color: #000;
-  -webkit-text-stroke: 1.5px #fff;
 }
 
 .coord {
@@ -307,8 +324,8 @@ const squareColor = (pos) => {
 }
 
 .promo-piece {
-  font-size: 52px;
-  line-height: 1;
+  width: 52px;
+  height: 52px;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
 }
 
@@ -322,13 +339,9 @@ const squareColor = (pos) => {
 }
 
 .promo-choice.white .promo-piece {
-  color: #fff;
-  -webkit-text-stroke: 1.5px #000;
 }
 
 .promo-choice.black .promo-piece {
-  color: #000;
-  -webkit-text-stroke: 1.5px #fff;
 }
 
 .fade-enter-active,

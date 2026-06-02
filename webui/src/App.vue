@@ -6,6 +6,220 @@ import GameStatus from './components/GameStatus.vue'
 import ImportExport from './components/ImportExport.vue'
 import TimeSettings from './components/TimeSettings.vue'
 import MoveHistory from './components/MoveHistory.vue'
+import PuzzleView from './components/PuzzleView.vue'
+import HomeView from './components/HomeView.vue'
+
+const activeView = ref('home') // 'home', 'game', or 'puzzles'
+const showNewGameModal = ref(false)
+const showCustomInModal = ref(false)
+const customMin = ref(0)
+const customInc = ref(0)
+
+const timePresets = [
+  { name: '1|0 Bullet', time: 60000, inc: 0 },
+  { name: '3|2 Blitz', time: 180000, inc: 2000 },
+  { name: '10|0 Rapid', time: 600000, inc: 0 }
+]
+
+// ── Server URL (persisted in localStorage) ────────────────────────────────
+const DEFAULT_SERVER = 'http://localhost:8080'
+const savedServer = localStorage.getItem('chessServerUrl')
+const serverUrl = ref(savedServer && (savedServer.includes(':8080') || savedServer.includes(':8081')) ? savedServer : DEFAULT_SERVER)
+const serverInput = ref(serverUrl.value)
+const serverConnected = ref(true)
+
+// ── Session ID (persisted in localStorage) ────────────────────────────────
+const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+const sessionId = ref(localStorage.getItem('chessSessionId') || generateId())
+if (!localStorage.getItem('chessSessionId')) {
+  localStorage.setItem('chessSessionId', sessionId.value)
+}
+
+// ── Player Role (White / Black / Spectator) ──────────────────────────────
+const clientRole = ref(localStorage.getItem('chessClientRole') || 'white')
+
+const setRole = (role) => {
+  clientRole.value = role
+  localStorage.setItem('chessClientRole', role)
+}
+
+// ── User / Social State ──────────────────────────────────────────────────
+const currentUser = ref(JSON.parse(localStorage.getItem('chessUser')))
+const friends = ref([])
+const friendRequests = ref([])
+const newFriendName = ref('')
+const friendFeedback = ref('')
+const friendFeedbackError = ref(false)
+
+
+const authMode = ref('login') // 'login' or 'register'
+const showAuthModal = ref(false)
+const authForm = ref({ username: '', email: '', password: '' })
+const authError = ref('')
+
+const handleAuth = async () => {
+  authError.value = ''
+  const endpoint = authMode.value === 'login' ? 'login' : 'register'
+  try {
+    const response = await fetch(`${serverUrl.value}/api/auth/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authForm.value)
+    })
+    
+    if (response.ok) {
+      const user = await response.json()
+      
+      if (authMode.value === 'register' && !user.isVerified) {
+        authError.value = "Check your email for a verification link!"
+        authForm.value.password = ''
+        return
+      }
+
+      currentUser.value = user
+      localStorage.setItem('chessUser', JSON.stringify(user))
+      showAuthModal.value = false
+      fetchFriends()
+      fetchFriendRequests()
+    } else {
+      const errText = await response.text()
+      try {
+        const errJson = JSON.parse(errText)
+        authError.value = errJson.errorMessage || errJson.error || errJson
+      } catch (e) {
+        authError.value = errText
+      }
+    }
+  } catch (e) {
+    authError.value = 'Server connection failed'
+  }
+}
+
+const logout = () => {
+  currentUser.value = null
+  localStorage.removeItem('chessUser')
+  friends.value = []
+}
+
+const fetchFriends = async () => {
+  if (!currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends?userId=${currentUser.value.id}`)
+    if (response.ok) {
+      friends.value = await response.json()
+    }
+  } catch (e) {}
+}
+
+const fetchFriendRequests = async () => {
+  if (!currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends/requests?userId=${currentUser.value.id}`)
+    if (response.ok) {
+      friendRequests.value = await response.json()
+    }
+  } catch (e) {}
+}
+
+
+const challengeFriend = async (friendId) => {
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId })
+    })
+    if (response.ok) {
+      const { partyCode } = await response.json()
+      partyCodeInput.value = partyCode
+      joinParty()
+    }
+  } catch (e) {}
+}
+
+const addFriend = async () => {
+  if (!newFriendName.value.trim() || !currentUser.value) return
+  friendFeedback.value = ''
+  friendFeedbackError.value = false
+  const targetName = newFriendName.value.trim()
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends/add?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendName: targetName })
+    })
+    if (response.ok) {
+      newFriendName.value = ''
+      friendFeedback.value = `Anfrage an '${targetName}' verschickt!`
+      friendFeedbackError.value = false
+      fetchFriends()
+    } else {
+      const errText = await response.text()
+      if (errText.toLowerCase().includes("not found") || response.status === 404) {
+        friendFeedback.value = `User '${targetName}' existiert nicht!`
+      } else {
+        friendFeedback.value = errText || 'Fehler beim Hinzufügen'
+      }
+      friendFeedbackError.value = true
+    }
+  } catch (e) {
+    friendFeedback.value = 'Server-Fehler'
+    friendFeedbackError.value = true
+  }
+}
+
+const acceptFriend = async (friendId) => {
+  if (!currentUser.value) return
+  try {
+    const response = await fetch(`${serverUrl.value}/api/social/friends/accept?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId })
+    })
+    if (response.ok) {
+      fetchFriendRequests()
+      fetchFriends()
+    }
+  } catch (e) {
+    state.value.message = 'Failed to accept friend'
+  }
+}
+
+
+
+// ── Party Code Logic ─────────────────────────────────────────────────────
+const partyCodeInput = ref('')
+const currentParty = ref(localStorage.getItem('chessPartyCode') || '')
+
+const effectiveSessionId = computed(() => currentParty.value || sessionId.value)
+
+const joinParty = () => {
+  if (partyCodeInput.value.trim()) {
+    currentParty.value = partyCodeInput.value.trim().toUpperCase()
+    localStorage.setItem('chessPartyCode', currentParty.value)
+    fetchState()
+    partyCodeInput.value = ''
+  }
+}
+
+const leaveParty = () => {
+  currentParty.value = ''
+  localStorage.removeItem('chessPartyCode')
+  fetchState()
+}
+
+
+const applyServer = () => {
+  const url = serverInput.value.trim().replace(/\/$/, '')
+  serverUrl.value = url
+  serverInput.value = url
+  localStorage.setItem('chessServerUrl', url)
+  fetchState()
+}
+const resetServer = () => {
+  serverInput.value = DEFAULT_SERVER
+  applyServer()
+}
 
 const state = ref({
   fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -30,7 +244,8 @@ const state = ref({
   trainingProgress: null,
   whiteLiveMillis: 0,
   blackLiveMillis: 0,
-  activePgnParser: 'regex'
+  activePgnParser: 'regex',
+  opening: null
 })
 
 const showGameOver = ref(false)
@@ -78,8 +293,9 @@ const handleQuitModal = () => {
 
 const fetchState = async () => {
   try {
-    const response = await fetch(`http://localhost:8080/api/state?t=${Date.now()}`)
+    const response = await fetch(`${serverUrl.value}/api/state?sessionId=${effectiveSessionId.value}&t=${Date.now()}`)
     if (response.ok) {
+      serverConnected.value = true
       const data = await response.json()
       state.value = data
       
@@ -92,13 +308,36 @@ const fetchState = async () => {
       }
     }
   } catch (e) {
+    serverConnected.value = false
     console.error('Failed to fetch state', e)
   }
 }
 
 const sendCommand = async (cmd) => {
+  if (cmd === 'new') {
+    showNewGameModal.value = true
+    return
+  }
+  
+  const isBoardInteraction = /^[a-h][1-8]$/.test(cmd) || /^[a-h][1-8][a-h][1-8]/.test(cmd)
+  const isGameAction = ['undo', 'resign'].includes(cmd)
+  
+  if (isBoardInteraction || isGameAction) {
+    if (isGameOver.value && cmd !== 'undo') {
+      return
+    }
+    if (clientRole.value === 'spectator') {
+      return
+    }
+    const myTurn = (clientRole.value === 'white' && state.value.activeColor === 'White') ||
+                   (clientRole.value === 'black' && state.value.activeColor === 'Black')
+    if (!myTurn) {
+      return
+    }
+  }
+
   try {
-    await fetch('http://localhost:8080/api/command', {
+    await fetch(`${serverUrl.value}/api/command?sessionId=${effectiveSessionId.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command: cmd })
@@ -116,6 +355,12 @@ const handleStartWithTime = (time, inc) => {
   else sendCommand(`start ${time} ${inc}`)
 }
 
+const handleStartGameFromHome = (timeMs, incMs) => {
+  handleStartWithTime(timeMs, incMs)
+  activeView.value = 'game'
+  showNewGameModal.value = false
+}
+
 const handleSwitchParser = (event) => {
   const variant = event.target.value
   sendCommand(`parser pgn ${variant}`)
@@ -127,6 +372,9 @@ let tickerInterval
 
 onMounted(() => {
   fetchState()
+  fetchFriends()
+  fetchFriendRequests()
+
   pollInterval = setInterval(fetchState, 500)
   
   tickerInterval = setInterval(() => {
@@ -183,14 +431,24 @@ const isViewingHistory = computed(() => {
   const i = state.value.viewIndex
   return h && h.length > 0 && i < h.length - 1
 })
+
+const effectiveFlipped = computed(() => {
+  if (clientRole.value === 'white') return false
+  if (clientRole.value === 'black') return true
+  return state.value.flipped
+})
 </script>
 
 <template>
   <div class="app-container">
     <header class="glass">
       <div class="header-left">
-        <h1>JAVI CHESS</h1>
-        <div class="parser-switcher">
+        <div class="brand-group clickable-brand" @click="activeView = 'home'">
+          <h1>JAVI CHESS</h1>
+          <div class="premium-tag">Premium Chess Experience</div>
+        </div>
+
+        <div class="parser-switcher" v-show="activeView === 'game'">
           <label for="parser-select">PGN Parser:</label>
           <select id="parser-select" :value="state.activePgnParser" @change="handleSwitchParser" class="glass-select">
             <option value="regex">Regex</option>
@@ -198,11 +456,121 @@ const isViewingHistory = computed(() => {
             <option value="combinator">Combinator</option>
           </select>
         </div>
+        <div v-if="state.opening && activeView === 'game'" class="opening-badge shadow-sm">
+          <span class="label">OPENING:</span>
+          <span class="name">{{ state.opening }}</span>
+        </div>
       </div>
-      <div v-if="state.message" class="status-msg">{{ state.message }}</div>
+
+      <!-- Party Mode UI -->
+      <div class="server-switcher party-mode" v-show="activeView === 'game'">
+        <div v-if="!currentParty" class="party-input-group">
+          <input 
+            v-model="partyCodeInput" 
+            placeholder="Party Code (e.g. ABCD)" 
+            class="config-input party-input glass-input"
+            @keyup.enter="joinParty"
+            spellcheck="false"
+          >
+          <button @click="joinParty" class="server-reset-btn" title="Join Party">Join</button>
+        </div>
+        <div v-else class="party-active glass-pill">
+          <span class="active-label">Party:</span>
+          <span class="active-code">{{ currentParty }}</span>
+          <button @click="leaveParty" class="server-reset-btn leave-btn" title="Leave Party">✕</button>
+        </div>
+      </div>
+
+      <!-- Server URL switcher -->
+      <div class="server-switcher" v-show="activeView === 'game'">
+        <span class="server-dot" :class="{ connected: serverConnected, disconnected: !serverConnected }" :title="serverConnected ? 'Connected' : 'Disconnected'"></span>
+        <input
+          id="server-url-input"
+          v-model="serverInput"
+          class="server-input glass-input"
+          placeholder="Relative (default) or http://host:8080"
+          @keyup.enter="applyServer"
+          @blur="applyServer"
+          spellcheck="false"
+        />
+        <button class="server-reset-btn" @click="resetServer" title="Reset to localhost">↺</button>
+      </div>
+
+      <!-- Player Role Selector -->
+      <div class="role-selector glass-pill" v-show="activeView === 'game'">
+        <button 
+          v-for="role in ['white', 'black', 'spectator']" 
+          :key="role"
+          :class="['role-btn', role, { active: clientRole === role }]"
+          @click="setRole(role)"
+        >
+          {{ role === 'spectator' ? '👁' : (role === 'white' ? '♔' : '♚') }}
+          <span class="role-label">{{ role.charAt(0).toUpperCase() + role.slice(1) }}</span>
+        </button>
+      </div>
+
+      <!-- User Account -->
+      <div class="user-account">
+        <div v-if="!currentUser" class="auth-trigger" @click="showAuthModal = true">
+          <span class="user-icon">👤</span>
+          <span class="auth-label">Login / Register</span>
+        </div>
+        <div v-else class="user-profile glass-pill">
+          <span class="username">{{ currentUser.username }}</span>
+          <button @click="logout" class="logout-btn">Logout</button>
+        </div>
+      </div>
     </header>
 
-    <main>
+    <!-- Home View -->
+    <main v-if="activeView === 'home'">
+      <HomeView 
+        @start-game="handleStartGameFromHome" 
+        @goto-puzzles="activeView = 'puzzles'" 
+      />
+    </main>
+
+    <!-- Puzzle View -->
+    <main v-else-if="activeView === 'puzzles'">
+      <PuzzleView :serverUrl="serverUrl" />
+    </main>
+
+    <!-- Game View -->
+    <main v-else>
+      <!-- Friends Sidebar -->
+      <aside class="social-sidebar glass" v-if="currentUser">
+        <div class="sidebar-header">
+          <h3>Friends</h3>
+          <div class="add-friend-form">
+            <input v-model="newFriendName" placeholder="Username..." @keyup.enter="addFriend" class="glass-input small">
+            <button @click="addFriend" class="add-btn">+</button>
+          </div>
+          <p v-if="friendFeedback" :style="{ color: friendFeedbackError ? '#ff6b6b' : '#4ecca3', fontSize: '0.75rem', marginTop: '4px', marginBottom: '8px', textAlign: 'left', opacity: 0.9 }">
+            {{ friendFeedback }}
+          </p>
+        </div>
+
+        <!-- Friend Requests -->
+        <div class="friend-requests" v-if="friendRequests.length > 0">
+          <h4>Requests</h4>
+          <div v-for="req in friendRequests" :key="req.id" class="friend-item glass-pill incoming-req">
+            <span class="friend-name">{{ req.username }}</span>
+            <button @click="acceptFriend(req.id)" class="accept-btn">Accept</button>
+          </div>
+        </div>
+
+
+        <div class="friends-list">
+          <div v-for="friend in friends" :key="friend.id" class="friend-item glass-pill">
+            <span class="friend-name">{{ friend.username }}</span>
+            <button @click="challengeFriend(friend.id)" class="challenge-btn">Challenge</button>
+          </div>
+          <div v-if="friends.length === 0" class="no-friends">
+            <p>No friends yet.</p>
+          </div>
+        </div>
+      </aside>
+
       <div class="left-panel">
         <GameStatus :state="state" />
         <MoveHistory 
@@ -230,7 +598,7 @@ const isViewingHistory = computed(() => {
 
         <ChessBoard 
           :fen="state.displayFen" 
-          :flipped="state.flipped"
+          :flipped="effectiveFlipped"
           :highlights="isViewingHistory ? [] : state.highlights"
           :selectedPos="isViewingHistory ? null : state.selectedPos"
           @square-click="(pos) => sendCommand(pos)"
@@ -252,7 +620,7 @@ const isViewingHistory = computed(() => {
       </div>
 
       <div class="right-panel">
-        <TimeSettings @startWithTime="handleStartWithTime" />
+
         <ImportExport 
           :fen="state.fen" 
           :pgn="state.pgn" 
@@ -277,6 +645,74 @@ const isViewingHistory = computed(() => {
         <div class="modal-footer">
           <button class="btn primary" @click="handleNewGameModal">New Game</button>
           <button class="btn" @click="handleQuitModal">Quit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div v-if="showAuthModal" class="modal-overlay" @click.self="showAuthModal = false">
+    <div class="modal-content glass">
+      <h2>{{ authMode === 'login' ? 'Welcome Back' : 'Join Javi Chess' }}</h2>
+      <div class="auth-tabs">
+        <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
+        <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
+      </div>
+      
+      <form @submit.prevent="handleAuth" class="auth-form">
+        <div class="form-group">
+          <input v-model="authForm.username" placeholder="Username" required class="glass-input">
+        </div>
+        <div v-if="authMode === 'register'" class="form-group">
+          <input v-model="authForm.email" type="email" placeholder="Email Address" required class="glass-input">
+        </div>
+        <div class="form-group">
+          <input v-model="authForm.password" type="password" placeholder="Password" required class="glass-input">
+        </div>
+        <p v-if="authError" class="auth-error">{{ authError }}</p>
+        <button type="submit" class="auth-submit-btn">{{ authMode === 'login' ? 'Login' : 'Sign Up' }}</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- New Game Modal -->
+  <div v-if="showNewGameModal" class="modal-overlay" @click.self="showNewGameModal = false">
+    <div class="modal-content glass time-modal">
+      <button class="close-x" @click="showNewGameModal = false">&times;</button>
+      <div class="modal-header">
+        <h2>New Game</h2>
+        <p>Select your time control</p>
+      </div>
+
+      <div class="modal-body">
+        <div class="time-grid-modal">
+          <button 
+            v-for="p in timePresets" 
+            :key="p.name"
+            @click="handleStartGameFromHome(p.time, p.inc)"
+            class="preset-btn-modal primary"
+          >
+            {{ p.name }}
+          </button>
+          <button @click="showCustomInModal = !showCustomInModal" class="preset-btn-modal primary">
+            Custom
+          </button>
+        </div>
+
+        <div v-if="showCustomInModal" class="custom-settings-modal glass-card">
+          <div class="modal-custom-row">
+            <div class="modal-custom-field">
+              <label>Time(min)</label>
+              <input type="number" v-model="customMin" min="0" max="180" class="glass-input compact">
+            </div>
+            <div class="modal-custom-field">
+              <label>inc(sec)</label>
+              <input type="number" v-model="customInc" min="0" max="60" class="glass-input compact">
+            </div>
+          </div>
+          <button @click="handleStartGameFromHome(customMin > 0 ? customMin * 60000 : null, customInc * 1000)" class="preset-btn-modal primary full-width">
+            Start {{ customMin === 0 ? '(Unlimited)' : `(${customMin}m | ${customInc}s)` }}
+          </button>
         </div>
       </div>
     </div>
@@ -317,23 +753,73 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  position: relative; /* For absolute status-msg */
+  z-index: 100;
 }
 
 header h1 {
   margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: 2px;
+  font-size: 1.8rem;
+  letter-spacing: 3px;
   color: var(--primary);
+  line-height: 1.2;
+  font-family: 'Playfair Display', serif;
 }
 
-.status-msg {
-  background: rgba(240, 165, 0, 0.2);
-  color: #f0a500;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
+.brand-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
+.premium-tag {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  opacity: 0.8;
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.clickable-brand {
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.clickable-brand:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.nav-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-btn:hover { color: white; background: rgba(255,255,255,0.06); }
+.nav-btn.active {
+  background: rgba(78,204,163,0.2);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(78,204,163,0.15);
+}
+
+
+/* ── Layout ───────────────────────────────────────────────────────────── */
 .header-left {
   display: flex;
   align-items: center;
@@ -354,7 +840,25 @@ header h1 {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-
+.opening-badge {
+  background: rgba(78, 204, 163, 0.1);
+  border: 1px solid rgba(78, 204, 163, 0.3);
+  padding: 4px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.opening-badge .label {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+.opening-badge .name {
+  color: white;
+  font-weight: 600;
+}
 .glass-select {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid var(--glass-border);
@@ -379,13 +883,14 @@ header h1 {
 main {
   flex: 1;
   display: flex;
-  padding: 1.5rem;
-  gap: 1.5rem;
+  padding: 1rem;
+  gap: 1rem;
   overflow: hidden;
 }
 
 .left-panel, .right-panel {
   width: 320px;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -402,7 +907,8 @@ main {
 }
 
 .player-info {
-  width: 500px;
+  width: 100%;
+  max-width: 650px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -450,21 +956,21 @@ main {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-content {
-  position: relative;
-  width: 400px;
-  padding: 2rem;
-  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem;
+  border-radius: 30px;
   text-align: center;
   box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   animation: modal-in 0.3s ease-out;
@@ -546,5 +1052,419 @@ main {
 .btn.primary:hover {
   background: #3eb88f;
   box-shadow: 0 4px 12px rgba(78, 204, 163, 0.3);
+}
+
+/* ── Server Switcher ──────────────────────────────────────────────────── */
+.server-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.server-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.server-dot.connected    { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
+.server-dot.disconnected { background: #e74c3c; box-shadow: 0 0 6px #e74c3c; animation: pulse-red 1s infinite; }
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: white;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.glass-input.compact {
+  padding: 6px 4px;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.glass-input:focus {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.server-reset-btn {
+  background: none;
+  border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.5);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.server-reset-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  transform: rotate(-30deg);
+}
+
+/* ── Role Selector ────────────────────────────────────────────────────── */
+.role-selector {
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 30px;
+}
+
+.role-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.role-btn .role-label {
+  display: none;
+}
+
+.role-btn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.role-btn.active {
+  color: #1a1a2e;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.role-btn.active.white { background: #fff; color: #1a1a2e; }
+.role-btn.active.black { background: #333; color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.role-btn.active.spectator { background: var(--accent); color: #1a1a2e; }
+
+@media (min-width: 1200px) {
+  .role-btn .role-label {
+    display: inline;
+  }
+}
+.party-mode {
+  flex: 0 1 auto;
+}
+
+.party-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.party-input {
+  width: 150px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.party-active {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 1rem;
+  background: rgba(var(--primary-rgb), 0.15) !important;
+  border: 1px solid rgba(var(--primary-rgb), 0.3) !important;
+}
+
+.active-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.active-code {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+}
+
+.leave-btn {
+  color: #ff4d4d;
+  font-size: 1.2rem;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.leave-btn:hover {
+  color: #ff1a1a;
+  transform: scale(1.2);
+}
+
+/* Social & Auth Styles */
+.user-account {
+  margin-left: 2rem;
+}
+
+.auth-trigger {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-trigger:hover {
+  background: rgba(var(--primary-rgb), 0.1);
+  border-color: rgba(var(--primary-rgb), 0.3);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 1.2rem;
+}
+
+.logout-btn {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Sidebar */
+.social-sidebar {
+  width: 240px;
+  min-width: 240px;
+  padding: 1.5rem;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: fit-content;
+}
+
+.sidebar-header h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  opacity: 0.6;
+  margin: 0;
+}
+
+.add-friend-form {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-friend-form .glass-input.small {
+  flex: 1;
+  width: auto;
+  font-size: 0.75rem;
+}
+
+.add-btn {
+  background: var(--primary);
+  color: black;
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.add-btn:hover {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+.friend-requests {
+  margin-top: 1rem;
+}
+
+.friend-requests h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.4;
+  margin-bottom: 0.5rem;
+}
+
+.incoming-req {
+  border-color: rgba(78, 204, 163, 0.3);
+  background: rgba(78, 204, 163, 0.05);
+}
+
+.accept-btn {
+  font-size: 0.6rem;
+  background: var(--primary);
+  color: black;
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+
+
+.friend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.challenge-btn {
+  font-size: 0.7rem;
+  background: var(--primary);
+  color: black;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.challenge-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.auth-submit-btn {
+  background: var(--primary);
+  color: black;
+  border: none;
+  padding: 1rem;
+  border-radius: 14px;
+  font-weight: 700;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.3);
+}
+
+.no-friends {
+  text-align: center;
+  opacity: 0.4;
+  font-size: 0.8rem;
+  padding: 2rem 0;
+}
+
+.time-modal {
+  max-width: 400px !important;
+}
+
+.time-grid-modal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.preset-btn-modal {
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(78, 204, 163, 0.3);
+  background: rgba(78, 204, 163, 0.1);
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn-modal:hover {
+  background: rgba(78, 204, 163, 0.25);
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.custom-settings-modal {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-custom-row {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-custom-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  text-align: left;
+}
+
+.modal-custom-field label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.full-width {
+  width: 100%;
 }
 </style>
