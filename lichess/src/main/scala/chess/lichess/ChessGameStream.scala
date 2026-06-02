@@ -53,60 +53,46 @@ object ChessGameStream:
   def run(numGames: Int = 10)(using system: ActorSystem[?]): Future[Unit] =
     given ExecutionContext = system.executionContext
 
-    println(s"\n╔══════════════════════════════════════════════╗")
-    println(s"║   Chess Game Stream  –  $numGames games          ║")
-    println(s"╚══════════════════════════════════════════════╝\n")
+    println(s"\n\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557")
+    println(s"\u2551   Chess Game Stream  \u2013  $numGames games          \u2551")
+    println(s"\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d\n")
 
-    // ── SOURCE ────────────────────────────────────────────────────────────────
-    //
-    // Produces one RawGame (= list of GameState snapshots) per emitted element.
-    // We use Source.fromIterator so the heavy CPU work happens downstream and
-    // is naturally back-pressured by the sink.
-
-    val source: Source[List[PositionSnapshot], _] =
-      Source.fromIterator(() => Iterator.range(0, numGames))
-        .map(gameId => playRandomGame(gameId))
-
-    // ── FLOW 1 – Position Analysis ────────────────────────────────────────────
-    //
-    // Flattens the per-game list into individual PositionSnapshot elements.
-    // mapConcat is the idiomatic Pekko/Akka way to do a flatMap on a Source.
-
-    val analysisFlow: Flow[List[PositionSnapshot], PositionSnapshot, _] =
-      Flow[List[PositionSnapshot]]
-        .mapConcat(identity)        // flatten List[Snapshot] → Snapshot
-
-    // ── FLOW 2 – Per-game aggregation ─────────────────────────────────────────
-    //
-    // Groups snapshots by gameId and folds them into a GameReport.
-    // groupBy opens a sub-stream per gameId; fold accumulates the stats;
-    // mergeSubstreams re-joins everything back into a single stream.
-
-    val aggregationFlow: Flow[PositionSnapshot, GameReport, _] =
-      Flow[PositionSnapshot]
-        .groupBy(maxSubstreams = numGames + 1, snap => snap.gameId)
-        .fold(GameReportAccumulator.empty) { (acc, snap) =>
-          acc.update(snap)
-        }
-        .map(_.toReport)
-        .mergeSubstreams
-
-    // ── SINK ──────────────────────────────────────────────────────────────────
-    //
-    // Collect all GameReports in memory, then print a formatted summary table.
-
-    val sink: Sink[GameReport, Future[Seq[GameReport]]] =
-      Sink.seq[GameReport]
-
-    // ── Wire & run ────────────────────────────────────────────────────────────
-
-    source
+    gameSource(numGames)
       .via(analysisFlow)
-      .via(aggregationFlow)
-      .runWith(sink)
+      .via(aggregationFlow(numGames))
+      .runWith(Sink.seq[GameReport])
       .map { reports =>
         printSummary(reports.sortBy(_.gameId))
       }
+
+  // ─── Public pipeline stages (reusable by KafkaChessStream) ────────────────
+
+  /** Emits one List[PositionSnapshot] per game (back-pressured). */
+  def gameSource(numGames: Int): Source[List[PositionSnapshot], _] =
+    Source.fromIterator(() => Iterator.range(0, numGames))
+      .map(gameId => playRandomGame(gameId))
+
+  /** Flattens List[PositionSnapshot] → individual PositionSnapshot elements. */
+  val analysisFlow: Flow[List[PositionSnapshot], PositionSnapshot, _] =
+    Flow[List[PositionSnapshot]].mapConcat(identity)
+
+  /** Groups snapshots by gameId and folds them into a GameReport per game. */
+  def aggregationFlow(numGames: Int): Flow[PositionSnapshot, GameReport, _] =
+    Flow[PositionSnapshot]
+      .groupBy(maxSubstreams = numGames + 1, snap => snap.gameId)
+      .fold(GameReportAccumulator.empty)((acc, snap) => acc.update(snap))
+      .map(_.toReport)
+      .mergeSubstreams
+
+  /** Human-readable result label (also used by KafkaChessStream). */
+  def resultLabel(s: GameStatus): String = s match
+    case GameStatus.Checkmate(loser)  => if loser == Color.White then "Black wins" else "White wins"
+    case GameStatus.Stalemate         => "Stalemate"
+    case GameStatus.Draw(reason)      => s"Draw ($reason)"
+    case GameStatus.Resigned(loser)   => s"${loser} resigned"
+    case GameStatus.Playing           => "Max moves hit"
+    case GameStatus.Check(_)          => "Check"
+    case GameStatus.Timeout(loser)    => s"${loser} timeout"
 
   // ─── Random self-play ──────────────────────────────────────────────────────
 
@@ -119,7 +105,7 @@ object ChessGameStream:
    * the stream stays snappy for demo purposes.  Swap in `AlphaBetaAgent` for
    * a stronger (but slower) self-play source.
    */
-  private def playRandomGame(gameId: Int, maxMoves: Int = 150): List[PositionSnapshot] =
+  private[lichess] def playRandomGame(gameId: Int, maxMoves: Int = 150): List[PositionSnapshot] =
     val snapshots = scala.collection.mutable.ListBuffer.empty[PositionSnapshot]
     var state     = GameState.initial
     var finished  = false
@@ -216,16 +202,6 @@ object ChessGameStream:
       count        = 0
     )
 
-  // ─── Pretty-print summary ──────────────────────────────────────────────────
-
-  private def resultLabel(s: GameStatus): String = s match
-    case GameStatus.Checkmate(loser)  => if loser == Color.White then "Black wins ♟" else "White wins ♙"
-    case GameStatus.Stalemate         => "Stalemate     "
-    case GameStatus.Draw(reason)      => s"Draw ($reason)"
-    case GameStatus.Resigned(loser)   => s"${loser} resigned"
-    case GameStatus.Playing           => "Max moves hit "
-    case GameStatus.Check(_)          => "Check?        "
-    case GameStatus.Timeout(loser)    => s"${loser} timeout"
 
   private def bar(v: Double, range: Double, width: Int = 20): String =
     val ratio  = math.min(1.0, math.abs(v) / math.max(1.0, range))
@@ -242,7 +218,6 @@ object ChessGameStream:
 
     reports.foreach { r =>
       val resultStr = resultLabel(r.result)
-      val evalBar   = bar(r.maxEval, maxAbsEval)
       println(
         f"#${r.gameId}%5d  ${resultStr}%-22s  ${r.totalMoves}%5d  ${r.maxEval}%+8.1f  ${r.minEval}%+8.1f  ${r.avgLegal}%8.1f  ${r.peakMobility}%7d"
       )
