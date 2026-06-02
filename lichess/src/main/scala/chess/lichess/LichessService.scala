@@ -227,6 +227,7 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
     val safeTimeLeft = math.max(0L, timeLeftMs - 750L)
     if (safeTimeLeft <= 0L) 1L
     else {
+      val perMoveMaxMultiplier = 1.25
       val ply = ((state.fullMoveNumber - 1) * 2) + (if (state.activeColor == Color.White) 0 else 1)
       val pieces = state.board.pieceCount
       val movesToGo =
@@ -247,7 +248,9 @@ class LichessService(client: LichessClient)(implicit system: ActorSystem[?]) {
         else if (pieces <= 10) 2500L
         else 8000L
       val safetyCeiling = if (safeTimeLeft <= 300L) math.max(1L, safeTimeLeft / 3L) else safeTimeLeft - 150L
-      val ceiling = List(maxCapMs, clockCap, safetyCeiling).min.max(1L)
+      val boostedMaxCap = (maxCapMs.toDouble * perMoveMaxMultiplier).toLong
+      val boostedClockCap = (clockCap.toDouble * perMoveMaxMultiplier).toLong
+      val ceiling = List(boostedMaxCap, boostedClockCap, safetyCeiling).min.max(1L)
       val floor = if (safeTimeLeft < 1000L) 20L else if (safeTimeLeft < 5000L) 50L else 100L
       math.max(1L, math.min(ceiling, math.max(floor, raw)))
     }

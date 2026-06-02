@@ -7,7 +7,8 @@ import chess.util.parser.CoordinateMoveParser
 import java.util.SplittableRandom
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.{AtomicLong, AtomicReferenceArray}
+import java.util.concurrent.{Callable, ExecutorCompletionService, Executors, Future, ThreadFactory, TimeUnit}
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReferenceArray}
 
 import scala.util.Try
 import scala.util.boundary
@@ -65,6 +66,18 @@ object AlphaBetaAgent:
     sys.env.get("CHESS_DEPTH_START_MAX_GROWTH").flatMap(_.toDoubleOption).getOrElse(5.0).max(DepthStartMinGrowth)
   private val DepthStartReserveMs =
     sys.env.get("CHESS_DEPTH_START_RESERVE_MS").flatMap(_.toLongOption).getOrElse(15L).max(0L)
+  private val AvailableProcessors = Runtime.getRuntime().availableProcessors().max(1)
+  private val SearchThreads =
+    sys.env.get("CHESS_SEARCH_THREADS").flatMap(_.toIntOption)
+      .getOrElse(math.min(3, (AvailableProcessors - 1).max(1)))
+      .max(1)
+      .min(AvailableProcessors)
+  private val ParallelRootMinDepth =
+    sys.env.get("CHESS_PARALLEL_ROOT_MIN_DEPTH").flatMap(_.toIntOption).getOrElse(7).max(1)
+  private val ParallelRootMinRemainingMs =
+    sys.env.get("CHESS_PARALLEL_ROOT_MIN_REMAINING_MS").flatMap(_.toLongOption).getOrElse(250L).max(0L)
+  private val ParallelRootMinMoves =
+    sys.env.get("CHESS_PARALLEL_ROOT_MIN_MOVES").flatMap(_.toIntOption).getOrElse(4).max(2)
   private val MaxOpeningBookPly =
     sys.env.get("CHESS_OPENING_MAX_PLY").flatMap(_.toIntOption).getOrElse(16)
   private val StalemateAvoidMaterialCp = 300
@@ -112,6 +125,7 @@ object AlphaBetaAgent:
   private val counterMoves: Array[Array[Array[Move | Null]]] = Array.fill(2, 64, 64)(null)
   private val continuationHistory: Array[Array[Array[Int]]] = Array.fill(2, 64, 64)(0)
   private val captureHistory: Array[Array[Array[Array[Int]]]] = Array.fill(2, 6, 64, 6)(0)
+  private val orderingHeuristicLock = new Object
   private final case class SearchStats(
     betaCutoffs: Long = 0L,
     heuristicCutoffs: Long = 0L,
@@ -141,6 +155,21 @@ object AlphaBetaAgent:
   private final case class AspirationStats(hit: Boolean, failLow: Int, failHigh: Int, retries: Int)
   private final case class OpeningHit(move: Move, weight: Int)
   private final case class TablebaseHit(move: Move, wdl: Int, dtz: Option[Int], dtm: Option[Int], source: String)
+  private final case class RootMoveTask(
+    index: Int,
+    move: Move,
+    isRepetitionMove: Boolean,
+    isStalemateMove: Boolean,
+    allowsImmediateMate: Boolean
+  )
+  private final case class RootMoveSearch(
+    index: Int,
+    move: Move,
+    scoreCp: Double,
+    nodes: Long,
+    stats: SearchStats,
+    profile: TimeProfile
+  )
   private final case class OrderingContext(
     activeColor: Color,
     activeColorIndex: Int,
@@ -173,6 +202,19 @@ object AlphaBetaAgent:
     HceEvaluator.default
   private lazy val fastHceEvaluator: HceEvaluator =
     HceEvaluator.fast
+  private val rootSearchThreadCounter = new AtomicInteger(0)
+  private lazy val rootSearchExecutor: Option[java.util.concurrent.ExecutorService] =
+    if SearchThreads <= 1 then None
+    else
+      Some(Executors.newFixedThreadPool(
+        SearchThreads,
+        new ThreadFactory {
+          override def newThread(runnable: Runnable): Thread =
+            val thread = new Thread(runnable, s"javi-root-search-${rootSearchThreadCounter.incrementAndGet()}")
+            thread.setDaemon(true)
+            thread
+        }
+      ))
 
   def bestMove(state: GameState, timeLimitMs: Long): Option[Move] =
     bestMoveWithStats(state, timeLimitMs).map(_.move)
@@ -386,15 +428,9 @@ object AlphaBetaAgent:
     startBeta: Double
   ): Option[RootSearch] = boundary:
     val started = System.currentTimeMillis()
-    val nodes = Array(0L)
-    val stats = Array(SearchStats())
     val rootKey = searchHash(state)
     val ttMoveRoot = Option(getTt(rootKey)).flatMap(_.best)
     val ordered = orderMoves(state, legalMoves, depth, None, ttMoveRoot, profile)
-    var alpha = startAlpha
-    val beta = startBeta
-    var bestMove: Option[Move] = None
-    var bestScore = Double.NegativeInfinity
     val repetitionFlags = ordered.map(m => wouldCauseImmediateThreefold(state, m))
     val materialLeadCp = materialLeadCpFor(state, state.activeColor)
     val stalemateFlags =
@@ -402,45 +438,187 @@ object AlphaBetaAgent:
       else ordered.map(_ => false)
     val immediateMateFlags = ordered.map(m => wouldAllowImmediateMate(state, m))
     val rootDrawScore = drawScoreForRoot(rootStaticScore(state, profile))
+    val tasks = ordered.zipWithIndex.map { case (move, idx) =>
+      RootMoveTask(
+        index = idx,
+        move = move,
+        isRepetitionMove = repetitionFlags(idx),
+        isStalemateMove = stalemateFlags(idx),
+        allowsImmediateMate = immediateMateFlags(idx)
+      )
+    }
+    val result =
+      if shouldUseParallelRoot(depth, tasks.length, deadline) then
+        searchRootParallel(state, tasks, depth, deadline, profile, startAlpha, startBeta, rootDrawScore)
+      else
+        searchRootSerial(state, tasks, depth, deadline, profile, startAlpha, startBeta, rootDrawScore)
+    result match
+      case None => None
+      case Some((bestMove, bestScore, nodes, stats)) =>
+        val elapsed = System.currentTimeMillis() - started
+        val rootScore = sanitizeScore(bestScore)
+        val bound =
+          if rootScore <= startAlpha then 2
+          else if rootScore >= startBeta then 1
+          else 0
+        val ttPutStart = System.nanoTime()
+        putTt(
+          rootKey,
+          scoreToTt(rootScore, plyFromRoot = 0),
+          depth,
+          bound,
+          Some(bestMove)
+        )
+        profile.ttNs += (System.nanoTime() - ttPutStart)
+        Some(RootSearch(bestMove, rootScore, nodes, elapsed, stats))
 
-    for (move, idx) <- ordered.zipWithIndex do
-      if System.currentTimeMillis() >= deadline then boundary.break(None)
-      val isRepetitionMove = repetitionFlags(idx)
-      val isStalemateMove = stalemateFlags(idx)
-      val allowsImmediateMate = immediateMateFlags(idx)
+  private def shouldUseParallelRoot(depth: Int, rootMoveCount: Int, deadline: Long): Boolean =
+    SearchThreads > 1 &&
+      depth >= ParallelRootMinDepth &&
+      rootMoveCount >= ParallelRootMinMoves &&
+      deadline - System.currentTimeMillis() >= ParallelRootMinRemainingMs &&
+      rootSearchExecutor.nonEmpty
+
+  private def searchRootSerial(
+    state: GameState,
+    tasks: List[RootMoveTask],
+    depth: Int,
+    deadline: Long,
+    profile: TimeProfile,
+    startAlpha: Double,
+    startBeta: Double,
+    rootDrawScore: Double
+  ): Option[(Move, Double, Long, SearchStats)] =
+    var alpha = startAlpha
+    var bestMove: Option[Move] = None
+    var bestIndex = Int.MaxValue
+    var bestScore = Double.NegativeInfinity
+    var totalNodes = 0L
+    var totalStats = SearchStats()
+
+    for task <- tasks do
+      if System.currentTimeMillis() >= deadline then return None
+      searchRootMove(state, task, depth, alpha, startBeta, deadline, rootDrawScore) match
+        case None => return None
+        case Some(result) =>
+          mergeTimeProfile(profile, result.profile)
+          totalNodes += result.nodes
+          totalStats = mergeStats(totalStats, result.stats)
+          if isBetterRootResult(result.scoreCp, result.index, bestScore, bestIndex) then
+            bestScore = result.scoreCp
+            bestIndex = result.index
+            bestMove = Some(result.move)
+          if result.scoreCp > alpha then alpha = result.scoreCp
+
+    bestMove.map(move => (move, bestScore, totalNodes, totalStats))
+
+  private def searchRootParallel(
+    state: GameState,
+    tasks: List[RootMoveTask],
+    depth: Int,
+    deadline: Long,
+    profile: TimeProfile,
+    startAlpha: Double,
+    startBeta: Double,
+    rootDrawScore: Double
+  ): Option[(Move, Double, Long, SearchStats)] =
+    if tasks.isEmpty then None
+    else
+      searchRootMove(state, tasks.head, depth, startAlpha, startBeta, deadline, rootDrawScore) match
+        case None => None
+        case Some(first) =>
+          mergeTimeProfile(profile, first.profile)
+          var alpha = math.max(startAlpha, first.scoreCp)
+          var bestMove = first.move
+          var bestIndex = first.index
+          var bestScore = first.scoreCp
+          var totalNodes = first.nodes
+          var totalStats = first.stats
+          val remaining = tasks.tail
+          if remaining.isEmpty then Some((bestMove, bestScore, totalNodes, totalStats))
+          else
+            val executor = rootSearchExecutor.get
+            val completion = new ExecutorCompletionService[Option[RootMoveSearch]](executor)
+            val futures = new java.util.ArrayList[Future[Option[RootMoveSearch]]](remaining.length)
+            val alphaSnapshot = alpha
+            remaining.foreach { task =>
+              futures.add(completion.submit(new Callable[Option[RootMoveSearch]]:
+                override def call(): Option[RootMoveSearch] =
+                  searchRootMove(state, task, depth, alphaSnapshot, startBeta, deadline, rootDrawScore)
+              ))
+            }
+
+            var completed = 0
+            var failed = false
+            while completed < remaining.length && !failed do
+              val waitMs = (deadline - System.currentTimeMillis()).max(0L)
+              val future =
+                if waitMs <= 0L then null
+                else completion.poll(waitMs, TimeUnit.MILLISECONDS)
+              if future == null then failed = true
+              else
+                try
+                  future.get() match
+                    case None =>
+                      failed = true
+                    case Some(result) =>
+                      mergeTimeProfile(profile, result.profile)
+                      totalNodes += result.nodes
+                      totalStats = mergeStats(totalStats, result.stats)
+                      if isBetterRootResult(result.scoreCp, result.index, bestScore, bestIndex) then
+                        bestScore = result.scoreCp
+                        bestIndex = result.index
+                        bestMove = result.move
+                      if result.scoreCp > alpha then alpha = result.scoreCp
+                      completed += 1
+                catch
+                  case _: java.util.concurrent.ExecutionException =>
+                    failed = true
+                  case _: InterruptedException =>
+                    Thread.currentThread().interrupt()
+                    failed = true
+
+            if failed then
+              cancelRootFutures(futures)
+              None
+            else Some((bestMove, bestScore, totalNodes, totalStats))
+
+  private def searchRootMove(
+    state: GameState,
+    task: RootMoveTask,
+    depth: Int,
+    alpha: Double,
+    beta: Double,
+    deadline: Long,
+    rootDrawScore: Double
+  ): Option[RootMoveSearch] =
+    if System.currentTimeMillis() >= deadline then None
+    else
+      val profile = TimeProfile()
+      val nodes = Array(0L)
+      val stats = Array(SearchStats())
       val score =
-        if allowsImmediateMate then
+        if task.allowsImmediateMate then
           matedScore(plyFromRoot = 2)
-        else if isRepetitionMove || isStalemateMove then
+        else if task.isRepetitionMove || task.isStalemateMove then
           rootDrawScore
         else
           val amStart = System.nanoTime()
-          val child = fastApplyMove(state, move)
+          val child = fastApplyMove(state, task.move)
           profile.applyMoveNs += (System.nanoTime() - amStart)
-          sanitizeScore(-negamax(child, depth - 1, -beta, -alpha, deadline, nodes, stats, Some(move), profile, allowNullMove = true, plyFromRoot = 1))
-      if score > bestScore then
-        bestScore = score
-        bestMove = Some(move)
-      if score > alpha then alpha = score
+          val out = sanitizeScore(-negamax(child, depth - 1, -beta, -alpha, deadline, nodes, stats, Some(task.move), profile, allowNullMove = true, plyFromRoot = 1))
+          if System.currentTimeMillis() >= deadline then return None
+          out
+      Some(RootMoveSearch(task.index, task.move, sanitizeScore(score), nodes(0), stats(0), profile))
 
-    val elapsed = System.currentTimeMillis() - started
-    bestMove.map { move =>
-      val rootScore = sanitizeScore(bestScore)
-      val bound =
-        if rootScore <= startAlpha then 2
-        else if rootScore >= startBeta then 1
-        else 0
-      val ttPutStart = System.nanoTime()
-      putTt(
-        rootKey,
-        scoreToTt(rootScore, plyFromRoot = 0),
-        depth,
-        bound,
-        Some(move)
-      )
-      profile.ttNs += (System.nanoTime() - ttPutStart)
-      RootSearch(move, rootScore, nodes(0), elapsed, stats(0))
-    }
+  private def cancelRootFutures(futures: java.util.List[Future[Option[RootMoveSearch]]]): Unit =
+    var i = 0
+    while i < futures.size() do
+      futures.get(i).cancel(true)
+      i += 1
+
+  private def isBetterRootResult(score: Double, index: Int, bestScore: Double, bestIndex: Int): Boolean =
+    score > bestScore || (score == bestScore && index < bestIndex)
 
   private def negamax(
     state: GameState,
@@ -643,13 +821,15 @@ object AlphaBetaAgent:
             captureHistoryCutoffs = old.captureHistoryCutoffs + (if hasCaptureHistory then 1 else 0)
           )
           val heuStart = System.nanoTime()
-          if isCaptureMove then
-            updateCaptureHistory(state, move, depth)
-          else
-            updateKillers(depth, move)
-            updateHistory(state.activeColor, move, depth)
-            updateCounterMove(state.activeColor, prevMove, move)
-            updateContinuationHistory(state.activeColor, prevMove, move, depth)
+          orderingHeuristicLock.synchronized {
+            if isCaptureMove then
+              updateCaptureHistory(state, move, depth)
+            else
+              updateKillers(depth, move)
+              updateHistory(state.activeColor, move, depth)
+              updateCounterMove(state.activeColor, prevMove, move)
+              updateContinuationHistory(state.activeColor, prevMove, move, depth)
+          }
           profile.heuristicNs += (System.nanoTime() - heuStart)
           boundary.break(currentAlpha)
       moveIndex += 1
@@ -1994,6 +2174,20 @@ object AlphaBetaAgent:
       continuationCutoffs = a.continuationCutoffs + b.continuationCutoffs,
       captureHistoryCutoffs = a.captureHistoryCutoffs + b.captureHistoryCutoffs
     )
+
+  private def mergeTimeProfile(target: TimeProfile, source: TimeProfile): Unit =
+    target.totalNs += source.totalNs
+    target.tablebaseLookupNs += source.tablebaseLookupNs
+    target.openingLookupNs += source.openingLookupNs
+    target.searchNs += source.searchNs
+    target.orderMovesNs += source.orderMovesNs
+    target.evalNs += source.evalNs
+    target.evalHceNs += source.evalHceNs
+    target.moveGenNs += source.moveGenNs
+    target.applyMoveNs += source.applyMoveNs
+    target.statusNs += source.statusNs
+    target.ttNs += source.ttNs
+    target.heuristicNs += source.heuristicNs
 
   private def logSearchHeuristicSavings(nodes: Long, stats: SearchStats): Unit =
     val heuristicShareOfCutoffs =
