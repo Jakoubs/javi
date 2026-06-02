@@ -8,17 +8,20 @@ WORKDIR /app
 COPY project/ project/
 COPY build.sbt .
 
-# Copy only the modules needed for rest (model, util, ai, controller, rest)
-COPY model/      model/
-COPY util/       util/
-COPY ai/         ai/
-COPY controller/ controller/
-COPY rest/       rest/
+# Copy the modules needed for rest (model, util, ai, controller, persistence, lichess, rest)
+COPY model/       model/
+COPY util/        util/
+COPY ai/          ai/
+COPY controller/  controller/
+COPY persistence/ persistence/
+COPY lichess/     lichess/
+COPY rest/        rest/
 
 # Build fat JAR – reuse ivy/sbt cache via BuildKit cache mount
+# Increase memory and disable supershell to prevent hangs and provide better logs
 RUN --mount=type=cache,target=/root/.ivy2/cache \
     --mount=type=cache,target=/root/.sbt \
-    sbt rest/assembly
+    SBT_OPTS="-Xmx2G -Xss2M -Dsbt.supershell=false" sbt rest/assembly
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy
