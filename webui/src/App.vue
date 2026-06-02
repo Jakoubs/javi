@@ -10,8 +10,9 @@ import PuzzleView from './components/PuzzleView.vue'
 import HomeView from './components/HomeView.vue'
 import AdminPanel from './components/AdminPanel.vue'
 import UserSettings from './components/UserSettings.vue'
+import TournamentView from './components/TournamentView.vue'
 
-const activeView = ref('home') // 'home', 'game', or 'puzzles'
+const activeView = ref('home') // 'home', 'game', 'puzzles', or 'tournament'
 const isSpectatorForced = ref(false)
 const showNewGameModal = ref(false)
 const showAdminPanel = ref(false)
@@ -781,6 +782,12 @@ const effectiveFlipped = computed(() => {
           <div class="premium-tag">Premium Chess Experience</div>
         </div>
 
+        <div class="nav-tabs">
+          <button :class="['nav-btn', { active: activeView === 'home' }]" @click="goToHome">Home</button>
+          <button :class="['nav-btn', { active: activeView === 'puzzles' }]" @click="activeView = 'puzzles'">Puzzles</button>
+          <button :class="['nav-btn', { active: activeView === 'tournament' }]" @click="activeView = 'tournament'">Tournament</button>
+        </div>
+
         <div class="parser-switcher" v-show="activeView === 'game'">
           <label for="parser-select">PGN Parser:</label>
           <select id="parser-select" :value="state.activePgnParser" @change="handleSwitchParser" class="glass-select">
@@ -952,6 +959,11 @@ const effectiveFlipped = computed(() => {
     <!-- Puzzle View -->
     <main v-else-if="activeView === 'puzzles'">
       <PuzzleView :serverUrl="serverUrl" />
+    </main>
+
+    <!-- Tournament Server View -->
+    <main v-else-if="activeView === 'tournament'">
+      <TournamentView />
     </main>
 
     <!-- Game View -->
