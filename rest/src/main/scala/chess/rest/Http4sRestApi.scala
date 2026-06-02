@@ -75,6 +75,26 @@ class Http4sRestApi(
     val id = sid.getOrElse("default")
     (id, sessions.getOrElseUpdate(id, SessionState()))
 
+  private def updateSessionWithResult[A](id: String)(f: SessionState => (SessionState, A)): IO[A] = IO {
+    var succeeded = false
+    var result: A = null.asInstanceOf[A]
+    while (!succeeded) {
+      val current = sessions.getOrElseUpdate(id, SessionState())
+      val (updated, res) = f(current)
+      if (sessions.replace(id, current, updated)) {
+        succeeded = true
+        result = res
+      }
+    }
+    result
+  }
+
+  private def updateSession(id: String)(f: SessionState => SessionState): IO[SessionState] =
+    updateSessionWithResult(id)(s => {
+      val updated = f(s)
+      (updated, updated)
+    })
+
   private def buildStateResponse(session: SessionState): GameStateResponse =
     val state = session.appState
     GameStateResponse(
@@ -126,15 +146,14 @@ class Http4sRestApi(
 
   private def dispatch(sessionId: String, cmd: Command): IO[AppState] = 
     for {
-      sessionData <- IO(getSession(Some(sessionId)))
-      (id, session) = sessionData
-      newState      <- IO(GameController.handleCommand(session.appState, cmd))
-      
-      _ <- IO(sessions.put(id, session.copy(appState = newState)))
+      newState <- updateSessionWithResult(sessionId) { session =>
+        val newState = GameController.handleCommand(session.appState, cmd)
+        (session.copy(appState = newState), newState)
+      }
       
       _ <- (cmd, newState) match {
         case (Command.ApplyMove(move), s) if s.messageType != MessageType.Error =>
-          kafkaService.publishMove(id, move, s.game.toFen)
+          kafkaService.publishMove(sessionId, move, s.game.toFen)
         case _ => IO.unit
       }
       
@@ -245,55 +264,68 @@ class Http4sRestApi(
       }
 
     case GET -> Root / "api" / "state" :? SessionIdParam(sid) :? UsernameParam(username) =>
-      val (id, session) = getSession(sid)
+      val id = sid.getOrElse("default")
       val now = System.currentTimeMillis()
       
-      // Update active users and remove stale ones (> 15s)
-      val updatedUsers = (session.activeUsers ++ username.map(_ -> now))
-        .filter { case (_, lastSeen) => now - lastSeen < 15000 }
-        
-      val updatedSession = session.copy(activeUsers = updatedUsers)
-      val response = buildStateResponse(updatedSession)
-      
-      // Clear one-time message after build, but keep emotes (client handles deduplication)
-      sessions.put(id, updatedSession.copy(message = None))
-      
-      Ok(response.asJson)
+      updateSession(id) { session =>
+        val updatedUsers = (session.activeUsers ++ username.map(_ -> now))
+          .filter { case (_, lastSeen) => now - lastSeen < 15000 }
+        session.copy(activeUsers = updatedUsers)
+      }.flatMap { updatedSession =>
+        val response = buildStateResponse(updatedSession)
+        if (updatedSession.message.isDefined) {
+          updateSession(id)(_.copy(message = None)) >> Ok(response.asJson)
+        } else {
+          Ok(response.asJson)
+        }
+      }
 
     case req @ POST -> Root / "api" / "command" :? SessionIdParam(sid) =>
       req.as[String].flatMap { jsonString =>
         val (cleaned, finalJson) = normalizeCommandJson(jsonString)
-        val (sessionId, session) = getSession(sid)
-        decode[CommandRequest](finalJson) match {
-          case Right(cmdReq) =>
-            val cmd = CommandParser.parse(cmdReq.command, session.appState)
-            cmd match {
-              case Command.Flip =>
-                IO(sessions.put(sessionId, session.copy(flipped = !session.flipped))) >> Ok("View flipped")
-              case Command.SelectSquare(optPos) =>
-                val isMoveAttempt = optPos.exists(pos => session.highlights.contains(pos) && session.selectedPos.isDefined)
-                if (isMoveAttempt && optPos.isDefined) {
-                  dispatch(sessionId, Command.ApplyMove(chess.model.Move(session.selectedPos.get, optPos.get))).flatMap { newState =>
-                    IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None)))) >>
-                    (if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error")) else Ok("Move executed"))
+        val sessionId = sid.getOrElse("default")
+        IO(sessions.getOrElseUpdate(sessionId, SessionState())).flatMap { session =>
+          decode[CommandRequest](finalJson) match {
+            case Right(cmdReq) =>
+              val cmd = CommandParser.parse(cmdReq.command, session.appState)
+              cmd match {
+                case Command.Flip =>
+                  updateSession(sessionId)(s => s.copy(flipped = !s.flipped)) >> Ok("View flipped")
+                case Command.SelectSquare(optPos) =>
+                  updateSessionWithResult(sessionId) { s =>
+                    val isMoveAttempt = optPos.exists(pos => s.highlights.contains(pos) && s.selectedPos.isDefined)
+                    if (isMoveAttempt && optPos.isDefined) {
+                      (s, Right((s.selectedPos.get, optPos.get)))
+                    } else {
+                      val updated = handleSelectSquare(s.appState, s, optPos)
+                      (updated, Left(updated))
+                    }
+                  }.flatMap {
+                    case Right((from, to)) =>
+                      dispatch(sessionId, Command.ApplyMove(chess.model.Move(from, to))).flatMap { newState =>
+                        updateSession(sessionId)(_.copy(selectedPos = None, highlights = Set.empty, message = None)) >>
+                        (if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error")) else Ok("Move executed"))
+                      }
+                    case Left(_) =>
+                      Ok("Square selected")
                   }
-                } else {
-                  IO(handleSelectSquare(session.appState, session, optPos)).flatMap(updated => IO(sessions.put(sessionId, updated)) >> Ok("Square selected"))
-                }
-              case Command.AiMove | Command.AiSuggest =>
-                handleAiWithOpening(cmd, sessionId, session)
-              case Command.Emote(emoji) =>
-                val nextId = emoteCounter.incrementAndGet()
-                val newEmote = EmoteInfo(nextId, emoji)
-                IO(sessions.put(sessionId, session.copy(recentEmotes = (session.recentEmotes :+ newEmote).takeRight(20)))) >> Ok("Emote sent")
-              case _ =>
-                dispatch(sessionId, cmd).flatMap { newState =>
-                  val cleanup = if (cmd.isInstanceOf[Command.ApplyMove]) IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None)))) else IO.unit
-                  cleanup >> (if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error")) else Ok("Executed"))
-                }
-            }
-          case Left(_) =>
-            dispatch(sessionId, CommandParser.parse(cleaned, session.appState)).flatMap(ns => if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("Dispatched"))
+                case Command.AiMove | Command.AiSuggest =>
+                  handleAiWithOpening(cmd, sessionId)
+                case Command.Emote(emoji) =>
+                  val nextId = emoteCounter.incrementAndGet()
+                  val newEmote = EmoteInfo(nextId, emoji)
+                  updateSession(sessionId)(s => s.copy(recentEmotes = (s.recentEmotes :+ newEmote).takeRight(20))) >> Ok("Emote sent")
+                case _ =>
+                  dispatch(sessionId, cmd).flatMap { newState =>
+                    val cleanup = if (cmd.isInstanceOf[Command.ApplyMove]) {
+                      updateSession(sessionId)(_.copy(selectedPos = None, highlights = Set.empty, message = None)).void
+                    } else IO.unit
+                    cleanup >> (if (newState.messageType == MessageType.Error) BadRequest(newState.message.getOrElse("Error")) else Ok("Executed"))
+                  }
+              }
+            case Left(_) =>
+              dispatch(sessionId, CommandParser.parse(cleaned, session.appState)).flatMap(ns => if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("Dispatched"))
+          }
         }
       }
 
@@ -454,28 +486,31 @@ class Http4sRestApi(
       IO(println(s"[REST DEBUG] Unmatched request: ${req.method} ${req.uri}")) >> NotFound(s"Route not found: ${req.uri}")
   }
 
-  private def handleAiWithOpening(cmd: Command, sessionId: String, session: SessionState): IO[Response[IO]] =
-    val app = session.appState
-    openingDao.findByFen(app.game.toFen).flatMap {
-      case Nil => dispatch(sessionId, cmd).flatMap(ns => if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("AI moved"))
-      case openings =>
-        val chosen = openings(scala.util.Random.nextInt(openings.size))
-        CoordinateMoveParser.parse(chosen.move, app.game).toOption match {
-          case Some(move) =>
-            if (cmd == Command.AiMove) {
-              dispatch(sessionId, Command.ApplyMove(move)).flatMap { _ =>
-                val msg = s"AI played opening: ${chosen.name.getOrElse("Book Move")} (${chosen.move})"
-                dispatch(sessionId, Command.SetOpening(chosen.name)).flatMap { _ =>
-                  IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = Some(msg))))) >> Ok(msg)
+  private def handleAiWithOpening(cmd: Command, sessionId: String): IO[Response[IO]] =
+    for {
+      session <- IO(sessions.getOrElseUpdate(sessionId, SessionState()))
+      app = session.appState
+      res <- openingDao.findByFen(app.game.toFen).flatMap {
+        case Nil => dispatch(sessionId, cmd).flatMap(ns => if (ns.messageType == MessageType.Error) BadRequest(ns.message.getOrElse("Error")) else Ok("AI moved"))
+        case openings =>
+          val chosen = openings(scala.util.Random.nextInt(openings.size))
+          CoordinateMoveParser.parse(chosen.move, app.game).toOption match {
+            case Some(move) =>
+              if (cmd == Command.AiMove) {
+                dispatch(sessionId, Command.ApplyMove(move)).flatMap { _ =>
+                  val msg = s"AI played opening: ${chosen.name.getOrElse("Book Move")} (${chosen.move})"
+                  dispatch(sessionId, Command.SetOpening(chosen.name)).flatMap { _ =>
+                    updateSession(sessionId)(_.copy(selectedPos = None, highlights = Set.empty, message = Some(msg))) >> Ok(msg)
+                  }
                 }
+              } else {
+                val msg = s"Opening suggests: ${chosen.move}"
+                updateSession(sessionId)(_.copy(selectedPos = Some(move.from), highlights = Set(move.to), message = Some(msg))) >> Ok(msg)
               }
-            } else {
-              val msg = s"Opening suggests: ${chosen.move}"
-              IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = Some(move.from), highlights = Set(move.to), message = Some(msg))))) >> Ok(msg)
-            }
-          case None => dispatch(sessionId, cmd).flatMap(_ => Ok("AI moved (fallback)"))
-        }
-    }
+            case None => dispatch(sessionId, cmd).flatMap(_ => Ok("AI moved (fallback)"))
+          }
+      }
+    } yield res
 
   private def handleSelectSquare(app: AppState, session: SessionState, optPos: Option[Pos]): SessionState =
     optPos match

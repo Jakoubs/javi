@@ -1,0 +1,364 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/perf/apache-maven-3.9.9/lib/jansi-2.4.1.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/perf/apache-maven-3.9.9/lib/guava-33.2.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< chess.perf:chess-gatling >----------------------
+[INFO] Building chess-gatling 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> gatling:4.9.6:test (default-cli) > test-compile @ chess-gatling >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ chess-gatling ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/perf/gatling/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ chess-gatling ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ chess-gatling ---
+[WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] skip non existing resourceDirectory /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/perf/gatling/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ chess-gatling ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< gatling:4.9.6:test (default-cli) < test-compile @ chess-gatling <<<
+[INFO] 
+[INFO] 
+[INFO] --- gatling:4.9.6:test (default-cli) @ chess-gatling ---
+[INFO] Running simulation chess.perf.ChessApiSimulation.
+17:26:03,119 |-INFO in ch.qos.logback.classic.LoggerContext[default] - This is logback-classic version 1.5.6
+17:26:03,120 |-INFO in ch.qos.logback.classic.util.ContextInitializer@69b794e2 - No custom configurators were discovered as a service.
+17:26:03,121 |-INFO in ch.qos.logback.classic.util.ContextInitializer@69b794e2 - Trying to configure with ch.qos.logback.classic.joran.SerializedModelConfigurator
+17:26:03,122 |-INFO in ch.qos.logback.classic.util.ContextInitializer@69b794e2 - Constructed configurator of type class ch.qos.logback.classic.joran.SerializedModelConfigurator
+17:26:03,123 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback-test.scmo]
+17:26:03,124 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback.scmo]
+17:26:03,130 |-INFO in ch.qos.logback.classic.util.ContextInitializer@69b794e2 - ch.qos.logback.classic.joran.SerializedModelConfigurator.configure() call lasted 2 milliseconds. ExecutionStatus=INVOKE_NEXT_IF_ANY
+17:26:03,130 |-INFO in ch.qos.logback.classic.util.ContextInitializer@69b794e2 - Trying to configure with ch.qos.logback.classic.util.DefaultJoranConfigurator
+17:26:03,131 |-INFO in ch.qos.logback.classic.util.ContextInitializer@69b794e2 - Constructed configurator of type class ch.qos.logback.classic.util.DefaultJoranConfigurator
+17:26:03,132 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Could NOT find resource [logback-test.xml]
+17:26:03,135 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Found resource [logback.xml] at [jar:file:/home/jakobsteiner/.m2/repository/io/gatling/gatling-maven-plugin/4.9.6/gatling-maven-plugin-4.9.6.jar!/logback.xml]
+17:26:03,144 |-INFO in ch.qos.logback.core.joran.spi.ConfigurationWatchList@3f200884 - URL [jar:file:/home/jakobsteiner/.m2/repository/io/gatling/gatling-maven-plugin/4.9.6/gatling-maven-plugin-4.9.6.jar!/logback.xml] is not of type file
+17:26:03,263 |-WARN in ch.qos.logback.classic.joran.action.LevelAction - <level> element is deprecated. Near [level] on line 12
+17:26:03,263 |-WARN in ch.qos.logback.classic.joran.action.LevelAction - Please use "level" attribute within <logger> or <root> elements instead.
+17:26:03,365 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - Processing appender named [CONSOLE]
+17:26:03,366 |-INFO in ch.qos.logback.core.model.processor.AppenderModelHandler - About to instantiate appender of type [ch.qos.logback.core.ConsoleAppender]
+17:26:03,386 |-INFO in ch.qos.logback.core.model.processor.ImplicitModelHandler - Assuming default type [ch.qos.logback.classic.encoder.PatternLayoutEncoder] for [encoder] property
+17:26:03,439 |-INFO in ch.qos.logback.classic.model.processor.LevelModelHandler - ROOT level set to WARN
+17:26:03,440 |-INFO in ch.qos.logback.core.model.processor.AppenderRefModelHandler - Attaching appender named [CONSOLE] to Logger[ROOT]
+17:26:03,440 |-INFO in ch.qos.logback.core.model.processor.DefaultProcessor@4d339552 - End of configuration.
+17:26:03,441 |-INFO in ch.qos.logback.classic.joran.JoranConfigurator@f0f2775 - Registering current configuration as safe fallback point
+17:26:03,441 |-INFO in ch.qos.logback.classic.util.ContextInitializer@69b794e2 - ch.qos.logback.classic.util.DefaultJoranConfigurator.configure() call lasted 310 milliseconds. ExecutionStatus=DO_NOT_INVOKE_NEXT_IF_ANY
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::allocateMemory has been called by io.netty.util.internal.PlatformDependent0$2 (file:/home/jakobsteiner/.m2/repository/io/netty/netty-common/4.1.111.Final/netty-common-4.1.111.Final.jar)
+WARNING: Please consider reporting this to the maintainers of class io.netty.util.internal.PlatformDependent0$2
+WARNING: sun.misc.Unsafe::allocateMemory will be removed in a future release
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil in an unnamed module (file:/home/jakobsteiner/.m2/repository/io/netty/netty-common/4.1.111.Final/netty-common-4.1.111.Final.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Gatling 3.13.5 is available! (you're using 3.11.5)
+Simulation chess.perf.ChessApiSimulation started...
+
+================================================================================
+2026-05-04 15:26:11 GMT                                       5s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=30     KO=0     )
+> GET /ping                                                (OK=10     KO=0     )
+> GET /api/state                                           (OK=4      KO=0     )
+> POST /api/command (e2e4)                                 (OK=4      KO=0     )
+> GET /api/state (after move)                              (OK=4      KO=0     )
+> GET /api/legal-moves d7                                  (OK=4      KO=0     )
+> POST /api/command (d7d5)                                 (OK=4      KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[#####################################                                     ] 50%
+          waiting: 10     / active: 0      / done: 10    
+---- Chess Gameplay ------------------------------------------------------------
+[#                                                                         ]  2%
+          waiting: 166    / active: 0      / done: 4     
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:16 GMT                                      10s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=55     KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=7      KO=0     )
+> POST /api/command (e2e4)                                 (OK=7      KO=0     )
+> GET /api/state (after move)                              (OK=7      KO=0     )
+> GET /api/legal-moves d7                                  (OK=7      KO=0     )
+> POST /api/command (d7d5)                                 (OK=7      KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[###                                                                       ]  4%
+          waiting: 163    / active: 0      / done: 7     
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:21 GMT                                      15s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=70     KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=10     KO=0     )
+> POST /api/command (e2e4)                                 (OK=10     KO=0     )
+> GET /api/state (after move)                              (OK=10     KO=0     )
+> GET /api/legal-moves d7                                  (OK=10     KO=0     )
+> POST /api/command (d7d5)                                 (OK=10     KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[####                                                                      ]  5%
+          waiting: 160    / active: 0      / done: 10    
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:26 GMT                                      20s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=90     KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=14     KO=0     )
+> POST /api/command (e2e4)                                 (OK=14     KO=0     )
+> GET /api/state (after move)                              (OK=14     KO=0     )
+> GET /api/legal-moves d7                                  (OK=14     KO=0     )
+> POST /api/command (d7d5)                                 (OK=14     KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[######                                                                    ]  8%
+          waiting: 156    / active: 0      / done: 14    
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:31 GMT                                      25s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=105    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=17     KO=0     )
+> POST /api/command (e2e4)                                 (OK=17     KO=0     )
+> GET /api/state (after move)                              (OK=17     KO=0     )
+> GET /api/legal-moves d7                                  (OK=17     KO=0     )
+> POST /api/command (d7d5)                                 (OK=17     KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[#######                                                                   ] 10%
+          waiting: 153    / active: 0      / done: 17    
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:36 GMT                                      30s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=120    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=20     KO=0     )
+> POST /api/command (e2e4)                                 (OK=20     KO=0     )
+> GET /api/state (after move)                              (OK=20     KO=0     )
+> GET /api/legal-moves d7                                  (OK=20     KO=0     )
+> POST /api/command (d7d5)                                 (OK=20     KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[########                                                                  ] 11%
+          waiting: 150    / active: 0      / done: 20    
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:41 GMT                                      35s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=241    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=45     KO=0     )
+> POST /api/command (e2e4)                                 (OK=45     KO=0     )
+> GET /api/state (after move)                              (OK=44     KO=0     )
+> GET /api/legal-moves d7                                  (OK=44     KO=0     )
+> POST /api/command (d7d5)                                 (OK=43     KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[##################-                                                       ] 25%
+          waiting: 125    / active: 2      / done: 43    
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:46 GMT                                      40s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=366    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=70     KO=0     )
+> POST /api/command (e2e4)                                 (OK=70     KO=0     )
+> GET /api/state (after move)                              (OK=69     KO=0     )
+> GET /api/legal-moves d7                                  (OK=69     KO=0     )
+> POST /api/command (d7d5)                                 (OK=68     KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[#############################-                                            ] 40%
+          waiting: 100    / active: 2      / done: 68    
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:51 GMT                                      45s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=491    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=95     KO=0     )
+> POST /api/command (e2e4)                                 (OK=95     KO=0     )
+> GET /api/state (after move)                              (OK=94     KO=0     )
+> GET /api/legal-moves d7                                  (OK=94     KO=0     )
+> POST /api/command (d7d5)                                 (OK=93     KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[########################################-                                 ] 54%
+          waiting: 75     / active: 2      / done: 93    
+================================================================================
+
+
+================================================================================
+2026-05-04 15:26:56 GMT                                      50s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=616    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=120    KO=0     )
+> POST /api/command (e2e4)                                 (OK=120    KO=0     )
+> GET /api/state (after move)                              (OK=119    KO=0     )
+> GET /api/legal-moves d7                                  (OK=119    KO=0     )
+> POST /api/command (d7d5)                                 (OK=118    KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[###################################################-                      ] 69%
+          waiting: 50     / active: 2      / done: 118   
+================================================================================
+
+
+================================================================================
+2026-05-04 15:27:01 GMT                                      55s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=741    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=145    KO=0     )
+> POST /api/command (e2e4)                                 (OK=145    KO=0     )
+> GET /api/state (after move)                              (OK=144    KO=0     )
+> GET /api/legal-moves d7                                  (OK=144    KO=0     )
+> POST /api/command (d7d5)                                 (OK=143    KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[##############################################################-           ] 84%
+          waiting: 25     / active: 2      / done: 143   
+================================================================================
+
+
+================================================================================
+2026-05-04 15:27:06 GMT                                      60s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=866    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=170    KO=0     )
+> POST /api/command (e2e4)                                 (OK=170    KO=0     )
+> GET /api/state (after move)                              (OK=169    KO=0     )
+> GET /api/legal-moves d7                                  (OK=169    KO=0     )
+> POST /api/command (d7d5)                                 (OK=168    KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[#########################################################################-] 98%
+          waiting: 0      / active: 2      / done: 168   
+================================================================================
+
+
+================================================================================
+2026-05-04 15:27:06 GMT                                      60s elapsed
+---- Requests ------------------------------------------------------------------
+> Global                                                   (OK=870    KO=0     )
+> GET /ping                                                (OK=20     KO=0     )
+> GET /api/state                                           (OK=170    KO=0     )
+> POST /api/command (e2e4)                                 (OK=170    KO=0     )
+> GET /api/state (after move)                              (OK=170    KO=0     )
+> GET /api/legal-moves d7                                  (OK=170    KO=0     )
+> POST /api/command (d7d5)                                 (OK=170    KO=0     )
+
+---- Ping ----------------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 20    
+---- Chess Gameplay ------------------------------------------------------------
+[##########################################################################]100%
+          waiting: 0      / active: 0      / done: 170   
+================================================================================
+
+Simulation chess.perf.ChessApiSimulation completed in 60 seconds
+Parsing log file(s)...
+Parsing log file(s) done in 0s.
+Generating reports...
+
+================================================================================
+---- Global Information --------------------------------------------------------
+> request count                                        870 (OK=870    KO=0     )
+> min response time                                      0 (OK=0      KO=-     )
+> max response time                                     14 (OK=14     KO=-     )
+> mean response time                                     2 (OK=2      KO=-     )
+> std deviation                                          2 (OK=2      KO=-     )
+> response time 50th percentile                          2 (OK=2      KO=-     )
+> response time 75th percentile                          3 (OK=3      KO=-     )
+> response time 95th percentile                          5 (OK=5      KO=-     )
+> response time 99th percentile                          8 (OK=8      KO=-     )
+> mean requests/sec                                  14.26 (OK=14.26  KO=-     )
+---- Response Time Distribution ------------------------------------------------
+> t < 800 ms                                           870 (   100%)
+> 800 ms <= t < 1200 ms                                  0 (     0%)
+> t >= 1200 ms                                           0 (     0%)
+> failed                                                 0 (     0%)
+================================================================================
+
+Reports generated, please open the following file: file:///home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/perf/gatling/results/chessapisimulation-20260504152606095/index.html
+Global: 95th percentile of response time is less than 500.0 : true (actual : 5.0)
+Global: percentage of failed events is less than 1.0 : true (actual : 0.0)
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:06 min
+[INFO] Finished at: 2026-05-04T17:27:07+02:00
+[INFO] ------------------------------------------------------------------------

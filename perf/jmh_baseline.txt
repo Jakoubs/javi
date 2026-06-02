@@ -1,0 +1,655 @@
+[info] welcome to sbt 1.12.6 (Red Hat, Inc. Java 25.0.3)
+[info] loading settings for project javi-build from plugins.sbt...
+[info] loading project definition from /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to chess-functional-improvements (in build file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/)
+[info] .env detected (fileName=.env). About to configure JVM System Environment with new map
+java.lang.reflect.InaccessibleObjectException: Unable to make field private static final java.util.HashMap java.lang.ProcessEnvironment.theEnvironment accessible: module java.base does not "opens java.lang" to unnamed module @118b73d9
+	at java.base/java.lang.reflect.AccessibleObject.throwInaccessibleObjectException(AccessibleObject.java:353)
+	at java.base/java.lang.reflect.AccessibleObject.checkCanSetAccessible(AccessibleObject.java:329)
+	at java.base/java.lang.reflect.AccessibleObject.checkCanSetAccessible(AccessibleObject.java:277)
+	at java.base/java.lang.reflect.Field.checkCanSetAccessible(Field.java:179)
+	at java.base/java.lang.reflect.Field.setAccessible(Field.java:173)
+	at au.com.onegeek.sbtdotenv.DirtyEnvironmentHack$.$anonfun$setEnv$1(DirtyEnvironmentHack.scala:42)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.util.Try$.apply(Try.scala:213)
+	at au.com.onegeek.sbtdotenv.DirtyEnvironmentHack$.setEnv(DirtyEnvironmentHack.scala:38)
+	at au.com.onegeek.sbtdotenv.SbtDotenv$.applyEnvironment(SbtDotenv.scala:93)
+	at au.com.onegeek.sbtdotenv.SbtDotenv$.$anonfun$configureEnvironment$2(SbtDotenv.scala:75)
+	at scala.Option.fold(Option.scala:251)
+	at au.com.onegeek.sbtdotenv.SbtDotenv$.configureEnvironment(SbtDotenv.scala:75)
+	at au.com.onegeek.sbtdotenv.SbtDotenv$autoImport$.$anonfun$dotEnv$1(SbtDotenv.scala:43)
+	at scala.Function1.$anonfun$compose$1(Function1.scala:49)
+	at scala.Function1.$anonfun$compose$1(Function1.scala:49)
+	at scala.Function1.$anonfun$compose$1(Function1.scala:49)
+	at scala.Function1.$anonfun$compose$1(Function1.scala:49)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at spray.revolver.RevolverPlugin$.$anonfun$settings$23(RevolverPlugin.scala:105)
+	at sbt.Project$.setProject(Project.scala:502)
+	at sbt.BuiltinCommands$.doLoadProject(Main.scala:979)
+	at sbt.BuiltinCommands$.$anonfun$loadProjectImpl$2(Main.scala:917)
+	at sbt.Command$.$anonfun$applyEffect$4(Command.scala:151)
+	at sbt.Command$.$anonfun$applyEffect$2(Command.scala:146)
+	at sbt.Command$.process(Command.scala:194)
+	at sbt.MainLoop$.$anonfun$processCommand$7(MainLoop.scala:267)
+	at scala.Option.getOrElse(Option.scala:189)
+	at sbt.MainLoop$.process$1(MainLoop.scala:267)
+	at sbt.MainLoop$.processCommand(MainLoop.scala:314)
+	at sbt.MainLoop$.$anonfun$next$5(MainLoop.scala:171)
+	at sbt.State$StateOpsImpl$.runCmd$1(State.scala:290)
+	at sbt.State$StateOpsImpl$.process$extension(State.scala:326)
+	at sbt.MainLoop$.$anonfun$next$4(MainLoop.scala:171)
+	at sbt.internal.util.ErrorHandling$.wideConvert(ErrorHandling.scala:24)
+	at sbt.MainLoop$.next(MainLoop.scala:171)
+	at sbt.MainLoop$.run(MainLoop.scala:152)
+	at sbt.MainLoop$.$anonfun$runWithNewLog$1(MainLoop.scala:127)
+	at sbt.io.Using.apply(Using.scala:41)
+	at sbt.MainLoop$.runWithNewLog(MainLoop.scala:120)
+	at sbt.MainLoop$.runAndClearLast(MainLoop.scala:74)
+	at sbt.MainLoop$.runLoggedLoop(MainLoop.scala:59)
+	at sbt.MainLoop$.runLogged(MainLoop.scala:50)
+	at sbt.StandardMain$.runManaged(Main.scala:225)
+	at sbt.xMain$.$anonfun$run$11(Main.scala:136)
+	at scala.util.DynamicVariable.withValue(DynamicVariable.scala:62)
+	at scala.Console$.withIn(Console.scala:230)
+	at sbt.internal.util.Terminal$.withIn(Terminal.scala:620)
+	at sbt.internal.util.Terminal$.$anonfun$withStreams$1(Terminal.scala:400)
+	at scala.util.DynamicVariable.withValue(DynamicVariable.scala:62)
+	at scala.Console$.withOut(Console.scala:167)
+	at sbt.internal.util.Terminal$.$anonfun$withOut$2(Terminal.scala:610)
+	at scala.util.DynamicVariable.withValue(DynamicVariable.scala:62)
+	at scala.Console$.withErr(Console.scala:196)
+	at sbt.internal.util.Terminal$.withOut(Terminal.scala:610)
+	at sbt.internal.util.Terminal$.withStreams(Terminal.scala:400)
+	at sbt.xMain$.withStreams$1(Main.scala:89)
+	at sbt.xMain$.run(Main.scala:124)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at sbt.internal.XMainConfiguration.run(XMainConfiguration.java:59)
+	at sbt.xMain.run(Main.scala:48)
+	at xsbt.boot.Launch$.run$$anonfun$1(Launch.scala:132)
+	at xsbt.boot.Launch$.withContextLoader(Launch.scala:157)
+	at xsbt.boot.Launch$.run(Launch.scala:132)
+	at xsbt.boot.Launch$.apply$$anonfun$1(Launch.scala:43)
+	at xsbt.boot.Launch$.launch(Launch.scala:142)
+	at xsbt.boot.Launch$.apply(Launch.scala:43)
+	at xsbt.boot.Launch$.apply(Launch.scala:24)
+	at xsbt.boot.Boot$.runImpl(Boot.scala:73)
+	at xsbt.boot.Boot$.run(Boot.scala:69)
+	at xsbt.boot.Boot$.main(Boot.scala:23)
+	at xsbt.boot.Boot.main(Boot.scala)
+[info] Configured .env environment
+[info] compiling 1 Scala source to /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/classes ...
+[info] done compiling
+[info] running (fork) org.openjdk.jmh.generators.bytecode.JmhBytecodeGenerator /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/classes /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/src_managed/jmh /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/resource_managed/jmh default
+[info] Processing 1 classes from /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/classes with "reflection" generator
+[info] Writing out Java source to /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/src_managed/jmh and resources to /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/resource_managed/jmh
+[info] compiling 13 Java sources to /home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/benchmark/target/scala-3.3.4/classes ...
+[info] done compiling
+[info] running (fork) org.openjdk.jmh.Main -i 5 -wi 3 -f 1 -t 1
+[error] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[error] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[error] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[error] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.fromFen_complex
+[info] # Run progress: 0,00% complete, ETA 00:02:24
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,024 ops/us
+[info] # Warmup Iteration   2: 0,095 ops/us
+[info] # Warmup Iteration   3: 0,143 ops/us
+[info] Iteration   1: 0,147 ops/us
+[info] Iteration   2: 0,149 ops/us
+[info] Iteration   3: 0,147 ops/us
+[info] Iteration   4: 0,149 ops/us
+[info] Iteration   5: 0,119 ops/us
+[info] Result "chess.benchmark.FenBenchmark.fromFen_complex":
+[info]   0,142 ±(99.9%) 0,049 ops/us [Average]
+[info]   (min, avg, max) = (0,119, 0,142, 0,149), stdev = 0,013
+[info]   CI (99.9%): [0,093, 0,191] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.fromFen_initial
+[info] # Run progress: 5,56% complete, ETA 00:02:27
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,112 ops/us
+[info] # Warmup Iteration   2: 0,163 ops/us
+[info] # Warmup Iteration   3: 0,170 ops/us
+[info] Iteration   1: 0,151 ops/us
+[info] Iteration   2: 0,134 ops/us
+[info] Iteration   3: 0,175 ops/us
+[info] Iteration   4: 0,172 ops/us
+[info] Iteration   5: 0,179 ops/us
+[info] Result "chess.benchmark.FenBenchmark.fromFen_initial":
+[info]   0,162 ±(99.9%) 0,074 ops/us [Average]
+[info]   (min, avg, max) = (0,134, 0,162, 0,179), stdev = 0,019
+[info]   CI (99.9%): [0,088, 0,237] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.fromFen_midgame
+[info] # Run progress: 11,11% complete, ETA 00:02:17
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,070 ops/us
+[info] # Warmup Iteration   2: 0,150 ops/us
+[info] # Warmup Iteration   3: 0,165 ops/us
+[info] Iteration   1: 0,163 ops/us
+[info] Iteration   2: 0,156 ops/us
+[info] Iteration   3: 0,168 ops/us
+[info] Iteration   4: 0,154 ops/us
+[info] Iteration   5: 0,127 ops/us
+[info] Result "chess.benchmark.FenBenchmark.fromFen_midgame":
+[info]   0,154 ±(99.9%) 0,060 ops/us [Average]
+[info]   (min, avg, max) = (0,127, 0,154, 0,168), stdev = 0,016
+[info]   CI (99.9%): [0,093, 0,214] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.legalMoves_complex
+[info] # Run progress: 16,67% complete, ETA 00:02:08
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,012 ops/us
+[info] # Warmup Iteration   2: 0,019 ops/us
+[info] # Warmup Iteration   3: 0,018 ops/us
+[info] Iteration   1: 0,017 ops/us
+[info] Iteration   2: 0,017 ops/us
+[info] Iteration   3: 0,019 ops/us
+[info] Iteration   4: 0,019 ops/us
+[info] Iteration   5: 0,019 ops/us
+[info] Result "chess.benchmark.FenBenchmark.legalMoves_complex":
+[info]   0,018 ±(99.9%) 0,004 ops/us [Average]
+[info]   (min, avg, max) = (0,017, 0,018, 0,019), stdev = 0,001
+[info]   CI (99.9%): [0,014, 0,022] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.legalMoves_initial
+[info] # Run progress: 22,22% complete, ETA 00:02:00
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,023 ops/us
+[info] # Warmup Iteration   2: 0,029 ops/us
+[info] # Warmup Iteration   3: 0,036 ops/us
+[info] Iteration   1: 0,041 ops/us
+[info] Iteration   2: 0,037 ops/us
+[info] Iteration   3: 0,040 ops/us
+[info] Iteration   4: 0,041 ops/us
+[info] Iteration   5: 0,042 ops/us
+[info] Result "chess.benchmark.FenBenchmark.legalMoves_initial":
+[info]   0,040 ±(99.9%) 0,007 ops/us [Average]
+[info]   (min, avg, max) = (0,037, 0,040, 0,042), stdev = 0,002
+[info]   CI (99.9%): [0,033, 0,048] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.legalMoves_midgame
+[info] # Run progress: 27,78% complete, ETA 00:01:51
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,020 ops/us
+[info] # Warmup Iteration   2: 0,026 ops/us
+[info] # Warmup Iteration   3: 0,030 ops/us
+[info] Iteration   1: 0,028 ops/us
+[info] Iteration   2: 0,026 ops/us
+[info] Iteration   3: 0,021 ops/us
+[info] Iteration   4: 0,026 ops/us
+[info] Iteration   5: 0,029 ops/us
+[info] Result "chess.benchmark.FenBenchmark.legalMoves_midgame":
+[info]   0,026 ±(99.9%) 0,012 ops/us [Average]
+[info]   (min, avg, max) = (0,021, 0,026, 0,029), stdev = 0,003
+[info]   CI (99.9%): [0,014, 0,038] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.toFenPlacement_complex
+[info] # Run progress: 33,33% complete, ETA 00:01:42
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,354 ops/us
+[info] # Warmup Iteration   2: 0,488 ops/us
+[info] # Warmup Iteration   3: 0,523 ops/us
+[info] Iteration   1: 0,519 ops/us
+[info] Iteration   2: 0,509 ops/us
+[info] Iteration   3: 0,526 ops/us
+[info] Iteration   4: 0,527 ops/us
+[info] Iteration   5: 0,479 ops/us
+[info] Result "chess.benchmark.FenBenchmark.toFenPlacement_complex":
+[info]   0,512 ±(99.9%) 0,076 ops/us [Average]
+[info]   (min, avg, max) = (0,479, 0,512, 0,527), stdev = 0,020
+[info]   CI (99.9%): [0,436, 0,588] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.toFenPlacement_initial
+[info] # Run progress: 38,89% complete, ETA 00:01:34
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,326 ops/us
+[info] # Warmup Iteration   2: 0,571 ops/us
+[info] # Warmup Iteration   3: 0,615 ops/us
+[info] Iteration   1: 0,627 ops/us
+[info] Iteration   2: 0,659 ops/us
+[info] Iteration   3: 0,627 ops/us
+[info] Iteration   4: 0,639 ops/us
+[info] Iteration   5: 0,607 ops/us
+[info] Result "chess.benchmark.FenBenchmark.toFenPlacement_initial":
+[info]   0,632 ±(99.9%) 0,074 ops/us [Average]
+[info]   (min, avg, max) = (0,607, 0,632, 0,659), stdev = 0,019
+[info]   CI (99.9%): [0,558, 0,706] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Throughput, ops/time
+[info] # Benchmark: chess.benchmark.FenBenchmark.toFenPlacement_midgame
+[info] # Run progress: 44,44% complete, ETA 00:01:25
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 0,400 ops/us
+[info] # Warmup Iteration   2: 0,537 ops/us
+[info] # Warmup Iteration   3: 0,429 ops/us
+[info] Iteration   1: 0,441 ops/us
+[info] Iteration   2: 0,517 ops/us
+[info] Iteration   3: 0,540 ops/us
+[info] Iteration   4: 0,578 ops/us
+[info] Iteration   5: 0,562 ops/us
+[info] Result "chess.benchmark.FenBenchmark.toFenPlacement_midgame":
+[info]   0,527 ±(99.9%) 0,206 ops/us [Average]
+[info]   (min, avg, max) = (0,441, 0,527, 0,578), stdev = 0,054
+[info]   CI (99.9%): [0,321, 0,734] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.fromFen_complex
+[info] # Run progress: 50,00% complete, ETA 00:01:17
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 11,475 us/op
+[info] # Warmup Iteration   2: 7,411 us/op
+[info] # Warmup Iteration   3: 6,572 us/op
+[info] Iteration   1: 6,605 us/op
+[info] Iteration   2: 7,234 us/op
+[info] Iteration   3: 7,137 us/op
+[info] Iteration   4: 9,184 us/op
+[info] Iteration   5: 6,684 us/op
+[info] Result "chess.benchmark.FenBenchmark.fromFen_complex":
+[info]   7,369 ±(99.9%) 4,048 us/op [Average]
+[info]   (min, avg, max) = (6,605, 7,369, 9,184), stdev = 1,051
+[info]   CI (99.9%): [3,321, 11,417] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.fromFen_initial
+[info] # Run progress: 55,56% complete, ETA 00:01:08
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 10,527 us/op
+[info] # Warmup Iteration   2: 6,328 us/op
+[info] # Warmup Iteration   3: 5,679 us/op
+[info] Iteration   1: 5,754 us/op
+[info] Iteration   2: 6,069 us/op
+[info] Iteration   3: 5,749 us/op
+[info] Iteration   4: 6,200 us/op
+[info] Iteration   5: 5,661 us/op
+[info] Result "chess.benchmark.FenBenchmark.fromFen_initial":
+[info]   5,887 ±(99.9%) 0,902 us/op [Average]
+[info]   (min, avg, max) = (5,661, 5,887, 6,200), stdev = 0,234
+[info]   CI (99.9%): [4,985, 6,788] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.fromFen_midgame
+[info] # Run progress: 61,11% complete, ETA 00:01:00
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 14,294 us/op
+[info] # Warmup Iteration   2: 9,024 us/op
+[info] # Warmup Iteration   3: 6,272 us/op
+[info] Iteration   1: 6,250 us/op
+[info] Iteration   2: 6,327 us/op
+[info] Iteration   3: 6,204 us/op
+[info] Iteration   4: 6,365 us/op
+[info] Iteration   5: 6,289 us/op
+[info] Result "chess.benchmark.FenBenchmark.fromFen_midgame":
+[info]   6,287 ±(99.9%) 0,244 us/op [Average]
+[info]   (min, avg, max) = (6,204, 6,287, 6,365), stdev = 0,063
+[info]   CI (99.9%): [6,043, 6,530] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.legalMoves_complex
+[info] # Run progress: 66,67% complete, ETA 00:00:51
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 98,871 us/op
+[info] # Warmup Iteration   2: 52,518 us/op
+[info] # Warmup Iteration   3: 48,681 us/op
+[info] Iteration   1: 54,729 us/op
+[info] Iteration   2: 66,287 us/op
+[info] Iteration   3: 50,110 us/op
+[info] Iteration   4: 48,907 us/op
+[info] Iteration   5: 48,292 us/op
+[info] Result "chess.benchmark.FenBenchmark.legalMoves_complex":
+[info]   53,665 ±(99.9%) 28,853 us/op [Average]
+[info]   (min, avg, max) = (48,292, 53,665, 66,287), stdev = 7,493
+[info]   CI (99.9%): [24,812, 82,518] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.legalMoves_initial
+[info] # Run progress: 72,22% complete, ETA 00:00:42
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 40,063 us/op
+[info] # Warmup Iteration   2: 26,094 us/op
+[info] # Warmup Iteration   3: 28,138 us/op
+[info] Iteration   1: 26,618 us/op
+[info] Iteration   2: 26,175 us/op
+[info] Iteration   3: 25,393 us/op
+[info] Iteration   4: 26,878 us/op
+[info] Iteration   5: 33,352 us/op
+[info] Result "chess.benchmark.FenBenchmark.legalMoves_initial":
+[info]   27,683 ±(99.9%) 12,393 us/op [Average]
+[info]   (min, avg, max) = (25,393, 27,683, 33,352), stdev = 3,219
+[info]   CI (99.9%): [15,290, 40,077] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.legalMoves_midgame
+[info] # Run progress: 77,78% complete, ETA 00:00:34
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 52,459 us/op
+[info] # Warmup Iteration   2: 34,997 us/op
+[info] # Warmup Iteration   3: 33,907 us/op
+[info] Iteration   1: 33,800 us/op
+[info] Iteration   2: 37,077 us/op
+[info] Iteration   3: 33,270 us/op
+[info] Iteration   4: 33,800 us/op
+[info] Iteration   5: 32,855 us/op
+[info] Result "chess.benchmark.FenBenchmark.legalMoves_midgame":
+[info]   34,160 ±(99.9%) 6,461 us/op [Average]
+[info]   (min, avg, max) = (32,855, 34,160, 37,077), stdev = 1,678
+[info]   CI (99.9%): [27,699, 40,622] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.toFenPlacement_complex
+[info] # Run progress: 83,33% complete, ETA 00:00:25
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 2,546 us/op
+[info] # Warmup Iteration   2: 2,290 us/op
+[info] # Warmup Iteration   3: 2,265 us/op
+[info] Iteration   1: 1,873 us/op
+[info] Iteration   2: 1,918 us/op
+[info] Iteration   3: 1,944 us/op
+[info] Iteration   4: 2,030 us/op
+[info] Iteration   5: 1,864 us/op
+[info] Result "chess.benchmark.FenBenchmark.toFenPlacement_complex":
+[info]   1,926 ±(99.9%) 0,258 us/op [Average]
+[info]   (min, avg, max) = (1,864, 1,926, 2,030), stdev = 0,067
+[info]   CI (99.9%): [1,668, 2,184] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.toFenPlacement_initial
+[info] # Run progress: 88,89% complete, ETA 00:00:17
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 2,285 us/op
+[info] # Warmup Iteration   2: 1,770 us/op
+[info] # Warmup Iteration   3: 1,590 us/op
+[info] Iteration   1: 1,566 us/op
+[info] Iteration   2: 1,762 us/op
+[info] Iteration   3: 1,976 us/op
+[info] Iteration   4: 1,547 us/op
+[info] Iteration   5: 1,569 us/op
+[info] Result "chess.benchmark.FenBenchmark.toFenPlacement_initial":
+[info]   1,684 ±(99.9%) 0,714 us/op [Average]
+[info]   (min, avg, max) = (1,547, 1,684, 1,976), stdev = 0,185
+[info]   CI (99.9%): [0,970, 2,398] (assumes normal distribution)
+[info] # JMH version: 1.37
+[info] # VM version: JDK 25.0.3, OpenJDK 64-Bit Server VM, 25.0.3+9
+[info] # VM invoker: /usr/lib/jvm/java-25-openjdk/bin/java
+[info] # VM options: <none>
+[info] # Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+[info] # Warmup: 3 iterations, 1 s each
+[info] # Measurement: 5 iterations, 1 s each
+[info] # Timeout: 10 min per iteration
+[info] # Threads: 1 thread, will synchronize iterations
+[info] # Benchmark mode: Average time, time/op
+[info] # Benchmark: chess.benchmark.FenBenchmark.toFenPlacement_midgame
+[info] # Run progress: 94,44% complete, ETA 00:00:08
+[info] # Fork: 1 of 1
+[info] WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/jakobsteiner/Dokumente/fun_projects/Telebot/javi/target/bg-jobs/sbt_17eb221c/target/dd371411/1296d6b9/jmh-core-1.37.jar)
+[info] WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+[info] WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[info] # Warmup Iteration   1: 2,834 us/op
+[info] # Warmup Iteration   2: 1,940 us/op
+[info] # Warmup Iteration   3: 1,813 us/op
+[info] Iteration   1: 1,833 us/op
+[info] Iteration   2: 1,812 us/op
+[info] Iteration   3: 1,852 us/op
+[info] Iteration   4: 1,809 us/op
+[info] Iteration   5: 1,923 us/op
+[info] Result "chess.benchmark.FenBenchmark.toFenPlacement_midgame":
+[info]   1,846 ±(99.9%) 0,179 us/op [Average]
+[info]   (min, avg, max) = (1,809, 1,846, 1,923), stdev = 0,046
+[info]   CI (99.9%): [1,667, 2,025] (assumes normal distribution)
+[info] # Run complete. Total time: 00:02:34
+[info] REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+[info] why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+[info] experiments, perform baseline and negative tests that provide experimental control, make sure
+[info] the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+[info] Do not assume the numbers tell you what you want them to tell.
+[info] NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+[info] extra caution when trusting the results, look into the generated code to check the benchmark still
+[info] works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+[info] different JVMs are already problematic, the performance difference caused by different Blackhole
+[info] modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+[info] Benchmark                             Mode  Cnt   Score    Error   Units
+[info] FenBenchmark.fromFen_complex         thrpt    5   0,142 ±  0,049  ops/us
+[info] FenBenchmark.fromFen_initial         thrpt    5   0,162 ±  0,074  ops/us
+[info] FenBenchmark.fromFen_midgame         thrpt    5   0,154 ±  0,060  ops/us
+[info] FenBenchmark.legalMoves_complex      thrpt    5   0,018 ±  0,004  ops/us
+[info] FenBenchmark.legalMoves_initial      thrpt    5   0,040 ±  0,007  ops/us
+[info] FenBenchmark.legalMoves_midgame      thrpt    5   0,026 ±  0,012  ops/us
+[info] FenBenchmark.toFenPlacement_complex  thrpt    5   0,512 ±  0,076  ops/us
+[info] FenBenchmark.toFenPlacement_initial  thrpt    5   0,632 ±  0,074  ops/us
+[info] FenBenchmark.toFenPlacement_midgame  thrpt    5   0,527 ±  0,206  ops/us
+[info] FenBenchmark.fromFen_complex          avgt    5   7,369 ±  4,048   us/op
+[info] FenBenchmark.fromFen_initial          avgt    5   5,887 ±  0,902   us/op
+[info] FenBenchmark.fromFen_midgame          avgt    5   6,287 ±  0,244   us/op
+[info] FenBenchmark.legalMoves_complex       avgt    5  53,665 ± 28,853   us/op
+[info] FenBenchmark.legalMoves_initial       avgt    5  27,683 ± 12,393   us/op
+[info] FenBenchmark.legalMoves_midgame       avgt    5  34,160 ±  6,461   us/op
+[info] FenBenchmark.toFenPlacement_complex   avgt    5   1,926 ±  0,258   us/op
+[info] FenBenchmark.toFenPlacement_initial   avgt    5   1,684 ±  0,714   us/op
+[info] FenBenchmark.toFenPlacement_midgame   avgt    5   1,846 ±  0,179   us/op
+[success] Total time: 162 s (0:02:42.0), completed 04.05.2026, 17:11:50

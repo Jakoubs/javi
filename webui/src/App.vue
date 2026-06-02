@@ -27,6 +27,15 @@ const showCustomInModal = ref(false)
 const customMin = ref(0)
 const customInc = ref(0)
 
+// ── Session & Role State (declared early to avoid TDZ) ───────────────────
+const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+const sessionId = ref(localStorage.getItem('chessSessionId') || generateId())
+if (!localStorage.getItem('chessSessionId')) {
+  localStorage.setItem('chessSessionId', sessionId.value)
+}
+const clientRole = ref(localStorage.getItem('chessClientRole') || 'white')
+const currentParty = ref(localStorage.getItem('chessPartyCode') || '')
+
 // ── User Settings ────────────────────────────────────────────────────────
 const DEFAULT_SETTINGS = { watchModeEnabled: true, showSpectatorCount: true, showEmotes: true, canSendEmotes: true }
 const savedSettings = JSON.parse(localStorage.getItem('chessUserSettings') || 'null')
@@ -38,6 +47,7 @@ const EMOTES = ['👏', '🔥', '😮', '😂', '💀', '🎉', '😤', '❤️'
 const activeEmotes = ref([])  // [{ id, emoji, lane }]
 let emoteIdCounter = 0
 const lastSeenEmoteId = ref(0)
+let isFirstFetch = true
 
 const addEmoteDisplay = (emoji) => {
   if (!userSettings.value.showEmotes) return
@@ -93,6 +103,7 @@ watch(() => clientRole.value, (newRole, oldRole) => {
 watch(() => currentParty.value, () => {
   spectatorCount.value = 0
   lastSeenEmoteId.value = 0
+  isFirstFetch = true
 })
 
 const timePresets = [
@@ -108,15 +119,7 @@ const serverUrl = ref(savedServer && (savedServer.includes(':8080') || savedServ
 const serverInput = ref(serverUrl.value)
 const serverConnected = ref(true)
 
-// ── Session ID (persisted in localStorage) ────────────────────────────────
-const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-const sessionId = ref(localStorage.getItem('chessSessionId') || generateId())
-if (!localStorage.getItem('chessSessionId')) {
-  localStorage.setItem('chessSessionId', sessionId.value)
-}
-
 // ── Player Role (White / Black / Spectator) ──────────────────────────────
-const clientRole = ref(localStorage.getItem('chessClientRole') || 'white')
 
 const setRole = (role) => {
   if (currentParty.value) return // Block switching in online games
@@ -315,7 +318,6 @@ const acceptFriend = async (friendId) => {
 
 // ── Party Code Logic ─────────────────────────────────────────────────────
 const partyCodeInput = ref('')
-const currentParty = ref(localStorage.getItem('chessPartyCode') || '')
 
 const effectiveSessionId = computed(() => currentParty.value || sessionId.value)
 
@@ -450,8 +452,7 @@ const fetchState = async () => {
       }
       // Handle server-side emotes with deduplication
       if (data.recentEmotes && data.recentEmotes.length > 0) {
-        // If it's the first poll with emotes, just set the baseline ID
-        if (lastSeenEmoteId.value === 0) {
+        if (isFirstFetch) {
           lastSeenEmoteId.value = Math.max(...data.recentEmotes.map(e => e.id))
         } else {
           data.recentEmotes.forEach(emote => {
@@ -462,6 +463,7 @@ const fetchState = async () => {
           })
         }
       }
+      isFirstFetch = false
     }
     
     if (currentUser.value) {

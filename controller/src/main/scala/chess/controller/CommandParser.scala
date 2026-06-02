@@ -39,6 +39,8 @@ object CommandParser:
         Command.LoadPgn(original.drop(9).trim)
       case s if s.startsWith("load fen ") => 
         Command.LoadFen(original.drop(9).trim)
+      case s if s.startsWith("emote ") =>
+        Command.Emote(original.drop(6).trim)
       
       case s if s.startsWith("start ") || s.startsWith("time ") =>
         val args = s.split("\\s+").drop(1)
