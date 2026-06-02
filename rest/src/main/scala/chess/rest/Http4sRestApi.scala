@@ -15,7 +15,7 @@ import org.http4s.circe.*
 import cats.data.Kleisli
 import org.http4s.server.middleware.ErrorHandling
 
-import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser}
+import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser, EmoteInfo}
 import chess.controller.{liveMillis, displayFen, historyFen}
 import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, materialInfo, capturedPieces}
 import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao}
@@ -28,13 +28,22 @@ case class SessionState(
   flipped: Boolean = false,
   highlights: Set[Pos] = Set.empty,
   selectedPos: Option[Pos] = None,
-  message: Option[String] = None
+  message: Option[String] = None,
+  recentEmotes: List[EmoteInfo] = Nil,
+  activeUsers: Map[String, Long] = Map.empty // username -> lastSeen
 )
 
 case class ChallengeRequest(friendId: Long)
 case class ChallengeResponse(partyCode: String)
 case class AddFriendRequest(friendName: String)
 case class AcceptFriendRequest(friendId: Long)
+case class UpdateUserRequest(username: String, email: String)
+case class GameChallenge(challengerId: Long, challengerName: String, challengedId: Long, partyCode: String, accepted: Boolean)
+case class AcceptChallengeRequest(partyCode: String)
+case class QueueJoinRequest(timeMs: Option[Long], incMs: Int)
+case class QueueEntry(userId: Long, timeMs: Option[Long], incMs: Int)
+case class PartyAssignment(partyCode: String, whiteUserId: Long, whiteUser: String, blackUserId: Long, blackUser: String)
+case class ActiveGameInfo(partyCode: String, whiteUser: String, blackUser: String)
 
 class Http4sRestApi(
   kafkaService: KafkaService,
@@ -48,8 +57,19 @@ class Http4sRestApi(
   implicit val challengeReqDecoder: EntityDecoder[IO, ChallengeRequest] = jsonOf[IO, ChallengeRequest]
   implicit val addFriendReqDecoder: EntityDecoder[IO, AddFriendRequest] = jsonOf[IO, AddFriendRequest]
   implicit val acceptFriendReqDecoder: EntityDecoder[IO, AcceptFriendRequest] = jsonOf[IO, AcceptFriendRequest]
+  implicit val updateUserReqDecoder: EntityDecoder[IO, UpdateUserRequest] = jsonOf[IO, UpdateUserRequest]
+  implicit val acceptChallengeReqDecoder: EntityDecoder[IO, AcceptChallengeRequest] = jsonOf[IO, AcceptChallengeRequest]
+  implicit val queueJoinReqDecoder: EntityDecoder[IO, QueueJoinRequest] = jsonOf[IO, QueueJoinRequest]
 
   private val sessions = TrieMap.empty[String, SessionState]
+  private val emoteCounter = new java.util.concurrent.atomic.AtomicLong(0)
+  private val pendingChallenges = TrieMap.empty[String, GameChallenge]
+  private val matchmakingQueue = TrieMap.empty[Long, QueueEntry]
+  private val partyAssignments = TrieMap.empty[String, PartyAssignment]
+  // Queue-only assignments: separate from friend-challenge partyAssignments
+  // so /queue/status doesn't accidentally find old challenge parties.
+  private val queueAssignments = TrieMap.empty[Long, PartyAssignment]
+  private val partyLeftUsers = TrieMap.empty[String, Set[Long]]
 
   private def getSession(sid: Option[String]): (String, SessionState) =
     val id = sid.getOrElse("default")
@@ -85,7 +105,9 @@ class Http4sRestApi(
       blackLiveMillis = state.liveMillis(Color.Black),
       activePgnParser = state.activePgnParser,
       activeMoveParser = state.activeMoveParser,
-      opening = state.opening
+      opening = state.opening,
+      recentEmotes = session.recentEmotes,
+      activeUsers = session.activeUsers.keys.toList
     )
 
   private def normalizeCommandJson(jsonString: String): (String, String) =
@@ -168,18 +190,74 @@ class Http4sRestApi(
         friendshipDao.acceptFriend(uid, accReq.friendId) >> Ok(s"Request accepted")
       }
 
-    case req @ POST -> Root / "api" / "social" / "challenge" =>
-      req.as[ChallengeRequest].flatMap { _ =>
-        val partyCode = java.util.UUID.randomUUID().toString.substring(0, 6).toUpperCase()
-        Ok(ChallengeResponse(partyCode).asJson)
+    case req @ POST -> Root / "api" / "social" / "challenge" :? UserIdParam(uid) =>
+      req.as[ChallengeRequest].flatMap { challengeReq =>
+        authService.userDao.findById(uid).flatMap {
+          case Some(challenger) =>
+            val partyCode = java.util.UUID.randomUUID().toString.substring(0, 6).toUpperCase()
+            val challenge = GameChallenge(uid, challenger.username, challengeReq.friendId, partyCode, accepted = false)
+            pendingChallenges.put(partyCode, challenge)
+            Ok(ChallengeResponse(partyCode).asJson)
+          case None =>
+            NotFound(s"Challenger not found")
+        }
       }
 
-    case GET -> Root / "api" / "state" :? SessionIdParam(sid) =>
-      val (id, session) = getSession(sid)
-      val response = buildStateResponse(session)
-      if (session.message.isDefined) {
-        sessions.put(id, session.copy(message = None))
+    case GET -> Root / "api" / "social" / "challenges" :? UserIdParam(uid) =>
+      val list = pendingChallenges.values.filter(c => c.challengedId == uid && !c.accepted).toList
+      Ok(list.asJson)
+
+    case GET -> Root / "api" / "social" / "challenges" / "outgoing" :? UserIdParam(uid) =>
+      val list = pendingChallenges.values.filter(c => c.challengerId == uid).toList
+      Ok(list.asJson)
+
+    case req @ POST -> Root / "api" / "social" / "challenge" / "accept" :? UserIdParam(uid) =>
+      req.as[AcceptChallengeRequest].flatMap { acceptReq =>
+        pendingChallenges.get(acceptReq.partyCode) match {
+          case Some(c) =>
+            val updated = c.copy(accepted = true)
+            pendingChallenges.put(acceptReq.partyCode, updated)
+            
+            val setupParty = if (!partyAssignments.contains(acceptReq.partyCode)) {
+              val isChallengerWhite = scala.util.Random.nextBoolean()
+              val (wId, bId) = if (isChallengerWhite) (c.challengerId, c.challengedId) else (c.challengedId, c.challengerId)
+              
+              for {
+                wOpt <- authService.userDao.findById(wId)
+                bOpt <- authService.userDao.findById(bId)
+                wName = wOpt.map(_.username).getOrElse(if (wId == 0) "admin" else "Unknown")
+                bName = bOpt.map(_.username).getOrElse(if (bId == 0) "admin" else "Unknown")
+                assignment = PartyAssignment(acceptReq.partyCode, wId, wName, bId, bName)
+                _ <- IO(partyAssignments.put(acceptReq.partyCode, assignment))
+              } yield ()
+            } else IO.unit
+            
+            setupParty >> Ok(ChallengeResponse(acceptReq.partyCode).asJson)
+          case None =>
+            NotFound("Challenge not found")
+        }
       }
+
+    case req @ POST -> Root / "api" / "social" / "challenge" / "decline" :? UserIdParam(uid) =>
+      req.as[AcceptChallengeRequest].flatMap { declineReq =>
+        pendingChallenges.remove(declineReq.partyCode)
+        Ok("Challenge declined")
+      }
+
+    case GET -> Root / "api" / "state" :? SessionIdParam(sid) :? UsernameParam(username) =>
+      val (id, session) = getSession(sid)
+      val now = System.currentTimeMillis()
+      
+      // Update active users and remove stale ones (> 15s)
+      val updatedUsers = (session.activeUsers ++ username.map(_ -> now))
+        .filter { case (_, lastSeen) => now - lastSeen < 15000 }
+        
+      val updatedSession = session.copy(activeUsers = updatedUsers)
+      val response = buildStateResponse(updatedSession)
+      
+      // Clear one-time message after build, but keep emotes (client handles deduplication)
+      sessions.put(id, updatedSession.copy(message = None))
+      
       Ok(response.asJson)
 
     case req @ POST -> Root / "api" / "command" :? SessionIdParam(sid) =>
@@ -204,6 +282,10 @@ class Http4sRestApi(
                 }
               case Command.AiMove | Command.AiSuggest =>
                 handleAiWithOpening(cmd, sessionId, session)
+              case Command.Emote(emoji) =>
+                val nextId = emoteCounter.incrementAndGet()
+                val newEmote = EmoteInfo(nextId, emoji)
+                IO(sessions.put(sessionId, session.copy(recentEmotes = (session.recentEmotes :+ newEmote).takeRight(20)))) >> Ok("Emote sent")
               case _ =>
                 dispatch(sessionId, cmd).flatMap { newState =>
                   val cleanup = if (cmd.isInstanceOf[Command.ApplyMove]) IO(sessions.get(sessionId).foreach(s => sessions.put(sessionId, s.copy(selectedPos = None, highlights = Set.empty, message = None)))) else IO.unit
@@ -251,6 +333,123 @@ class Http4sRestApi(
         case Left(_) => BadRequest("Invalid FEN string")
       }
 
+    case GET -> Root / "api" / "admin" / "stats" =>
+      IO(AdminService.getStats(sessions.size, 0)).flatMap(stats => Ok(stats.asJson))
+
+    case GET -> Root / "api" / "admin" / "users" =>
+      IO(AdminService.listUsers()).flatMap(users => Ok(users.asJson))
+
+    case req @ PUT -> Root / "api" / "admin" / "users" / LongVar(id) =>
+      req.as[UpdateUserRequest].flatMap { upd =>
+        IO(AdminService.updateUser(id, upd.username, upd.email)).flatMap {
+          case Right(user) => Ok(user.asJson)
+          case Left(err) => BadRequest(err.asJson)
+        }
+      }
+
+    case POST -> Root / "api" / "admin" / "users" / LongVar(id) / "verify" :? VerifiedParam(v) =>
+      IO(AdminService.setVerified(id, v)).flatMap {
+        case Right(user) => Ok(user.asJson)
+        case Left(err) => BadRequest(err.asJson)
+      }
+
+    case POST -> Root / "api" / "admin" / "users" / LongVar(id) / "ban" :? BannedParam(b) =>
+      IO(AdminService.setBanned(id, b)).flatMap {
+        case Right(user) => Ok(user.asJson)
+        case Left(err) => BadRequest(err.asJson)
+      }
+
+    case DELETE -> Root / "api" / "admin" / "users" / LongVar(id) =>
+      IO(AdminService.deleteUser(id)).flatMap {
+        case Right(_) => Ok("User deleted".asJson)
+        case Left(err) => BadRequest(err.asJson)
+      }
+
+    case GET -> Root / "api" / "admin" / "games" =>
+      Ok(Nil.asJson)
+
+    case req @ POST -> Root / "api" / "queue" / "join" :? UserIdParam(uid) =>
+      req.as[QueueJoinRequest].flatMap { joinReq =>
+        // Guard: remove any stale queue assignment for this user before joining
+        queueAssignments.remove(uid)
+        val optMatch = matchmakingQueue.find { case (id, q) =>
+          id != uid && q.timeMs == joinReq.timeMs && q.incMs == joinReq.incMs
+        }
+        optMatch match {
+          case Some((matchedUid, _)) =>
+            matchmakingQueue.remove(matchedUid)
+            matchmakingQueue.remove(uid)
+            val partyCode = java.util.UUID.randomUUID().toString.substring(0, 6).toUpperCase()
+            val isChallengerWhite = scala.util.Random.nextBoolean()
+            val (wId, bId) = if (isChallengerWhite) (uid, matchedUid) else (matchedUid, uid)
+            
+            for {
+              wOpt <- authService.userDao.findById(wId)
+              bOpt <- authService.userDao.findById(bId)
+              wName = wOpt.map(_.username).getOrElse(if (wId == 0) "admin" else "Unknown")
+              bName = bOpt.map(_.username).getOrElse(if (bId == 0) "admin" else "Unknown")
+              assignment = PartyAssignment(partyCode, wId, wName, bId, bName)
+              _ <- IO(partyAssignments.put(partyCode, assignment))
+              _ <- IO(queueAssignments.put(uid, assignment))
+              _ <- IO(queueAssignments.put(matchedUid, assignment))
+              res <- Ok(Json.obj("matched" -> true.asJson, "partyCode" -> partyCode.asJson))
+            } yield res
+          case None =>
+            matchmakingQueue.put(uid, QueueEntry(uid, joinReq.timeMs, joinReq.incMs))
+            Ok(Json.obj("matched" -> false.asJson))
+        }
+      }
+
+    case DELETE -> Root / "api" / "queue" / "leave" :? UserIdParam(uid) =>
+      matchmakingQueue.remove(uid)
+      queueAssignments.remove(uid)
+      Ok(Json.obj("left" -> true.asJson))
+
+    case GET -> Root / "api" / "queue" / "status" :? UserIdParam(uid) =>
+      // Only look in queueAssignments – never in partyAssignments (which also holds friend challenges)
+      queueAssignments.get(uid) match {
+        case Some(p) =>
+          // Consume the entry so repeated polls don't re-trigger joining
+          queueAssignments.remove(uid)
+          val role = if (p.whiteUserId == uid) "white" else "black"
+          Ok(Json.obj("partyCode" -> p.partyCode.asJson, "role" -> role.asJson))
+        case None =>
+          Ok(Json.obj())
+      }
+
+    case GET -> Root / "api" / "party" / "role" :? UserIdParam(uid) +& PartyCodeParam(pc) =>
+      partyAssignments.get(pc) match {
+        case Some(p) =>
+          val role = if (p.whiteUserId == uid) "white" else if (p.blackUserId == uid) "black" else "spectator"
+          Ok(Json.obj("role" -> role.asJson))
+        case None =>
+          Ok(Json.obj("role" -> "spectator".asJson))
+      }
+    
+    case POST -> Root / "api" / "party" / "leave" :? UserIdParam(uid) +& PartyCodeParam(pc) =>
+      partyAssignments.get(pc) match {
+        case Some(p) =>
+          if (p.whiteUserId == uid || p.blackUserId == uid) {
+            val leftSet = partyLeftUsers.getOrElse(pc, Set.empty) + uid
+            partyLeftUsers.put(pc, leftSet)
+            
+            if (leftSet.contains(p.whiteUserId) && leftSet.contains(p.blackUserId)) {
+              partyAssignments.remove(pc)
+              partyLeftUsers.remove(pc)
+              sessions.remove(pc)
+            }
+          }
+          Ok(Json.obj("success" -> true.asJson))
+        case None =>
+          Ok(Json.obj("success" -> true.asJson))
+      }
+
+    case GET -> Root / "api" / "party" / "active" =>
+      val games = partyAssignments.values.toList.map { p =>
+        ActiveGameInfo(p.partyCode, p.whiteUser, p.blackUser)
+      }
+      Ok(games.asJson)
+
     case req =>
       IO(println(s"[REST DEBUG] Unmatched request: ${req.method} ${req.uri}")) >> NotFound(s"Route not found: ${req.uri}")
   }
@@ -295,12 +494,16 @@ class Http4sRestApi(
   object SquareParam extends QueryParamDecoderMatcher[String]("square")
   object SessionIdParam extends OptionalQueryParamDecoderMatcher[String]("sessionId")
   object UserIdParam extends QueryParamDecoderMatcher[Long]("userId")
+  object PartyCodeParam extends QueryParamDecoderMatcher[String]("partyCode")
   object TokenParam extends QueryParamDecoderMatcher[String]("token")
   object ThemeParam extends OptionalQueryParamDecoderMatcher[String]("theme")
   object OrderParam extends OptionalQueryParamDecoderMatcher[String]("order")
   object LimitParam extends OptionalQueryParamDecoderMatcher[Int]("limit")
   object OffsetParam extends OptionalQueryParamDecoderMatcher[Int]("offset")
   object FenParam extends QueryParamDecoderMatcher[String]("fen")
+  object VerifiedParam extends QueryParamDecoderMatcher[Boolean]("verified")
+  object BannedParam extends QueryParamDecoderMatcher[Boolean]("banned")
+  object UsernameParam extends OptionalQueryParamDecoderMatcher[String]("username")
 
   val app: HttpApp[IO] = CORS.policy
     .withAllowOriginAll

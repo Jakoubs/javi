@@ -37,6 +37,7 @@ enum Command:
   case AiProgress(msg: String)
   case SetAiBot(bot: String)
   case SetOpening(name: Option[String])
+  case Emote(emoji: String)
   case Unknown(input: String)
 
 // AppState ─────────────────────────────────────────────────────────────────
@@ -222,6 +223,7 @@ object GameController extends Observable[AppState]:
         val fen = app.game.toFen
         app.copy(message = Some(s"FEN: $fen"), messageType = MessageType.Info)
       case SetOpening(name) => app.copy(opening = name, messageType = MessageType.Info)
+      case Emote(_)       => app // Emotes are handled at the session layer in the API
       case Unknown(msg)   => app.copy(message = Some(msg), highlights = Set.empty, messageType = MessageType.Error)
 
   // ── Move handler ───────────────────────────────────────────────────────────

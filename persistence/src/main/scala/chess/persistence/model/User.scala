@@ -8,6 +8,7 @@ case class User(
   email:             String,
   passwordHash:      String,
   isVerified:        Boolean        = false,
+  isBanned:          Boolean        = false,
   verificationToken: Option[String] = None,
   createdAt:         Instant        = Instant.now()
 )

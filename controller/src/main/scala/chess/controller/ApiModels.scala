@@ -8,6 +8,10 @@ case class CommandRequest(command: String)
 object CommandRequest:
   implicit val codec: Codec[CommandRequest] = deriveCodec[CommandRequest]
 
+case class EmoteInfo(id: Long, emoji: String)
+object EmoteInfo:
+  implicit val codec: Codec[EmoteInfo] = deriveCodec[EmoteInfo]
+
 case class GameStateResponse(
   fen: String, 
   displayFen: String,
@@ -36,7 +40,9 @@ case class GameStateResponse(
   blackLiveMillis: Long,
   activePgnParser: String,
   activeMoveParser: String,
-  opening: Option[String]
+  opening: Option[String],
+  recentEmotes: List[EmoteInfo] = Nil,
+  activeUsers: List[String] = Nil
 )
 object GameStateResponse:
   implicit val codec: Codec[GameStateResponse] = deriveCodec[GameStateResponse]

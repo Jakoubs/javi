@@ -19,10 +19,11 @@ class UserTable(val profile: JdbcProfile):
     def email             = column[String]("email", O.Unique)
     def passwordHash      = column[String]("password_hash")
     def isVerified        = column[Boolean]("is_verified", O.Default(false))
+    def isBanned          = column[Boolean]("is_banned", O.Default(false))
     def verificationToken = column[Option[String]]("verification_token")
     def createdAt         = column[Instant]("created_at")
 
-    def * = (id, username, email, passwordHash, isVerified, verificationToken, createdAt) <> (User.apply.tupled, User.unapply)
+    def * = (id, username, email, passwordHash, isVerified, isBanned, verificationToken, createdAt) <> (User.apply.tupled, User.unapply)
 
   val users = TableQuery[Users]
 
