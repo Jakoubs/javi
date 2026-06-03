@@ -1,0 +1,70 @@
+@startuml 06_ai_classes
+title Klassendiagramm — chess.ai
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #dfe6e9
+  BorderColor #636e72
+  FontSize 12
+}
+
+package "chess.ai" {
+
+  class AiEngine <<object>> {
+    - transpositionTable: ConcurrentHashMap[(String, Int), Double]
+    + bestMove(state, depth, epsilon): Option[Move]
+    - minimax(state, depth, alpha, beta, isMax): Double
+    + clearTranspositionTable(): Unit
+  }
+
+  class AlphaBetaAgent <<object>> {
+    ' Zeitgesteuerter Alpha-Beta-Agent
+    + bestMove(state: GameState, timeLimitMs: Long): Option[Move]
+  }
+
+  class Evaluator <<object>> {
+    - weights: Array[Double]
+    + evaluate(state: GameState): Double
+    + saveWeights(): Unit
+    + loadWeights(): Unit
+  }
+
+  class PassiveTrainer <<object>> {
+    ' Selbstlernender Trainer via Reinforcement Learning
+    + train(finalState: GameState, status: GameStatus): Unit
+    - adjustWeights(trajectory, outcome): Unit
+    - applyOpeningHeuristics(state, color): Unit
+  }
+}
+
+' ─── Relationships ───────────────────────────────────────
+AiEngine ..> Evaluator         : uses score
+AiEngine ..> "chess.model.MoveGenerator" as MG : uses
+AiEngine ..> "chess.model.GameRules" as GR    : uses
+
+AlphaBetaAgent ..> Evaluator   : uses score
+AlphaBetaAgent ..> MG          : uses
+AlphaBetaAgent ..> GR          : uses
+
+PassiveTrainer ..> Evaluator   : adjusts weights
+PassiveTrainer ..> "chess.model.GameState" as GS : reads trajectory
+
+note bottom of PassiveTrainer
+  Wird nach jedem Spielende aufgerufen.
+  Passt Evaluator-Gewichte an (Reward Shaping).
+  Läuft asynchron mit Future.
+end note
+
+note right of AiEngine
+  Minimax + Alpha-Beta-Pruning
+  + Transpositionstabelle (FEN-key)
+  + Epsilon-Greedy für Training
+end note
+
+note right of AlphaBetaAgent
+  Zeitgesteuerter Iterative Deepening.
+  Wird im normalen Spielbetrieb verwendet.
+  Passt Tiefe dynamisch an Restzeit an.
+end note
+
+@enduml

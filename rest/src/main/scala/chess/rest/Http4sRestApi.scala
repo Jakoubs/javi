@@ -41,7 +41,7 @@ case class UpdateUserRequest(username: String, email: String)
 case class GameChallenge(challengerId: Long, challengerName: String, challengedId: Long, partyCode: String, accepted: Boolean)
 case class AcceptChallengeRequest(partyCode: String)
 case class QueueJoinRequest(timeMs: Option[Long], incMs: Int)
-case class QueueEntry(userId: Long, timeMs: Option[Long], incMs: Int)
+case class QueueEntry(userId: Long, username: String, timeMs: Option[Long], incMs: Int)
 case class PartyAssignment(partyCode: String, whiteUserId: Long, whiteUser: String, blackUserId: Long, blackUser: String)
 case class ActiveGameInfo(partyCode: String, whiteUser: String, blackUser: String)
 
@@ -408,18 +408,19 @@ class Http4sRestApi(
           id != uid && q.timeMs == joinReq.timeMs && q.incMs == joinReq.incMs
         }
         optMatch match {
-          case Some((matchedUid, _)) =>
+          case Some((matchedUid, matchedEntry)) =>
             matchmakingQueue.remove(matchedUid)
             matchmakingQueue.remove(uid)
             val partyCode = java.util.UUID.randomUUID().toString.substring(0, 6).toUpperCase()
             val isChallengerWhite = scala.util.Random.nextBoolean()
-            val (wId, bId) = if (isChallengerWhite) (uid, matchedUid) else (matchedUid, uid)
-            
+            // Look up the joining user's name; the matched user's name is already stored in their QueueEntry
             for {
-              wOpt <- authService.userDao.findById(wId)
-              bOpt <- authService.userDao.findById(bId)
-              wName = wOpt.map(_.username).getOrElse(if (wId == 0) "admin" else "Unknown")
-              bName = bOpt.map(_.username).getOrElse(if (bId == 0) "admin" else "Unknown")
+              joiningOpt <- authService.userDao.findById(uid)
+              joiningName = joiningOpt.map(_.username).getOrElse(if (uid == 0) "admin" else "Unknown")
+              (wId, wName, bId, bName) = if (isChallengerWhite)
+                (uid, joiningName, matchedUid, matchedEntry.username)
+              else
+                (matchedUid, matchedEntry.username, uid, joiningName)
               assignment = PartyAssignment(partyCode, wId, wName, bId, bName)
               _ <- IO(partyAssignments.put(partyCode, assignment))
               _ <- IO(queueAssignments.put(uid, assignment))
@@ -427,8 +428,12 @@ class Http4sRestApi(
               res <- Ok(Json.obj("matched" -> true.asJson, "partyCode" -> partyCode.asJson))
             } yield res
           case None =>
-            matchmakingQueue.put(uid, QueueEntry(uid, joinReq.timeMs, joinReq.incMs))
-            Ok(Json.obj("matched" -> false.asJson))
+            for {
+              userOpt <- authService.userDao.findById(uid)
+              username = userOpt.map(_.username).getOrElse(if (uid == 0) "admin" else "Unknown")
+              _ <- IO(matchmakingQueue.put(uid, QueueEntry(uid, username, joinReq.timeMs, joinReq.incMs)))
+              res <- Ok(Json.obj("matched" -> false.asJson))
+            } yield res
         }
       }
 

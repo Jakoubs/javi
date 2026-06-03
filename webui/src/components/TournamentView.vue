@@ -2,7 +2,7 @@
 import { computed, onUnmounted, ref } from 'vue'
 import ChessBoard from './ChessBoard.vue'
 
-const DEFAULT_TOURNAMENT_SERVER = 'https://st.nowchess.janis-eccarius.de'
+const DEFAULT_TOURNAMENT_SERVER = '/tournament-api'
 
 const serverUrl = ref(localStorage.getItem('tournamentServerUrl') || DEFAULT_TOURNAMENT_SERVER)
 const token = ref(localStorage.getItem('tournamentBearerToken') || '')
@@ -21,6 +21,11 @@ const roundInput = ref(1)
 const gameState = ref(null)
 const tournamentEvents = ref([])
 const gameEvents = ref([])
+
+const activeTab = ref('connect')
+const showJsonModal = ref(false)
+const jsonModalTitle = ref('')
+const jsonModalContent = ref('')
 
 const createForm = ref({
   name: 'JAVI Bot Arena',
@@ -54,6 +59,12 @@ const currentFen = computed(() => gameState.value?.fen || START_FEN)
 const setStatus = (message, isError = false) => {
   statusMessage.value = message
   statusIsError.value = isError
+}
+
+const openJsonModal = (title, data) => {
+  jsonModalTitle.value = title
+  jsonModalContent.value = JSON.stringify(data, null, 2)
+  showJsonModal.value = true
 }
 
 const saveConfig = () => {
@@ -112,6 +123,7 @@ const loadTournaments = async () => {
     saveConfig()
     tournaments.value = await readJson('/api/tournament')
     setStatus('Tournament server connected.')
+    activeTab.value = 'tournament'
   } catch (e) {
     setStatus(`Connection failed: ${e.message}`, true)
   } finally {
@@ -156,6 +168,7 @@ const createTournament = async () => {
     saveConfig()
     await loadTournaments()
     setStatus(`Created tournament ${tournament.id}.`)
+    activeTab.value = 'tournament'
   } catch (e) {
     setStatus(`Create failed: ${e.message}`, true)
   } finally {
@@ -210,6 +223,7 @@ const loadResults = async () => {
   try {
     results.value = await readNdjson(`/api/tournament/${encodeURIComponent(selectedTournamentId.value.trim())}/results`)
     setStatus('Results loaded.')
+    openJsonModal('Results', results.value)
   } catch (e) {
     setStatus(`Results failed: ${e.message}`, true)
   } finally {
@@ -223,6 +237,7 @@ const loadRound = async () => {
   try {
     roundInfo.value = await readJson(`/api/tournament/${encodeURIComponent(selectedTournamentId.value.trim())}/round/${roundInput.value}`)
     setStatus(`Round ${roundInput.value} loaded.`)
+    openJsonModal(`Round ${roundInput.value}`, roundInfo.value)
   } catch (e) {
     setStatus(`Round failed: ${e.message}`, true)
   } finally {
@@ -335,16 +350,37 @@ onUnmounted(() => {
 
 <template>
   <div class="tournament-view">
-    <section class="tournament-panel glass">
-      <div class="panel-title-row">
-        <div>
-          <h2>Tournament Server</h2>
-          <p>Connect to the NowChess-compatible bot tournament API.</p>
-        </div>
-        <span :class="['tournament-status', { error: statusIsError }]">{{ statusMessage || 'Idle' }}</span>
-      </div>
 
-      <div class="connection-grid">
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-left">
+        <span class="connected-dot" :class="{ active: flatTournaments.length > 0 }"></span>
+        <span class="server-label">{{ normalizedBaseUrl }}</span>
+      </div>
+      <span :class="['status-msg', { error: statusIsError }]">{{ statusMessage }}</span>
+      <span v-if="loading" class="spinner"></span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button
+        v-for="tab in [
+          { id: 'connect', label: 'Connect' },
+          { id: 'create', label: 'Create' },
+          { id: 'tournament', label: 'Tournament' },
+          { id: 'game', label: 'Game' }
+        ]"
+        :key="tab.id"
+        :class="['tab-btn', { active: activeTab === tab.id }]"
+        @click="activeTab = tab.id"
+      >{{ tab.label }}</button>
+    </div>
+
+    <!-- ── Tab: Connect ── -->
+    <div v-if="activeTab === 'connect'" class="tab-panel glass">
+      <h3>Tournament Server</h3>
+      <p class="hint">Connect to a NowChess-compatible bot tournament API.</p>
+      <div class="field-row mt">
         <label>
           <span>Server URL</span>
           <input v-model="serverUrl" class="glass-input" spellcheck="false">
@@ -353,320 +389,650 @@ onUnmounted(() => {
           <span>Bearer JWT</span>
           <input v-model="token" class="glass-input" type="password" spellcheck="false">
         </label>
-        <button class="preset-btn primary" :disabled="loading" @click="loadTournaments">Connect</button>
+        <button class="btn primary" :disabled="loading" @click="loadTournaments">Connect &amp; Load</button>
       </div>
-    </section>
+    </div>
 
-    <div class="tournament-grid">
-      <section class="tournament-panel glass">
-        <div class="panel-title-row compact">
-          <h3>Tournaments</h3>
-          <button class="mini-btn" @click="loadTournaments">Refresh</button>
-        </div>
-        <div class="tournament-list">
-          <button
-            v-for="t in flatTournaments"
-            :key="t.id"
-            :class="['tournament-row', { selected: selectedTournamentId === t.id }]"
-            @click="selectTournament(t.id)"
-          >
-            <span class="tournament-name">{{ t.fullName || t.name || t.id }}</span>
-            <span class="tournament-meta">{{ t.statusGroup }} | {{ t.nbPlayers || 0 }} bots | {{ t.nbRounds }} rounds</span>
-          </button>
-          <div v-if="flatTournaments.length === 0" class="empty-state">No tournaments loaded.</div>
-        </div>
-      </section>
+    <!-- ── Tab: Create ── -->
+    <div v-if="activeTab === 'create'" class="tab-panel glass">
+      <h3>Create Tournament</h3>
+      <div class="create-grid mt">
+        <label>
+          <span>Name</span>
+          <input v-model="createForm.name" class="glass-input">
+        </label>
+        <label>
+          <span>Format</span>
+          <select v-model="createForm.format" class="glass-input">
+            <option value="swiss">Swiss</option>
+            <option value="singleElimination">Single Elimination</option>
+            <option value="doubleElimination">Double Elimination</option>
+            <option value="groupStage">Group Stage</option>
+            <option value="league">League</option>
+          </select>
+        </label>
+        <label>
+          <span>Rounds</span>
+          <input v-model.number="createForm.nbRounds" class="glass-input" type="number" min="1">
+        </label>
+        <label>
+          <span>Clock (s)</span>
+          <input v-model.number="createForm.clockLimit" class="glass-input" type="number" min="1">
+        </label>
+        <label>
+          <span>Increment (s)</span>
+          <input v-model.number="createForm.clockIncrement" class="glass-input" type="number" min="0">
+        </label>
+        <label>
+          <span>Matches/Pairing</span>
+          <input v-model.number="createForm.matchesPerPairing" class="glass-input" type="number" min="1">
+        </label>
+        <label>
+          <span>Start FEN</span>
+          <input v-model="createForm.startPosition" class="glass-input">
+        </label>
+        <label>
+          <span>Group size</span>
+          <input v-model="createForm.groupSize" class="glass-input" type="number" min="2">
+        </label>
+      </div>
+      <label class="checkbox-row mt">
+        <input type="checkbox" v-model="createForm.rated"> Rated
+      </label>
+      <button class="btn primary full-width mt" :disabled="loading" @click="createTournament">Create Tournament</button>
+    </div>
 
-      <section class="tournament-panel glass">
-        <h3>Create Tournament</h3>
-        <div class="form-grid">
-          <label><span>Name</span><input v-model="createForm.name" class="glass-input"></label>
-          <label><span>Format</span>
-            <select v-model="createForm.format" class="glass-input">
-              <option value="swiss">swiss</option>
-              <option value="singleElimination">singleElimination</option>
-              <option value="doubleElimination">doubleElimination</option>
-              <option value="groupStage">groupStage</option>
-              <option value="league">league</option>
-            </select>
-          </label>
-          <label><span>Rounds</span><input v-model.number="createForm.nbRounds" class="glass-input" type="number" min="1"></label>
-          <label><span>Clock</span><input v-model.number="createForm.clockLimit" class="glass-input" type="number" min="1"></label>
-          <label><span>Increment</span><input v-model.number="createForm.clockIncrement" class="glass-input" type="number" min="0"></label>
-          <label><span>Matches</span><input v-model.number="createForm.matchesPerPairing" class="glass-input" type="number" min="1"></label>
-          <label><span>Start FEN</span><input v-model="createForm.startPosition" class="glass-input"></label>
-          <label><span>Group size</span><input v-model="createForm.groupSize" class="glass-input" type="number" min="2"></label>
-        </div>
-        <button class="preset-btn primary full-width" :disabled="loading" @click="createTournament">Create</button>
-      </section>
+    <!-- ── Tab: Tournament ── -->
+    <div v-if="activeTab === 'tournament'" class="tab-panel">
+      <div class="tournament-split">
 
-      <section class="tournament-panel glass">
-        <h3>Selected Tournament</h3>
-        <div class="selected-controls">
-          <input v-model="selectedTournamentId" class="glass-input mono" placeholder="Tournament ID" @keyup.enter="loadTournament">
-          <button class="mini-btn" @click="loadTournament">Load</button>
-          <button class="mini-btn" @click="joinTournament">Join</button>
-          <button class="mini-btn" @click="withdrawTournament">Withdraw</button>
-          <button class="mini-btn" @click="startTournament">Start</button>
-        </div>
-        <pre class="json-box">{{ selectedTournament ? JSON.stringify(selectedTournament, null, 2) : 'No tournament selected.' }}</pre>
-      </section>
+        <!-- Left: list -->
+        <section class="glass side-panel">
+          <div class="panel-header">
+            <h3>Tournaments</h3>
+            <button class="btn-icon" title="Refresh" @click="loadTournaments">↻</button>
+          </div>
+          <div class="t-list">
+            <button
+              v-for="t in flatTournaments"
+              :key="t.id"
+              :class="['t-row', { selected: selectedTournamentId === t.id }]"
+              @click="selectTournament(t.id)"
+            >
+              <span class="t-name">{{ t.fullName || t.name || t.id }}</span>
+              <span class="t-meta">{{ t.statusGroup }} · {{ t.nbPlayers || 0 }} bots · {{ t.nbRounds }}r</span>
+            </button>
+            <div v-if="flatTournaments.length === 0" class="empty">No tournaments loaded.</div>
+          </div>
+        </section>
 
-      <section class="tournament-panel glass">
-        <h3>Round & Results</h3>
-        <div class="selected-controls">
-          <input v-model.number="roundInput" class="glass-input mono" type="number" min="1">
-          <button class="mini-btn" @click="loadRound">Round</button>
-          <button class="mini-btn" @click="loadResults">Results</button>
-        </div>
-        <pre class="json-box">{{ roundInfo ? JSON.stringify(roundInfo, null, 2) : JSON.stringify(results, null, 2) }}</pre>
-      </section>
+        <!-- Right: detail -->
+        <section class="glass main-panel">
+          <div class="panel-header">
+            <h3>Selected</h3>
+            <div class="btn-group">
+              <input v-model="selectedTournamentId" class="glass-input mono small" placeholder="ID" @keyup.enter="loadTournament">
+              <button class="mini-btn" @click="loadTournament">Load</button>
+              <button class="mini-btn" @click="joinTournament">Join</button>
+              <button class="mini-btn" @click="withdrawTournament">Withdraw</button>
+              <button class="mini-btn primary" @click="startTournament">Start</button>
+            </div>
+          </div>
 
-      <section class="tournament-panel glass game-panel">
-        <div class="panel-title-row compact">
+          <!-- Tournament info chips -->
+          <div v-if="selectedTournament" class="info-chips">
+            <span class="chip">{{ selectedTournament.status }}</span>
+            <span class="chip">{{ selectedTournament.system || selectedTournament.format }}</span>
+            <span class="chip">{{ selectedTournament.nbPlayers || 0 }} players</span>
+            <span class="chip">{{ selectedTournament.nbRounds }} rounds</span>
+            <button class="chip-link" @click="openJsonModal('Tournament', selectedTournament)">View JSON ↗</button>
+          </div>
+          <div v-else class="empty mt">No tournament selected.</div>
+
+          <!-- Round & Results -->
+          <div class="section-divider">
+            <span>Round &amp; Results</span>
+          </div>
+          <div class="btn-group">
+            <input v-model.number="roundInput" class="glass-input mono small" type="number" min="1" style="width:4rem">
+            <button class="mini-btn" @click="loadRound">Load Round</button>
+            <button class="mini-btn" @click="loadResults">Load Results</button>
+          </div>
+
+          <!-- Stream -->
+          <div class="section-divider">
+            <span>Stream</span>
+          </div>
+          <div class="btn-group">
+            <button class="mini-btn" @click="startTournamentStream">▶ Start</button>
+            <button class="mini-btn danger" @click="stopTournamentStream">■ Stop</button>
+            <button v-if="tournamentEvents.length" class="chip-link" @click="openJsonModal('Tournament Events', tournamentEvents.slice(0, 30))">
+              {{ tournamentEvents.length }} events ↗
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ── Tab: Game ── -->
+    <div v-if="activeTab === 'game'" class="tab-panel">
+      <div class="game-split">
+        <!-- Board -->
+        <div class="board-wrap glass">
+          <ChessBoard :fen="currentFen" :flipped="false" />
+        </div>
+
+        <!-- Controls -->
+        <div class="game-controls glass">
           <h3>Game</h3>
-          <div class="stream-actions">
-            <button class="mini-btn" @click="startTournamentStream">Tournament stream</button>
-            <button class="mini-btn danger" @click="stopTournamentStream">Stop</button>
-          </div>
-        </div>
-        <div class="game-layout">
-          <div class="game-board-wrap">
-            <ChessBoard :fen="currentFen" :flipped="false" />
-          </div>
-          <div class="game-tools">
-            <input v-model="selectedGameId" class="glass-input mono" placeholder="Game ID" @keyup.enter="loadGame">
-            <button class="mini-btn" @click="loadGame">Load game</button>
-            <div class="move-row">
+
+          <label class="mt">
+            <span>Game ID</span>
+            <div class="btn-group">
+              <input v-model="selectedGameId" class="glass-input mono" placeholder="Game ID" @keyup.enter="loadGame">
+              <button class="mini-btn" @click="loadGame">Load</button>
+            </div>
+          </label>
+
+          <label class="mt">
+            <span>Move (UCI)</span>
+            <div class="btn-group">
               <input v-model="moveInput" class="glass-input mono" placeholder="e2e4" @keyup.enter="sendMove">
               <button class="mini-btn primary" @click="sendMove">Send</button>
             </div>
-            <div class="stream-actions">
-              <button class="mini-btn" @click="startGameStream">Game stream</button>
-              <button class="mini-btn danger" @click="stopGameStream">Stop</button>
+          </label>
+
+          <!-- Game state chips -->
+          <div v-if="gameState" class="info-chips mt">
+            <span class="chip">{{ gameState.turn === 'w' ? 'White to move' : 'Black to move' }}</span>
+            <span v-if="gameState.status" class="chip">{{ gameState.status }}</span>
+            <button class="chip-link" @click="openJsonModal('Game State', gameState)">State JSON ↗</button>
+          </div>
+
+          <div class="section-divider mt">
+            <span>Streams</span>
+          </div>
+          <div class="stream-row">
+            <div class="stream-item">
+              <span class="stream-label">Tournament</span>
+              <div class="btn-group">
+                <button class="mini-btn" @click="startTournamentStream">▶</button>
+                <button class="mini-btn danger" @click="stopTournamentStream">■</button>
+                <button v-if="tournamentEvents.length" class="chip-link" @click="openJsonModal('Tournament Events', tournamentEvents.slice(0, 30))">
+                  {{ tournamentEvents.length }} ↗
+                </button>
+              </div>
             </div>
-            <pre class="json-box small">{{ gameState ? JSON.stringify(gameState, null, 2) : 'No game loaded.' }}</pre>
+            <div class="stream-item">
+              <span class="stream-label">Game</span>
+              <div class="btn-group">
+                <button class="mini-btn" @click="startGameStream">▶</button>
+                <button class="mini-btn danger" @click="stopGameStream">■</button>
+                <button v-if="gameEvents.length" class="chip-link" @click="openJsonModal('Game Events', gameEvents.slice(0, 30))">
+                  {{ gameEvents.length }} ↗
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-
-      <section class="tournament-panel glass">
-        <h3>Events</h3>
-        <pre class="json-box events">{{ JSON.stringify({ tournament: tournamentEvents.slice(0, 20), game: gameEvents.slice(0, 20) }, null, 2) }}</pre>
-      </section>
+      </div>
     </div>
+
+    <!-- ── JSON Modal ── -->
+    <Teleport to="body">
+      <div v-if="showJsonModal" class="modal-backdrop" @click.self="showJsonModal = false">
+        <div class="modal glass">
+          <div class="modal-header">
+            <span class="modal-title">{{ jsonModalTitle }}</span>
+            <button class="btn-icon" @click="showJsonModal = false">✕</button>
+          </div>
+          <pre class="json-box">{{ jsonModalContent }}</pre>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
+/* ── Layout ── */
 .tournament-view {
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0.75rem 1rem 1.5rem;
   box-sizing: border-box;
-}
-
-.tournament-panel {
-  padding: 1rem;
-  border-radius: 12px;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.panel-title-row {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.panel-title-row.compact {
-  align-items: center;
-}
-
-h2, h3, p {
-  margin: 0;
-}
-
-h2, h3 {
-  color: var(--primary);
-}
-
-p {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
-}
-
-.tournament-status {
-  max-width: 360px;
-  color: var(--primary);
-  font-size: 0.85rem;
-  text-align: right;
-}
-
-.tournament-status.error {
-  color: #ff6b6b;
-}
-
-.connection-grid,
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  flex-direction: column;
   gap: 0.75rem;
-  align-items: end;
 }
+
+/* ── Status bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.connected-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.connected-dot.active { background: var(--primary); box-shadow: 0 0 6px var(--primary); }
+
+.server-label {
+  color: rgba(255,255,255,0.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-msg {
+  color: var(--primary);
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+.status-msg.error { color: #ff6b6b; }
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 0.45rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.55);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.tab-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+.tab-btn.active {
+  border-color: rgba(78,204,163,0.4);
+  background: rgba(78,204,163,0.12);
+  color: var(--primary);
+}
+
+/* ── Glass panel ── */
+.glass {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+}
+
+.tab-panel {
+  flex: 1;
+  padding: 1rem;
+}
+
+.tab-panel.glass {
+  /* for connect/create: padding already on tab-panel */
+}
+
+/* ── Typography ── */
+h3 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.hint {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.82rem;
+  margin: 0.25rem 0 0;
+}
+
+/* ── Field helpers ── */
+.mt { margin-top: 0.85rem; }
 
 label {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.75rem;
+  gap: 0.3rem;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.73rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
 }
 
-.tournament-grid {
+.field-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(320px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.6rem;
+  align-items: end;
 }
 
-.tournament-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 340px;
-  overflow-y: auto;
+.create-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 0.6rem;
 }
 
-.tournament-row {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
-  padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ── Buttons ── */
+.btn {
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 0.55rem 1rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
   color: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
-
-.tournament-row.selected {
-  border-color: var(--primary);
-  background: rgba(78, 204, 163, 0.14);
+.btn:hover { background: rgba(255,255,255,0.1); }
+.btn.primary {
+  border-color: rgba(78,204,163,0.35);
+  background: rgba(78,204,163,0.14);
+  color: var(--primary);
 }
+.btn.primary:hover { background: rgba(78,204,163,0.22); }
+.btn.full-width { width: 100%; justify-content: center; }
 
-.tournament-name {
-  font-weight: 700;
-}
-
-.tournament-meta,
-.empty-state {
-  color: rgba(255, 255, 255, 0.55);
+.mini-btn {
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: white;
   font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.mini-btn:hover { background: rgba(255,255,255,0.1); }
+.mini-btn.primary {
+  border-color: rgba(78,204,163,0.3);
+  background: rgba(78,204,163,0.12);
+  color: var(--primary);
+}
+.mini-btn.danger {
+  border-color: rgba(255,107,107,0.35);
+  color: #ff6b6b;
 }
 
-.selected-controls,
-.stream-actions,
-.move-row {
+.btn-icon {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.btn-icon:hover { color: white; }
+
+.btn-group {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
   align-items: center;
 }
 
-.selected-controls {
-  margin-bottom: 0.75rem;
+/* ── Tournament split ── */
+.tournament-split {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0.75rem;
+  height: 100%;
 }
 
-.mini-btn {
-  border-radius: 8px;
-  padding: 0.55rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
+.side-panel, .main-panel {
+  padding: 0.75rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.t-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.t-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 7px;
+  background: rgba(255,255,255,0.03);
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.t-row:hover { background: rgba(255,255,255,0.07); }
+.t-row.selected {
+  border-color: var(--primary);
+  background: rgba(78,204,163,0.1);
+}
+
+.t-name { font-size: 0.85rem; font-weight: 600; }
+.t-meta { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
+
+.empty { color: rgba(255,255,255,0.35); font-size: 0.82rem; }
+
+/* ── Info chips ── */
+.info-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  padding: 0.25rem 0.55rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.chip-link {
+  padding: 0.25rem 0.55rem;
+  border-radius: 20px;
+  background: rgba(78,204,163,0.1);
+  border: 1px solid rgba(78,204,163,0.25);
+  font-size: 0.75rem;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip-link:hover { background: rgba(78,204,163,0.2); }
+
+/* ── Section divider ── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.section-divider span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.3);
+  white-space: nowrap;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+}
+.section-divider::before { display: none; }
+
+/* ── Glass input ── */
+.glass-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  padding: 0.45rem 0.65rem;
   color: white;
   font-size: 0.85rem;
 }
+.glass-input.small { font-size: 0.8rem; padding: 0.35rem 0.55rem; }
+.glass-input.mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+.glass-input:focus { outline: none; border-color: rgba(78,204,163,0.4); }
 
-.mini-btn.primary,
-.preset-btn.primary {
-  border-color: rgba(78, 204, 163, 0.3);
-  background: rgba(78, 204, 163, 0.16);
-  color: var(--primary);
-}
-
-.mini-btn.danger {
-  border-color: rgba(255, 107, 107, 0.4);
-  color: #ff6b6b;
-}
-
-.full-width {
-  width: 100%;
-  justify-content: center;
-  margin-top: 0.75rem;
-}
-
-.mono {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-}
-
-.json-box {
-  min-height: 180px;
-  max-height: 360px;
-  overflow: auto;
-  padding: 0.75rem;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.24);
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.78rem;
-  white-space: pre-wrap;
-}
-
-.json-box.small {
-  max-height: 260px;
-}
-
-.json-box.events {
-  max-height: 520px;
-}
-
-.game-panel {
-  grid-column: span 2;
-}
-
-.game-layout {
+/* ── Game split ── */
+.game-split {
   display: grid;
-  grid-template-columns: minmax(280px, 420px) 1fr;
-  gap: 1rem;
+  grid-template-columns: minmax(260px, 380px) 1fr;
+  gap: 0.75rem;
+  height: 100%;
 }
 
-.game-board-wrap {
+.board-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 420px;
+  padding: 0.5rem;
+  min-height: 320px;
+}
+
+.game-controls {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  overflow-y: auto;
+}
+
+.stream-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.stream-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.stream-label {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  width: 70px;
+  flex-shrink: 0;
+}
+
+/* ── JSON Modal ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.modal {
+  width: min(90vw, 680px);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   overflow: hidden;
 }
 
-.game-tools {
+.modal-header {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-@media (max-width: 900px) {
-  .tournament-grid,
-  .game-layout {
+.modal-title {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.json-box {
+  flex: 1;
+  overflow: auto;
+  padding: 0.85rem 1rem;
+  margin: 0;
+  color: rgba(255,255,255,0.78);
+  font-size: 0.76rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .field-row {
     grid-template-columns: 1fr;
   }
-
-  .game-panel {
-    grid-column: span 1;
+  .tournament-split,
+  .game-split {
+    grid-template-columns: 1fr;
   }
 }
 </style>

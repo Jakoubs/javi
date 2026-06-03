@@ -114,9 +114,10 @@ const timePresets = [
 ]
 
 // ── Server URL (persisted in localStorage) ────────────────────────────────
-const DEFAULT_SERVER = 'http://localhost:8080'
+const DEFAULT_SERVER = ''
 const savedServer = localStorage.getItem('chessServerUrl')
-const serverUrl = ref(savedServer && (savedServer.includes(':8080') || savedServer.includes(':8081')) ? savedServer : DEFAULT_SERVER)
+
+const serverUrl = ref(savedServer || DEFAULT_SERVER)
 const serverInput = ref(serverUrl.value)
 const serverConnected = ref(true)
 
@@ -831,20 +832,7 @@ const effectiveFlipped = computed(() => {
         </div>
       </div>
 
-      <!-- Server URL switcher -->
-      <div class="server-switcher" v-show="activeView === 'game'">
-        <span class="server-dot" :class="{ connected: serverConnected, disconnected: !serverConnected }" :title="serverConnected ? 'Connected' : 'Disconnected'"></span>
-        <input
-          id="server-url-input"
-          v-model="serverInput"
-          class="server-input glass-input"
-          placeholder="Relative (default) or http://host:8080"
-          @keyup.enter="applyServer"
-          @blur="applyServer"
-          spellcheck="false"
-        />
-        <button class="server-reset-btn" @click="resetServer" title="Reset to localhost">↺</button>
-      </div>
+
 
       <!-- Player Role Selector (only for online/party play) -->
       <div class="role-selector glass-pill" v-show="activeView === 'game' && !localMode" :style="{ opacity: currentParty ? 0.6 : 1, pointerEvents: currentParty ? 'none' : 'auto' }">
@@ -1161,7 +1149,12 @@ const effectiveFlipped = computed(() => {
   <UserSettings
     v-if="showSettingsModal"
     :settings="userSettings"
+    :serverInput="serverInput"
+    :serverConnected="serverConnected"
     @update:settings="userSettings = $event"
+    @update:serverInput="serverInput = $event"
+    @applyServer="applyServer"
+    @resetServer="resetServer"
     @close="showSettingsModal = false"
   />
 </template>

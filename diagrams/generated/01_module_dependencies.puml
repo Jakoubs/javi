@@ -1,0 +1,71 @@
+@startuml 01_module_dependencies
+title Modul-Abhängigkeiten (Compile-Zeit)
+
+skinparam packageStyle rectangle
+skinparam package {
+  BackgroundColor #f8f9fa
+  BorderColor #2c3e50
+  FontSize 14
+  FontStyle bold
+}
+skinparam arrow {
+  Color #e74c3c
+  Thickness 2
+}
+
+package "model" <<Frame>> #dff9fb {
+  [chess.model]
+}
+
+package "util" <<Frame>> #ffeaa7 {
+  [chess.util]
+  [chess.util.parser]
+}
+
+package "ai" <<Frame>> #dfe6e9 {
+  [chess.ai]
+}
+
+package "controller" <<Frame>> #fd79a8 {
+  [chess.controller]
+}
+
+package "view" <<Frame>> #a29bfe {
+  [chess.view]
+}
+
+package "rest" <<Frame>> #55efc4 {
+  [chess.rest]
+}
+
+package "root" <<Frame>> #fab1a0 {
+  [chess.Main]
+}
+
+[chess.util]        --> [chess.model]      : dependsOn
+[chess.util.parser] --> [chess.model]      : dependsOn
+[chess.ai]          --> [chess.model]      : dependsOn
+[chess.ai]          --> [chess.util]       : dependsOn
+[chess.controller]  --> [chess.model]      : dependsOn
+[chess.controller]  --> [chess.util]       : dependsOn
+[chess.controller]  --> [chess.ai]        : dependsOn
+[chess.view]        --> [chess.controller] : dependsOn
+[chess.rest]        --> [chess.controller] : dependsOn
+[chess.Main]        --> [chess.view]       : dependsOn
+[chess.Main]        --> [chess.rest]       : dependsOn
+
+note bottom of [chess.model]
+  Keine externen Scala-Dependencies.
+  Reines Domänenmodell.
+end note
+
+note right of [chess.rest]
+  Http4s + Cats Effect
+  Kein ScalaFX
+end note
+
+note right of [chess.view]
+  ScalaFX + JaviClient
+  Kein Http4s
+end note
+@enduml

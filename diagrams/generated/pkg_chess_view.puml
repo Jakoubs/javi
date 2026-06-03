@@ -1,0 +1,123 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+package chess.view {
+object "chess.view.CommandParser" as chess_view_CommandParser {
+  + parse(input: String, app: AppState): Command
+}
+
+object "chess.view.Gui" as chess_view_Gui {
+  + formatTime(ms: Long): String
+  + start(): Unit
+}
+
+class "chess.view.JaviClient" as chess_view_JaviClient {
+  + baseUrl: String
+  + system: ActorSystem[Nothing]
+  + ec: ExecutionContext
+  + fetchState(): Future[Either[String, GameStateResponse]]
+  + sendCommand(cmd: String): Future[Either[String, String]]
+}
+
+object "chess.view.JaviClient" as chess_view_JaviClient {
+  + apply(baseUrl: String): Any
+}
+
+class "chess.view.CommandRequest" as chess_view_CommandRequest << (C,#FFDDDD) case >> {
+  + command: String
+}
+
+object "chess.view.CommandRequest" as chess_view_CommandRequest {
+}
+
+class "chess.view.GameStateResponse" as chess_view_GameStateResponse << (C,#FFDDDD) case >> {
+  + fen: String
+  + displayFen: String
+  + pgn: String
+  + status: String
+  + activeColor: String
+  + highlights: List[String]
+  + selectedPos: Option[String]
+  + lastMove: Option[String]
+  + aiWhite: Boolean
+  + aiBlack: Boolean
+  + flipped: Boolean
+  + viewIndex: Int
+  + historyFen: List[String]
+  + historyMoves: List[String]
+  + clock: Option[ClockState]
+  + capturedWhite: List[String]
+  + capturedBlack: List[String]
+  + message: Option[String]
+  + training: Boolean
+  + trainingProgress: Option[String]
+  + running: Boolean
+  + messageIsError: Boolean
+  + materialInfo: MaterialInfo
+  + whiteLiveMillis: Long
+  + blackLiveMillis: Long
+  + activePgnParser: String
+  + activeMoveParser: String
+}
+
+object "chess.view.GameStateResponse" as chess_view_GameStateResponse {
+}
+
+class "chess.view.RestApi" as chess_view_RestApi {
+  + system: ActorSystem[Nothing]
+  + executionContext: ExecutionContextExecutor
+  + update(state: AppState): Unit
+  + route: Any
+  + start(port: Int): Unit
+  + stop(): scala.concurrent.Future[Unit]
+}
+
+object "chess.view.TerminalView" as chess_view_TerminalView {
+  + render(state: GameState, status: GameStatus, highlights: Set[Pos], lastMove: Option[Move], flipped: Boolean): String
+  + error(msg: String): String
+  + success(msg: String): String
+  + info(msg: String): String
+  + clear(): Unit
+}
+
+interface "chess.view.ConsoleIO" as chess_view_ConsoleIO {
+  + readLine(): Option[String]
+  + print(text: String): Unit
+  + clear(): Unit
+}
+
+object "chess.view.StdConsoleIO" as chess_view_StdConsoleIO {
+  + readLine(): Option[String]
+  + print(text: String): Unit
+  + clear(): Unit
+}
+
+class "chess.view.Tui" as chess_view_Tui {
+  + console: ConsoleIO
+  + update(app: AppState): Unit
+  + run(): Unit
+}
+
+}
+
+
+' Inheritance
+chess_util_Observer <|-- chess_view_RestApi
+chess_util_Observer <|-- chess_view_Tui
+
+' Dependencies
+chess_view_CommandParser --> chess_controller_Command
+chess_view_CommandParser --> chess_controller_AppState
+chess_view_JaviClient --> chess_view_GameStateResponse
+chess_view_GameStateResponse --> chess_model_ClockState
+chess_view_GameStateResponse --> chess_model_MaterialInfo
+chess_view_RestApi --> chess_controller_AppState
+chess_view_TerminalView --> chess_model_GameState
+chess_view_TerminalView --> chess_model_GameStatus
+chess_view_TerminalView --> chess_model_Pos
+chess_view_TerminalView --> chess_model_Move
+chess_view_Tui --> chess_view_ConsoleIO
+chess_view_Tui --> chess_controller_AppState
+@enduml

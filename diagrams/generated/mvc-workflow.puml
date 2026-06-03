@@ -1,0 +1,183 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide members
+
+package chess.ai {
+object "chess.ai.AiEngine" as chess_ai_AiEngine
+class "chess.ai.AtomicDouble" as chess_ai_AtomicDouble
+object "chess.ai.Evaluator" as chess_ai_Evaluator
+interface "chess.ai.Trainer" as chess_ai_Trainer
+object "chess.ai.PassiveTrainer" as chess_ai_PassiveTrainer
+}
+
+package chess {
+object "chess.Main" as chess_Main
+object "chess.TrainMain" as chess_TrainMain
+}
+
+package chess.util {
+interface "chess.util.Observer" as chess_util_Observer
+interface "chess.util.Observable" as chess_util_Observable
+object "chess.util.Pgn" as chess_util_Pgn
+interface "chess.util.Result" as chess_util_Result
+class "chess.util.Success" as chess_util_Success << (C,#FFDDDD) case >>
+class "chess.util.Failure" as chess_util_Failure << (C,#FFDDDD) case >>
+object "chess.util.Result" as chess_util_Result
+}
+
+package chess.util.parser {
+object "chess.util.parser.CombinatorPgnParser" as chess_util_parser_CombinatorPgnParser
+class "chess.util.parser.DelegatingPgnParser" as chess_util_parser_DelegatingPgnParser
+object "chess.util.parser.DelegatingPgnParser" as chess_util_parser_DelegatingPgnParser
+object "chess.util.parser.FastPgnParser" as chess_util_parser_FastPgnParser
+interface "chess.util.parser.MoveParser" as chess_util_parser_MoveParser
+object "chess.util.parser.CoordinateMoveParser" as chess_util_parser_CoordinateMoveParser
+object "chess.util.parser.SanMoveParser" as chess_util_parser_SanMoveParser
+object "chess.util.parser.ParserRegistry" as chess_util_parser_ParserRegistry
+interface "chess.util.parser.PgnParser" as chess_util_parser_PgnParser
+object "chess.util.parser.PgnParser" as chess_util_parser_PgnParser
+object "chess.util.parser.RegexPgnParser" as chess_util_parser_RegexPgnParser
+}
+
+package chess.view {
+object "chess.view.CommandParser" as chess_view_CommandParser
+object "chess.view.Gui" as chess_view_Gui
+class "chess.view.JaviClient" as chess_view_JaviClient
+object "chess.view.JaviClient" as chess_view_JaviClient
+class "chess.view.CommandRequest" as chess_view_CommandRequest << (C,#FFDDDD) case >>
+object "chess.view.CommandRequest" as chess_view_CommandRequest
+class "chess.view.GameStateResponse" as chess_view_GameStateResponse << (C,#FFDDDD) case >>
+object "chess.view.GameStateResponse" as chess_view_GameStateResponse
+class "chess.view.RestApi" as chess_view_RestApi
+object "chess.view.TerminalView" as chess_view_TerminalView
+interface "chess.view.ConsoleIO" as chess_view_ConsoleIO
+object "chess.view.StdConsoleIO" as chess_view_StdConsoleIO
+class "chess.view.Tui" as chess_view_Tui
+}
+
+package chess.controller {
+enum "chess.controller.MessageType" as chess_controller_MessageType
+enum "chess.controller.Command" as chess_controller_Command
+class "chess.controller.AppState" as chess_controller_AppState << (C,#FFDDDD) case >>
+object "chess.controller.AppState" as chess_controller_AppState
+object "chess.controller.GameController" as chess_controller_GameController
+}
+
+package chess.model {
+class "chess.model.Board" as chess_model_Board << (C,#FFDDDD) case >>
+object "chess.model.Board" as chess_model_Board
+interface "chess.model.GameState" as chess_model_GameState
+class "chess.model.WhiteToMove" as chess_model_WhiteToMove << (C,#FFDDDD) case >>
+class "chess.model.BlackToMove" as chess_model_BlackToMove << (C,#FFDDDD) case >>
+object "chess.model.GameState" as chess_model_GameState
+object "chess.model.GameRules" as chess_model_GameRules
+object "chess.model.MoveGenerator" as chess_model_MoveGenerator
+enum "chess.model.Color" as chess_model_Color
+enum "chess.model.PieceType" as chess_model_PieceType
+object "chess.model.PieceType" as chess_model_PieceType
+class "chess.model.Piece" as chess_model_Piece << (C,#FFDDDD) case >>
+object "chess.model.Piece" as chess_model_Piece
+class "chess.model.Pos" as chess_model_Pos << (C,#FFDDDD) case >>
+object "chess.model.Pos" as chess_model_Pos
+class "chess.model.Move" as chess_model_Move << (C,#FFDDDD) case >>
+class "chess.model.CastlingRights" as chess_model_CastlingRights << (C,#FFDDDD) case >>
+object "chess.model.CastlingRights" as chess_model_CastlingRights
+enum "chess.model.GameStatus" as chess_model_GameStatus
+class "chess.model.ClockState" as chess_model_ClockState << (C,#FFDDDD) case >>
+class "chess.model.MaterialInfo" as chess_model_MaterialInfo << (C,#FFDDDD) case >>
+class "chess.model.PlayerInfo" as chess_model_PlayerInfo << (C,#FFDDDD) case >>
+class "chess.model.TimeControl" as chess_model_TimeControl << (C,#FFDDDD) case >>
+object "chess.model.TimeControl" as chess_model_TimeControl
+}
+
+
+' Inheritance
+chess_model_GameState <|-- chess_model_WhiteToMove
+chess_model_GameState <|-- chess_model_BlackToMove
+chess_util_Observer <|-- chess_view_RestApi
+chess_util_Observer <|-- chess_view_Tui
+chess_util_Result <|-- chess_util_Success
+chess_util_Result <|-- chess_util_Failure
+chess_util_parser_PgnParser <|-- chess_util_parser_DelegatingPgnParser
+
+' Dependencies
+chess_controller_AppState --> chess_model_GameState
+chess_controller_AppState --> chess_model_GameStatus
+chess_controller_AppState --> chess_model_Pos
+chess_controller_AppState --> chess_model_Move
+chess_controller_AppState --> chess_controller_MessageType
+chess_controller_AppState --> chess_model_ClockState
+chess_controller_GameController --> chess_controller_AppState
+chess_controller_GameController --> chess_controller_Command
+chess_model_Board --> chess_model_Pos
+chess_model_Board --> chess_model_Piece
+chess_model_Board --> chess_model_Color
+chess_model_GameState --> chess_model_Board
+chess_model_GameState --> chess_model_Color
+chess_model_GameState --> chess_model_CastlingRights
+chess_model_GameState --> chess_model_Pos
+chess_model_WhiteToMove --> chess_model_Board
+chess_model_WhiteToMove --> chess_model_CastlingRights
+chess_model_WhiteToMove --> chess_model_Pos
+chess_model_WhiteToMove --> chess_model_GameState
+chess_model_WhiteToMove --> chess_model_Color
+chess_model_BlackToMove --> chess_model_Board
+chess_model_BlackToMove --> chess_model_CastlingRights
+chess_model_BlackToMove --> chess_model_Pos
+chess_model_BlackToMove --> chess_model_GameState
+chess_model_BlackToMove --> chess_model_Color
+chess_model_GameRules --> chess_model_GameState
+chess_model_GameRules --> chess_model_Move
+chess_model_GameRules --> chess_model_GameStatus
+chess_model_MoveGenerator --> chess_model_Move
+chess_model_MoveGenerator --> chess_model_GameState
+chess_model_MoveGenerator --> chess_model_Pos
+chess_model_MoveGenerator --> chess_model_Color
+chess_model_MoveGenerator --> chess_model_Board
+chess_model_Piece --> chess_model_Color
+chess_model_Piece --> chess_model_PieceType
+chess_model_Move --> chess_model_Pos
+chess_model_Move --> chess_model_PieceType
+chess_model_ClockState --> chess_model_Color
+chess_view_CommandParser --> chess_controller_Command
+chess_view_CommandParser --> chess_controller_AppState
+chess_view_JaviClient --> chess_view_GameStateResponse
+chess_view_GameStateResponse --> chess_model_ClockState
+chess_view_GameStateResponse --> chess_model_MaterialInfo
+chess_view_RestApi --> chess_controller_AppState
+chess_view_TerminalView --> chess_model_GameState
+chess_view_TerminalView --> chess_model_GameStatus
+chess_view_TerminalView --> chess_model_Pos
+chess_view_TerminalView --> chess_model_Move
+chess_view_Tui --> chess_view_ConsoleIO
+chess_view_Tui --> chess_controller_AppState
+chess_ai_AiEngine --> chess_model_Move
+chess_ai_AiEngine --> chess_model_GameState
+chess_ai_Evaluator --> chess_model_GameState
+chess_ai_Evaluator --> chess_model_PieceType
+chess_ai_Evaluator --> chess_model_Color
+chess_ai_Evaluator --> chess_model_Pos
+chess_ai_Evaluator --> chess_ai_AtomicDouble
+chess_ai_Trainer --> chess_model_GameState
+chess_ai_Trainer --> chess_model_GameStatus
+chess_ai_PassiveTrainer --> chess_model_GameState
+chess_ai_PassiveTrainer --> chess_model_GameStatus
+chess_util_Observable --> chess_util_Observer
+chess_util_Pgn --> chess_model_GameState
+chess_util_Pgn --> chess_model_Move
+chess_util_Success --> chess_util_Result
+chess_util_Failure --> chess_util_Result
+chess_util_parser_CombinatorPgnParser --> chess_model_GameState
+chess_util_parser_DelegatingPgnParser --> chess_util_parser_PgnParser
+chess_util_parser_DelegatingPgnParser --> chess_model_GameState
+chess_util_parser_FastPgnParser --> chess_model_GameState
+chess_util_parser_MoveParser --> chess_model_Move
+chess_util_parser_MoveParser --> chess_model_GameState
+chess_util_parser_CoordinateMoveParser --> chess_model_Move
+chess_util_parser_CoordinateMoveParser --> chess_model_GameState
+chess_util_parser_SanMoveParser --> chess_model_Move
+chess_util_parser_SanMoveParser --> chess_model_GameState
+chess_util_parser_PgnParser --> chess_model_GameState
+chess_util_parser_RegexPgnParser --> chess_model_GameState
+@enduml

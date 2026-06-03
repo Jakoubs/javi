@@ -1,0 +1,179 @@
+@startuml 02_model_classes
+title Klassendiagramm — chess.model
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #dff9fb
+  BorderColor #0984e3
+  FontSize 13
+}
+skinparam enum {
+  BackgroundColor #ffeaa7
+  BorderColor #fdcb6e
+}
+skinparam note {
+  BackgroundColor #fff
+}
+
+' ─── Enums ───────────────────────────────────────────────
+enum Color {
+  White
+  Black
+  + opposite(): Color
+}
+
+enum PieceType {
+  King
+  Queen
+  Rook
+  Bishop
+  Knight
+  Pawn
+}
+
+enum GameStatus {
+  Playing
+  Check(color)
+  Checkmate(loser)
+  Stalemate
+  Resigned(loser)
+  Timeout(loser)
+  Draw(reason)
+}
+
+' ─── Value Types ─────────────────────────────────────────
+class Pos {
+  + col: Int
+  + row: Int
+  + isValid(): Boolean
+  + toAlgebraic(): String
+  + {static} fromAlgebraic(s: String): Option[Pos]
+}
+
+class Piece {
+  + color: Color
+  + pieceType: PieceType
+  + symbol: String
+  + letter: String
+  + {static} fromFenChar(char: Char): Option[Piece]
+}
+
+class Move {
+  + from: Pos
+  + to: Pos
+  + promotion: Option[PieceType]
+  + toInputString(): String
+}
+
+class CastlingRights {
+  + whiteKingSide: Boolean
+  + whiteQueenSide: Boolean
+  + blackKingSide: Boolean
+  + blackQueenSide: Boolean
+  + toFen(): String
+  + {static} fromFen(s: String): Option[CastlingRights]
+}
+
+class ClockState {
+  + whiteMillis: Long
+  + blackMillis: Long
+  + incrementMillis: Long
+  + lastTickSysTime: Option[Long]
+  + isActive: Boolean
+  + activeMillis(color): Long
+}
+
+class MaterialInfo {
+  + whiteCapturedSymbols: List[String]
+  + blackCapturedSymbols: List[String]
+  + whiteAdvantage: Int
+  + blackAdvantage: Int
+}
+
+class PlayerInfo {
+  + color: String
+  + capturedSymbols: List[String]
+  + advantage: Int
+  + clockMillis: Long
+}
+
+class TimeControl {
+  + name: String
+  + initialMillis: Option[Long]
+  + incrementMillis: Long
+  + toCommand(): String
+}
+
+' ─── Board ───────────────────────────────────────────────
+class Board {
+  + pieces: Map[Pos, Piece]
+  + get(pos): Option[Piece]
+  + put(pos, piece): Board
+  + remove(pos): Board
+  + movePiece(from, to): Board
+  + findKing(color): Option[Pos]
+  + allPiecesOf(color): List[(Pos,Piece)]
+  + toFenPlacement(): String
+  + {static} initial(): Board
+  + {static} empty(): Board
+  + {static} fromFenPlacement(s): Either[String, Board]
+}
+
+' ─── GameState ───────────────────────────────────────────
+abstract class GameState {
+  + board: Board
+  + activeColor: Color
+  + castlingRights: CastlingRights
+  + enPassantTarget: Option[Pos]
+  + halfMoveClock: Int
+  + fullMoveNumber: Int
+  + history: List[GameState]
+  + toFen(): String
+  + withHistory(): GameState
+  ' Extension methods:
+  + capturedPieces(color): List[PieceType]
+  + materialInfo(): MaterialInfo
+  + displayFen(): String
+}
+
+class WhiteToMove {
+  + activeColor = White
+}
+
+class BlackToMove {
+  + activeColor = Black
+}
+
+' ─── Services ────────────────────────────────────────────
+class MoveGenerator <<object>> {
+  + legalMoves(state): List[Move]
+  + legalMovesFrom(state, pos): List[Move]
+  + isInCheck(state, color): Boolean
+}
+
+class GameRules <<object>> {
+  + applyMove(state, move): GameState
+  + computeStatus(state): GameStatus
+}
+
+' ─── Relationships ───────────────────────────────────────
+Piece --> Color
+Piece --> PieceType
+Move --> Pos
+Move --> PieceType
+Board "1" *-- "0..32" Piece : pieces
+Board --> Pos
+
+GameState <|-- WhiteToMove
+GameState <|-- BlackToMove
+GameState *-- Board
+GameState *-- CastlingRights
+GameState --> GameStatus
+GameState --> MaterialInfo
+
+MoveGenerator ..> GameState : uses
+MoveGenerator ..> Move : produces
+GameRules ..> GameState : produces
+GameRules ..> GameStatus : produces
+
+@enduml

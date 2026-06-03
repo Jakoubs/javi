@@ -1,0 +1,86 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+package chess.util.parser {
+object "chess.util.parser.CombinatorPgnParser" as chess_util_parser_CombinatorPgnParser {
+  + skipWhitespace(): Any
+  + pgn(): Parser[GameState]
+  + tag(): Parser[String]
+  + moveGroup(): Parser[List[String]]
+  + moveOrComment(): Parser[Either[String, String]]
+  + comment(): Parser[String]
+  + san(): Parser[String]
+  + result(): Parser[String]
+  + parse(pgnString: String): Try[GameState]
+}
+
+class "chess.util.parser.DelegatingPgnParser" as chess_util_parser_DelegatingPgnParser {
+  + delegate: PgnParser
+  + parse(pgn: String): Try[GameState]
+}
+
+object "chess.util.parser.DelegatingPgnParser" as chess_util_parser_DelegatingPgnParser {
+}
+
+object "chess.util.parser.FastPgnParser" as chess_util_parser_FastPgnParser {
+  + ws(ctx: P[?]): Any
+  + ws1(ctx: P[?]): Any
+  + tag(ctx: P[?]): Any
+  + tags(ctx: P[?]): Any
+  + moveNum(ctx: P[?]): Any
+  + comment(ctx: P[?]): Any
+  + sanChar(ctx: P[?]): Any
+  + san(ctx: P[?]): Any
+  + result(ctx: P[?]): Any
+  + pgn(ctx: P[?]): P[List[String]]
+  + parse(pgnString: String): Try[GameState]
+}
+
+interface "chess.util.parser.MoveParser" as chess_util_parser_MoveParser {
+  + parse(input: String, state: GameState): Try[Move]
+}
+
+object "chess.util.parser.CoordinateMoveParser" as chess_util_parser_CoordinateMoveParser {
+  + parse(input: String, state: GameState): Try[Move]
+}
+
+object "chess.util.parser.SanMoveParser" as chess_util_parser_SanMoveParser {
+  + parse(input: String, state: GameState): Try[Move]
+}
+
+object "chess.util.parser.ParserRegistry" as chess_util_parser_ParserRegistry {
+}
+
+interface "chess.util.parser.PgnParser" as chess_util_parser_PgnParser {
+  + parse(pgn: String): Try[GameState]
+}
+
+object "chess.util.parser.PgnParser" as chess_util_parser_PgnParser {
+}
+
+object "chess.util.parser.RegexPgnParser" as chess_util_parser_RegexPgnParser {
+  + parse(pgn: String): Try[GameState]
+}
+
+}
+
+
+' Inheritance
+chess_util_parser_PgnParser <|-- chess_util_parser_DelegatingPgnParser
+
+' Dependencies
+chess_util_parser_CombinatorPgnParser --> chess_model_GameState
+chess_util_parser_DelegatingPgnParser --> chess_util_parser_PgnParser
+chess_util_parser_DelegatingPgnParser --> chess_model_GameState
+chess_util_parser_FastPgnParser --> chess_model_GameState
+chess_util_parser_MoveParser --> chess_model_Move
+chess_util_parser_MoveParser --> chess_model_GameState
+chess_util_parser_CoordinateMoveParser --> chess_model_Move
+chess_util_parser_CoordinateMoveParser --> chess_model_GameState
+chess_util_parser_SanMoveParser --> chess_model_Move
+chess_util_parser_SanMoveParser --> chess_model_GameState
+chess_util_parser_PgnParser --> chess_model_GameState
+chess_util_parser_RegexPgnParser --> chess_model_GameState
+@enduml

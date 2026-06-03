@@ -3,10 +3,18 @@ const props = defineProps({
   settings: {
     type: Object,
     required: true
+  },
+  serverInput: {
+    type: String,
+    default: ''
+  },
+  serverConnected: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['update:settings', 'close'])
+const emit = defineEmits(['update:settings', 'update:serverInput', 'applyServer', 'resetServer', 'close'])
 
 const toggle = (key) => {
   emit('update:settings', { ...props.settings, [key]: !props.settings[key] })
@@ -90,6 +98,40 @@ const toggle = (key) => {
             >
               <span class="toggle-knob"></span>
             </button>
+          </div>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <!-- Server Section -->
+        <div class="settings-section">
+          <div class="section-label">
+            <span class="section-icon">🌐</span>
+            Server
+          </div>
+          <div class="settings-item server-item">
+            <div class="item-info">
+              <span class="item-title">Server URL</span>
+              <span class="item-desc">Backend-Adresse (Standard: relativ / localhost:8080)</span>
+            </div>
+            <span
+              class="server-dot-inline"
+              :class="{ connected: serverConnected, disconnected: !serverConnected }"
+              :title="serverConnected ? 'Verbunden' : 'Nicht verbunden'"
+            ></span>
+          </div>
+          <div class="server-input-row">
+            <input
+              id="settings-server-url-input"
+              :value="serverInput"
+              @input="emit('update:serverInput', $event.target.value)"
+              @keyup.enter="emit('applyServer')"
+              @blur="emit('applyServer')"
+              class="glass-input server-url-input"
+              placeholder="Relativ (Standard) oder http://host:8080"
+              spellcheck="false"
+            />
+            <button class="reset-server-btn" @click="emit('resetServer')" title="Zurücksetzen">↺</button>
           </div>
         </div>
 
@@ -270,6 +312,54 @@ const toggle = (key) => {
 .toggle-btn.active .toggle-knob {
   transform: translateX(24px);
   background: #4ecca3;
+}
+
+.server-dot-inline {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+.server-dot-inline.connected {
+  background: #4ecca3;
+  box-shadow: 0 0 6px rgba(78, 204, 163, 0.7);
+}
+.server-dot-inline.disconnected {
+  background: #ff6b6b;
+  box-shadow: 0 0 6px rgba(255, 107, 107, 0.5);
+}
+
+.server-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.server-url-input {
+  flex: 1;
+  font-size: 0.82rem;
+  padding: 8px 12px;
+  border-radius: 10px;
+  min-width: 0;
+}
+
+.reset-server-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.6);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+.reset-server-btn:hover {
+  background: rgba(78,204,163,0.15);
+  color: #4ecca3;
 }
 
 .settings-footer {

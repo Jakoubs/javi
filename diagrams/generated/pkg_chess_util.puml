@@ -1,0 +1,80 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+package chess.util {
+interface "chess.util.Observer" as chess_util_Observer {
+  + update(state: T): Unit
+}
+
+interface "chess.util.Observable" as chess_util_Observable {
+  + addObserver(s: Observer[T]): Unit
+  + removeObserver(s: Observer[T]): Unit
+  + notifyObservers(state: T): Unit
+}
+
+object "chess.util.Pgn" as chess_util_Pgn {
+  + exportPgn(finalState: GameState, whitePlayer: String, blackPlayer: String): String
+  + exportMovesOnly(finalState: GameState): String
+  + exportHistorySan(finalState: GameState): List[String]
+  + importPgn(pgn: String): Try[GameState]
+  + deduceMove(fromState: GameState, toState: GameState): Option[Move]
+  + toSan(state: GameState, move: Move, nextState: GameState): String
+}
+
+interface "chess.util.Result" as chess_util_Result {
+  + map(f: A => B): Result[B]
+  + flatMap(f: A => Result[B]): Result[B]
+  + isSuccess(): Boolean
+  + isFailure(): Boolean
+  + getOrElse(default: => B): B
+  + toEither(): Either[String, A]
+  + toOption(): Option[A]
+}
+
+class "chess.util.Success" as chess_util_Success << (C,#FFDDDD) case >> {
+  + value: A
+  + map(f: A => B): Result[B]
+  + flatMap(f: A => Result[B]): Result[B]
+  + isSuccess(): Boolean
+  + isFailure(): Boolean
+  + getOrElse(default: => B): B
+  + toEither(): Either[String, A]
+  + toOption(): Option[A]
+}
+
+class "chess.util.Failure" as chess_util_Failure << (C,#FFDDDD) case >> {
+  + message: String
+  + map(f: Nothing => B): Result[B]
+  + flatMap(f: Nothing => Result[B]): Result[B]
+  + isSuccess(): Boolean
+  + isFailure(): Boolean
+  + getOrElse(default: => B): B
+  + toEither(): Either[String, Nothing]
+  + toOption(): Option[Nothing]
+}
+
+object "chess.util.Result" as chess_util_Result {
+  + apply(value: A): Result[A]
+  + fail(msg: String): Result[Nothing]
+  + fromOption(option: Option[A], errorMsg: String): Result[A]
+  + fromEither(either: Either[String, A]): Result[A]
+  + fromTry(t: Try[A]): Result[A]
+  + cond(test: Boolean, success: => A, failure: => String): Result[A]
+}
+
+}
+
+
+' Inheritance
+chess_util_Result <|-- chess_util_Success
+chess_util_Result <|-- chess_util_Failure
+
+' Dependencies
+chess_util_Observable --> chess_util_Observer
+chess_util_Pgn --> chess_model_GameState
+chess_util_Pgn --> chess_model_Move
+chess_util_Success --> chess_util_Result
+chess_util_Failure --> chess_util_Result
+@enduml

@@ -1,0 +1,84 @@
+xcc@startuml
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+package chess.controller {
+enum "chess.controller.MessageType" as chess_controller_MessageType {
+}
+
+enum "chess.controller.Command" as chess_controller_Command {
+  ApplyMove
+  SelectSquare
+  Flip
+  Undo
+  Resign
+  OfferDraw
+  NewGame
+  StartGame
+  TimeExpired
+  Help
+  Quit
+  AiMove
+  AiSuggest
+  AiTrain
+  ToggleAi
+  LoadPgn
+  LoadFen
+  SwitchParser
+  StepBack
+  StepForward
+  FirstHistory
+  LastHistory
+  JumpToHistory
+  ShowPgn
+  ShowFen
+  AiProgress
+  Unknown
+}
+
+class "chess.controller.AppState" as chess_controller_AppState << (C,#FFDDDD) case >> {
+  + game: GameState
+  + status: GameStatus
+  + flipped: Boolean
+  + highlights: Set[Pos]
+  + selectedPos: Option[Pos]
+  + lastMove: Option[Move]
+  + message: Option[String]
+  + messageType: MessageType
+  + drawOffer: Boolean
+  + running: Boolean
+  + training: Boolean
+  + trainingProgress: Option[String]
+  + aiWhite: Boolean
+  + aiBlack: Boolean
+  + clock: Option[ClockState]
+  + viewIndex: Int
+  + activePgnParser: String
+  + activeMoveParser: String
+}
+
+object "chess.controller.AppState" as chess_controller_AppState {
+  + initial(): AppState
+}
+
+object "chess.controller.GameController" as chess_controller_GameController {
+  + eval(cmd: Command): AppState
+  + handleCommand(app: AppState, cmd: Command): AppState
+}
+
+}
+
+
+' Inheritance
+
+' Dependencies
+chess_controller_AppState --> chess_model_GameState
+chess_controller_AppState --> chess_model_GameStatus
+chess_controller_AppState --> chess_model_Pos
+chess_controller_AppState --> chess_model_Move
+chess_controller_AppState --> chess_controller_MessageType
+chess_controller_AppState --> chess_model_ClockState
+chess_controller_GameController --> chess_controller_AppState
+chess_controller_GameController --> chess_controller_Command
+@enduml
