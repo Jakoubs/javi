@@ -66,5 +66,20 @@ class AuthService(val userDao: UserDao, emailService: EmailService):
       case false => Left("Invalid or expired verification token.")
     }
 
+  def devLogin(username: String): IO[Either[String, AuthResponse]] =
+    if (username == "Admin") {
+      IO.pure(Right(AuthResponse(0L, "admin", "admin-token", true)))
+    } else {
+      for {
+        userOpt <- userDao.findByUsername(username)
+        user <- userOpt match {
+          case Some(u) => IO.pure(u)
+          case None => 
+            val u = User(username = username, email = s"$username@test.local", passwordHash = "", isVerified = true)
+            userDao.save(u).map(id => u.copy(id = id))
+        }
+      } yield Right(AuthResponse(user.id, user.username, generateToken(user.id), true))
+    }
+
   private def generateToken(userId: Long): String =
     java.util.UUID.randomUUID().toString

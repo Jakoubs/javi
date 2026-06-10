@@ -182,6 +182,20 @@ class Http4sRestApi(
         case Left(err) => BadRequest(err.asJson)
       }
 
+    case req @ POST -> Root / "api" / "auth" / "dev-login" =>
+      req.as[String].flatMap { jsonString =>
+        val username = jsonString.replace("\"", "").replace("{", "").replace("}", "").replace("username:", "").trim // very dirty unboxing, but good enough for test users. Better: map as Json or just use raw username
+        // Actually since it's just frontend sending { username: "..." } we can decode it via Json
+        io.circe.parser.parse(jsonString).flatMap(_.hcursor.get[String]("username")) match {
+          case Right(name) => 
+            authService.devLogin(name).flatMap {
+              case Right(resp) => Ok(resp.asJson)
+              case Left(err) => BadRequest(err.asJson)
+            }
+          case Left(_) => BadRequest("Invalid JSON payload for dev login")
+        }
+      }
+
     case GET -> Root / "api" / "auth" / "verify" :? TokenParam(token) =>
       authService.verify(token).flatMap {
         case Right(msg) => Ok(msg)

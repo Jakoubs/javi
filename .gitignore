@@ -31,3 +31,4 @@ webui/.vite/
 # Local secrets
 .env
 *.token
+*.csv

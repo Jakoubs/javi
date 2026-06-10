@@ -148,6 +148,33 @@ const showAuthModal = ref(false)
 const authForm = ref({ username: '', email: '', password: '' })
 const authError = ref('')
 
+const isDevMode = import.meta.env.DEV
+const devTestUsers = ['TestUser1', 'TestUser2', 'Admin']
+const selectedDevUser = ref('TestUser1')
+
+const handleDevLogin = async () => {
+  authError.value = ''
+  try {
+    const response = await fetch(`${serverUrl.value}/api/auth/dev-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: selectedDevUser.value })
+    })
+    if (response.ok) {
+      const user = await response.json()
+      currentUser.value = user
+      localStorage.setItem('chessUser', JSON.stringify(user))
+      showAuthModal.value = false
+      fetchFriends()
+      fetchFriendRequests()
+    } else {
+      authError.value = 'Dev Login failed'
+    }
+  } catch (e) {
+    authError.value = 'Server connection failed'
+  }
+}
+
 const handleAuth = async () => {
   authError.value = ''
   const endpoint = authMode.value === 'login' ? 'login' : 'register'
@@ -1077,25 +1104,37 @@ const effectiveFlipped = computed(() => {
   <!-- Auth Modal -->
   <div v-if="showAuthModal" class="modal-overlay" @click.self="showAuthModal = false">
     <div class="modal-content glass">
-      <h2>{{ authMode === 'login' ? 'Welcome Back' : 'Join Javi Chess' }}</h2>
-      <div class="auth-tabs">
-        <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
-        <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
-      </div>
-      
-      <form @submit.prevent="handleAuth" class="auth-form">
-        <div class="form-group">
-          <input v-model="authForm.username" placeholder="Username" required class="glass-input">
-        </div>
-        <div v-if="authMode === 'register'" class="form-group">
-          <input v-model="authForm.email" type="email" placeholder="Email Address" required class="glass-input">
-        </div>
-        <div class="form-group">
-          <input v-model="authForm.password" type="password" placeholder="Password" required class="glass-input">
+      <div v-if="isDevMode">
+        <h2>Dev Mode Login</h2>
+        <div class="form-group" style="margin-top: 20px;">
+          <select v-model="selectedDevUser" class="glass-select" style="width: 100%; padding: 15px;">
+            <option v-for="u in devTestUsers" :key="u" :value="u">{{ u }}</option>
+          </select>
         </div>
         <p v-if="authError" class="auth-error">{{ authError }}</p>
-        <button type="submit" class="auth-submit-btn">{{ authMode === 'login' ? 'Login' : 'Sign Up' }}</button>
-      </form>
+        <button @click="handleDevLogin" class="auth-submit-btn" style="margin-top: 20px;">Login as {{ selectedDevUser }}</button>
+      </div>
+      <div v-else>
+        <h2>{{ authMode === 'login' ? 'Welcome Back' : 'Join Javi Chess' }}</h2>
+        <div class="auth-tabs">
+          <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
+          <button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Register</button>
+        </div>
+        
+        <form @submit.prevent="handleAuth" class="auth-form">
+          <div class="form-group">
+            <input v-model="authForm.username" placeholder="Username" required class="glass-input">
+          </div>
+          <div v-if="authMode === 'register'" class="form-group">
+            <input v-model="authForm.email" type="email" placeholder="Email Address" required class="glass-input">
+          </div>
+          <div class="form-group">
+            <input v-model="authForm.password" type="password" placeholder="Password" required class="glass-input">
+          </div>
+          <p v-if="authError" class="auth-error">{{ authError }}</p>
+          <button type="submit" class="auth-submit-btn">{{ authMode === 'login' ? 'Login' : 'Sign Up' }}</button>
+        </form>
+      </div>
     </div>
   </div>
 
