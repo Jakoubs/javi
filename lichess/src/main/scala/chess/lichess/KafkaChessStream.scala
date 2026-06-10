@@ -106,6 +106,10 @@ object KafkaChessStream:
 
     ChessGameStream.gameSource(numGames)                    // Source[List[PositionSnapshot]]
       .via(ChessGameStream.analysisFlow)                    // Flow → PositionSnapshot
+      .wireTap { snap =>
+        val advantage = if snap.evalScore > 0 then s"White +${snap.evalScore.toInt}" else s"Black +${math.abs(snap.evalScore.toInt)}"
+        println(f"[PRODUCER-EVAL] game=${snap.gameId} move=${snap.moveNumber}%-3d eval=$advantage%-16s fen=${snap.state.toFen.take(25)}...")
+      }
       .via(ChessGameStream.aggregationFlow(numGames))       // Flow → GameReport
       .map { report =>
         val msg  = GameReportMsg.from(report)
@@ -160,15 +164,17 @@ object KafkaChessStream:
         .collect { case Some(event) => event }   // drop failed parses
 
         // ── Position evaluation flow ──────────────────────────────────────
-        .map { event =>
-          val evalScore: Double =
-            GameState.fromFen(event.fenAfter) match
-              case Right(state) => Evaluator.evaluate(state)
-              case Left(err)    =>
-                println(s"[CONSUMER] FEN parse error for ${event.fenAfter.take(20)}: $err")
-                0.0
+        .mapAsync(4) { event =>
+          Future {
+            val evalScore: Double =
+              GameState.fromFen(event.fenAfter) match
+                case Right(state) => Evaluator.evaluate(state)
+                case Left(err)    =>
+                  println(s"[CONSUMER] FEN parse error for ${event.fenAfter.take(20)}: $err")
+                  0.0
 
-          (event, evalScore)
+            (event, evalScore)
+          }(scala.concurrent.ExecutionContext.Implicits.global)
         }
 
         // ── Sink: log the analysis result ─────────────────────────────────
@@ -225,21 +231,16 @@ object KafkaStreamMain:
     // Run producer: plays N games and publishes reports; finishes after numGames
     val producerDone = KafkaChessStream.runProducer(numGames, bootstrap)
 
-    // Wait for producer to finish, then shut down consumer gracefully
+    // Wait for producer to finish, but leave the consumer running
     producerDone.onComplete { _ =>
-      println("\n[MAIN] Producer done — shutting down consumer in 3 s …")
-      system.scheduler.scheduleOnce(3.seconds, () => consumerKillSwitch.shutdown())
+      println("\n[MAIN] Producer done. Consumer will continue to listen and evaluate moves indefinitely...")
     }
 
-    // Wait for both to finish before terminating the actor system
-    val allDone = for
-      _ <- producerDone.recover { case _ => Done.getInstance() }
-      _ <- consumerDone.recover { case _ => Done.getInstance() }
-    yield ()
-
-    allDone.onComplete { _ =>
+    // Only terminate the actor system if the consumer dies or is manually stopped
+    consumerDone.onComplete { _ =>
       system.terminate()
     }
 
-    Await.result(system.whenTerminated, 10.minutes)
+    import scala.concurrent.duration.Duration
+    Await.result(system.whenTerminated, Duration.Inf)
     println("\nKafka stream finished. Goodbye!")

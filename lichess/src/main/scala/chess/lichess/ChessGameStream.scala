@@ -70,7 +70,7 @@ object ChessGameStream:
   /** Emits one List[PositionSnapshot] per game (back-pressured). */
   def gameSource(numGames: Int): Source[List[PositionSnapshot], _] =
     Source.fromIterator(() => Iterator.range(0, numGames))
-      .map(gameId => playRandomGame(gameId))
+      .mapAsync(4)(gameId => Future { playRandomGame(gameId) }(scala.concurrent.ExecutionContext.Implicits.global))
 
   /** Flattens List[PositionSnapshot] → individual PositionSnapshot elements. */
   val analysisFlow: Flow[List[PositionSnapshot], PositionSnapshot, _] =

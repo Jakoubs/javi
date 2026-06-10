@@ -148,7 +148,7 @@ const showAuthModal = ref(false)
 const authForm = ref({ username: '', email: '', password: '' })
 const authError = ref('')
 
-const isDevMode = import.meta.env.DEV
+const isDevMode = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 const devTestUsers = ['TestUser1', 'TestUser2', 'Admin']
 const selectedDevUser = ref('TestUser1')
 

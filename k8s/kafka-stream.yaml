@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-stream
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: kafka-stream
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: javi
+      app.kubernetes.io/component: kafka-stream
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: javi
+        app.kubernetes.io/component: kafka-stream
+    spec:
+      containers:
+        - name: kafka-stream
+          image: javi-kafka-stream:latest
+          imagePullPolicy: IfNotPresent
+          command: ["java"]
+          args: ["-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "app.jar", "chess.lichess.KafkaStreamMain", "5", "kafka:9092"]
+          env:
+            - name: KAFKA_BOOTSTRAP
+              value: kafka:9092
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

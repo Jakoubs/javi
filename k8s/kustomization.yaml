@@ -9,3 +9,4 @@ resources:
   - rest.yaml
   - webui.yaml
   - ingress.yaml
+  - kafka-stream.yaml
