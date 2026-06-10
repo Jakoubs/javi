@@ -4,7 +4,7 @@ import ChessBoard from './ChessBoard.vue'
 
 const props = defineProps({
   isQueueing: Boolean,
-  serverUrl: { type: String, default: 'http://localhost:8080' }
+  serverUrl: { type: String, default: '' }
 })
 
 const emit = defineEmits(['start-game', 'join-queue', 'cancel-queue', 'goto-puzzles', 'spectate-party'])

@@ -5,6 +5,7 @@ resources:
   - postgres.yaml
   - mongo.yaml
   - kafka.yaml
+  - kafka-ui.yaml
   - rest.yaml
   - webui.yaml
   - ingress.yaml

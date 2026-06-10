@@ -146,7 +146,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 const props = defineProps({ token: String })
 const emit = defineEmits(['close'])
 
-const API = 'http://localhost:8080/api/admin'
+const API = '/api/admin'
 const headers = computed(() => ({
   'Content-Type': 'application/json',
   'Authorization': `Bearer ${props.token}`
