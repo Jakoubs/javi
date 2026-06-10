@@ -16,7 +16,8 @@ class EmailService(
   val from: String
 ):
   def sendVerificationEmail(to: String, username: String, token: String): IO[Either[String, String]] = {
-    val verificationLink = s"http://localhost:8080/api/auth/verify?token=$token"
+    val publicUrl = sys.env.getOrElse("PUBLIC_URL", "http://141.37.74.147").trim
+    val verificationLink = s"$publicUrl/api/auth/verify?token=$token"
     
     val htmlContent = s"""<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
