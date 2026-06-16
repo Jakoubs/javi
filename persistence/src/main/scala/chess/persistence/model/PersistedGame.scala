@@ -12,11 +12,13 @@ package chess.persistence.model
  * @param updatedAt  Last-update timestamp (epoch millis)
  */
 case class PersistedGame(
-  id:        String,
-  startFen:  String,
-  finalFen:  String,
-  pgn:       String,
-  result:    String,
-  createdAt: Long,
-  updatedAt: Long
+  id:          String,
+  startFen:    String,
+  finalFen:    String,
+  pgn:         String,
+  result:      String,
+  createdAt:   Long,
+  updatedAt:   Long,
+  whitePlayer: String = "guest",
+  blackPlayer: String = "guest"
 )

@@ -18,7 +18,8 @@ import org.http4s.server.middleware.ErrorHandling
 import chess.controller.{GameController, AppState, Command, MessageType, CommandRequest, GameStateResponse, CommandParser, EmoteInfo}
 import chess.controller.{liveMillis, displayFen, historyFen}
 import chess.model.{Pos, MoveGenerator, ClockState, MaterialInfo, Color, materialInfo, capturedPieces}
-import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao}
+import chess.persistence.dao.{FriendshipDao, OpeningDao, PuzzleDao, GameDao, MoveEventDao}
+import chess.persistence.model.{PersistedGame, MoveEvent}
 import chess.util.parser.CoordinateMoveParser
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.*
@@ -50,7 +51,9 @@ class Http4sRestApi(
   authService: AuthService,
   friendshipDao: FriendshipDao,
   openingDao: OpeningDao,
-  puzzleDao: PuzzleDao
+  puzzleDao: PuzzleDao,
+  gameDao: GameDao,
+  moveEventDao: MoveEventDao
 ):
   implicit val commandReqDecoder: EntityDecoder[IO, CommandRequest] = jsonOf[IO, CommandRequest]
   implicit val authReqDecoder: EntityDecoder[IO, AuthRequest] = jsonOf[IO, AuthRequest]
@@ -144,6 +147,99 @@ class Http4sRestApi(
     }
     (cleaned, finalJson)
 
+  private def persistGameAndMove(sessionId: String, move: chess.model.Move, newState: AppState, session: SessionState): IO[Unit] = {
+    val now = System.currentTimeMillis()
+    
+    val resultStr = newState.status match {
+      case chess.model.GameStatus.Checkmate(loser) => if (loser == chess.model.Color.White) "black" else "white"
+      case chess.model.GameStatus.Resigned(loser)  => if (loser == chess.model.Color.White) "black" else "white"
+      case chess.model.GameStatus.Timeout(loser)   => if (loser == chess.model.Color.White) "black" else "white"
+      case chess.model.GameStatus.Stalemate        => "draw"
+      case chess.model.GameStatus.Draw(_)          => "draw"
+      case _                                       => "ongoing"
+    }
+
+    val (whitePl, blackPl) = partyAssignments.get(sessionId) match {
+      case Some(p) => (p.whiteUser, p.blackUser)
+      case None =>
+        val botName = "bot:" + newState.aiBot
+        val activeHumans = session.activeUsers.keys.toList
+        val humanName = activeHumans.headOption.getOrElse("guest")
+        val white = if (newState.aiWhite) botName else humanName
+        val black = if (newState.aiBlack) botName else humanName
+        (white, black)
+    }
+
+    val allSans = chess.util.Pgn.exportHistorySan(newState.game)
+    val san = allSans.lastOption.getOrElse("?")
+    val uci = move.toInputString
+    val moveNum = newState.game.history.size - 1
+
+    val moveEvent = MoveEvent(
+      id = java.util.UUID.randomUUID().toString,
+      gameId = sessionId,
+      moveNumber = moveNum,
+      san = san,
+      uci = uci,
+      fenAfter = newState.game.toFen,
+      timestamp = now
+    )
+
+    for {
+      existingOpt <- gameDao.findById(sessionId)
+      game = existingOpt match {
+        case Some(existing) =>
+          existing.copy(
+            finalFen = newState.game.toFen,
+            pgn = chess.util.Pgn.exportPgn(newState.game),
+            result = resultStr,
+            updatedAt = now,
+            whitePlayer = whitePl,
+            blackPlayer = blackPl
+          )
+        case None =>
+          val startFen = newState.game.history.headOption.map(_.toFen).getOrElse(newState.game.toFen)
+          PersistedGame(
+            id = sessionId,
+            startFen = startFen,
+            finalFen = newState.game.toFen,
+            pgn = chess.util.Pgn.exportPgn(newState.game),
+            result = resultStr,
+            createdAt = now,
+            updatedAt = now,
+            whitePlayer = whitePl,
+            blackPlayer = blackPl
+          )
+      }
+      _ <- if (existingOpt.isDefined) gameDao.update(game) else gameDao.save(game)
+      _ <- moveEventDao.save(moveEvent)
+    } yield ()
+  }
+
+  private def updateGameResult(sessionId: String, newState: AppState): IO[Unit] = {
+    val resultStr = newState.status match {
+      case chess.model.GameStatus.Checkmate(loser) => if (loser == chess.model.Color.White) "black" else "white"
+      case chess.model.GameStatus.Resigned(loser)  => if (loser == chess.model.Color.White) "black" else "white"
+      case chess.model.GameStatus.Timeout(loser)   => if (loser == chess.model.Color.White) "black" else "white"
+      case chess.model.GameStatus.Stalemate        => "draw"
+      case chess.model.GameStatus.Draw(_)          => "draw"
+      case _                                       => "ongoing"
+    }
+
+    gameDao.findById(sessionId).flatMap {
+      case Some(existing) =>
+        val updated = existing.copy(
+          finalFen = newState.game.toFen,
+          pgn = chess.util.Pgn.exportPgn(newState.game),
+          result = resultStr,
+          updatedAt = System.currentTimeMillis()
+        )
+        gameDao.update(updated)
+      case None =>
+        IO.unit
+    }
+  }
+
   private def dispatch(sessionId: String, cmd: Command): IO[AppState] = 
     for {
       newState <- updateSessionWithResult(sessionId) { session =>
@@ -151,9 +247,18 @@ class Http4sRestApi(
         (session.copy(appState = newState), newState)
       }
       
+      session <- IO(sessions.getOrElseUpdate(sessionId, SessionState()))
+
       _ <- (cmd, newState) match {
         case (Command.ApplyMove(move), s) if s.messageType != MessageType.Error =>
-          kafkaService.publishMove(sessionId, move, s.game.toFen)
+          kafkaService.publishMove(sessionId, move, s.game.toFen) *>
+            persistGameAndMove(sessionId, move, s, session).handleErrorWith { err =>
+              IO.println(s"[REST DB ERROR] Failed to persist game/move: ${err.getMessage}")
+            }
+        case (_, s) if s.status != chess.model.GameStatus.Playing =>
+          updateGameResult(sessionId, s).handleErrorWith { err =>
+            IO.println(s"[REST DB ERROR] Failed to update game status: ${err.getMessage}")
+          }
         case _ => IO.unit
       }
       
@@ -382,8 +487,8 @@ class Http4sRestApi(
     case GET -> Root / "api" / "admin" / "stats" =>
       IO(AdminService.getStats(sessions.size, 0)).flatMap(stats => Ok(stats.asJson))
 
-    case GET -> Root / "api" / "analytics" / "summary" =>
-      IO(AnalyticsService.getSummary()).flatMap(summary => Ok(summary.asJson))
+    case GET -> Root / "api" / "analytics" / "summary" :? UsernameParam(username) =>
+      IO(AnalyticsService.getSummary(username)).flatMap(summary => Ok(summary.asJson))
 
     case GET -> Root / "api" / "admin" / "users" =>
       IO(AdminService.listUsers()).flatMap(users => Ok(users.asJson))

@@ -4,8 +4,8 @@ import chess.controller.GameController
 import chess.view.{Tui, Gui}
 import chess.rest.{AuthService, EmailService, Http4sRestApi, KafkaService}
 import chess.persistence.PersistenceModule
-import chess.persistence.dao.{FriendshipDao, OpeningDao, UserDao, PuzzleDao}
-import chess.persistence.model.User
+import chess.persistence.dao.{FriendshipDao, OpeningDao, UserDao, PuzzleDao, GameDao, MoveEventDao}
+import chess.persistence.model.{User, PersistedGame, MoveEvent}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.effect.IO
@@ -53,13 +53,25 @@ object Main:
       val emailService = EmailService.fromEnv().unsafeRunSync()
       val authService = new AuthService(persistence.userDao, emailService)
       shutdownHooks = persistence.close() :: shutdownHooks
-      new Http4sRestApi(KafkaService.noOp, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao)
+      new Http4sRestApi(KafkaService.noOp, authService, persistence.friendshipDao, persistence.openingDao, persistence.puzzleDao, persistence.gameDao, persistence.moveEventDao)
     catch
       case _: Throwable =>
         val userDao = InMemoryUserDao
         val friendshipDao = InMemoryFriendshipDao
         val authService = new AuthService(userDao, new EmailService("", "", "", "", "noreply@localhost"))
-        new Http4sRestApi(KafkaService.noOp, authService, friendshipDao, InMemoryOpeningDao, InMemoryPuzzleDao)
+        new Http4sRestApi(KafkaService.noOp, authService, friendshipDao, InMemoryOpeningDao, InMemoryPuzzleDao, InMemoryGameDao, InMemoryMoveEventDao)
+
+  private object InMemoryGameDao extends GameDao:
+    override def save(game: PersistedGame): IO[Unit] = IO.unit
+    override def findById(id: String): IO[Option[PersistedGame]] = IO.pure(None)
+    override def findAll(): IO[List[PersistedGame]] = IO.pure(Nil)
+    override def update(game: PersistedGame): IO[Unit] = IO.unit
+    override def delete(id: String): IO[Unit] = IO.unit
+
+  private object InMemoryMoveEventDao extends MoveEventDao:
+    override def save(event: MoveEvent): IO[Unit] = IO.unit
+    override def findByGameId(gameId: String): IO[List[MoveEvent]] = IO.pure(Nil)
+    override def deleteByGameId(gameId: String): IO[Unit] = IO.unit
 
   private object InMemoryUserDao extends UserDao:
     override def save(user: User): IO[Long] = IO.pure(1L)

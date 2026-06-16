@@ -53,8 +53,8 @@ final class SlickPersistence private (
 
   override def update(game: PersistedGame): IO[Unit] =
     val q = gTbl.games.filter(_.id === game.id)
-      .map(r => (r.finalFen, r.pgn, r.result, r.updatedAt))
-      .update((game.finalFen, game.pgn, game.result, game.updatedAt))
+      .map(r => (r.finalFen, r.pgn, r.result, r.updatedAt, r.whitePlayer, r.blackPlayer))
+      .update((game.finalFen, game.pgn, game.result, game.updatedAt, game.whitePlayer, game.blackPlayer))
     run(q).void
 
   override def delete(id: String): IO[Unit] =
@@ -201,7 +201,9 @@ object SlickPersistence:
     val ptTbl = PuzzleThemeTable(profile)
     val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl, pTbl, ptTbl)
     import profile.api.*
-    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema >> pTbl.createSchema >> ptTbl.createSchema
+    val alterWhite = sqlu"ALTER TABLE games ADD COLUMN IF NOT EXISTS white_player VARCHAR DEFAULT 'guest'".asTry
+    val alterBlack = sqlu"ALTER TABLE games ADD COLUMN IF NOT EXISTS black_player VARCHAR DEFAULT 'guest'".asTry
+    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema >> pTbl.createSchema >> ptTbl.createSchema >> alterWhite >> alterBlack
     IO.fromFuture(IO(db.run(ddl))).as(instance)
 
   /**

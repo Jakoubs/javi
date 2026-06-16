@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   serverUrl: {
@@ -10,48 +10,82 @@ const props = defineProps({
 
 const loading = ref(true)
 const errorMsg = ref(null)
+const selectedUser = ref('')
+const usersList = ref([])
+const refreshInterval = ref(null)
+
 const data = ref({
   gameResults: [],
   popularFirstMoves: [],
-  puzzleDifficulty: [],
-  puzzleThemes: [],
-  gamesOverTime: []
+  gamesOverTime: [],
+  userWinRates: [],
+  botStats: []
 })
 
-const fetchAnalytics = async () => {
-  loading.value = true
+const fetchUsers = async () => {
+  try {
+    const response = await fetch(`${props.serverUrl}/api/admin/users`)
+    if (response.ok) {
+      usersList.value = await response.json()
+    }
+  } catch (e) {
+    console.error('Failed to fetch users list', e)
+  }
+}
+
+const fetchAnalytics = async (silent = false) => {
+  if (!silent) loading.value = true
   errorMsg.value = null
   try {
-    const response = await fetch(`${props.serverUrl}/api/analytics/summary`)
+    let url = `${props.serverUrl}/api/analytics/summary`
+    if (selectedUser.value) {
+      url += `?username=${encodeURIComponent(selectedUser.value)}`
+    }
+    const response = await fetch(url)
     if (response.ok) {
       data.value = await response.json()
     } else {
-      errorMsg.value = 'Fehler beim Laden der Spieldaten vom Server.'
+      if (!silent) errorMsg.value = 'Fehler beim Laden der Spieldaten vom Server.'
     }
   } catch (e) {
     console.error(e)
-    errorMsg.value = 'Server konnte nicht erreicht werden.'
+    if (!silent) errorMsg.value = 'Server konnte nicht erreicht werden.'
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
+}
+
+const onUserChange = () => {
+  fetchAnalytics()
 }
 
 onMounted(() => {
   fetchAnalytics()
+  fetchUsers()
+  // Auto-refresh stats silently every 4 seconds for instant updates
+  refreshInterval.value = setInterval(() => {
+    fetchAnalytics(true)
+  }, 4000)
+})
+
+onUnmounted(() => {
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value)
+  }
 })
 
 const isDataEmpty = () => {
   return !data.value.gameResults.length &&
          !data.value.popularFirstMoves.length &&
-         !data.value.puzzleDifficulty.length &&
-         !data.value.puzzleThemes.length &&
          !data.value.gamesOverTime.length
 }
 
 const getWinnerColor = (winner) => {
-  if (winner.toLowerCase().includes('white')) return '#4ecca3'
-  if (winner.toLowerCase().includes('black')) return '#ff6b6b'
-  return '#f0a500'
+  const w = winner.toLowerCase()
+  if (w.includes('white') || w === 'wins') return '#4ecca3'
+  if (w.includes('black') || w === 'losses') return '#ff6b6b'
+  if (w.includes('draw') || w === 'draws') return '#f0a500'
+  return '#708090'
 }
 
 const formatPercent = (val) => {
@@ -66,10 +100,24 @@ const formatPercent = (val) => {
         <h2>♟ Spark Analytics Dashboard</h2>
         <p class="subtitle">Echtzeit- und Batch-Analysen aus Spark-Aggregations-Pipelines</p>
       </div>
-      <button @click="fetchAnalytics" class="refresh-btn" :disabled="loading">
-        <span v-if="loading" class="spinner"></span>
-        <span>🔄 Aktualisieren</span>
-      </button>
+
+      <div class="controls-section">
+        <!-- User Selection Dropdown -->
+        <div class="user-select-wrap">
+          <label for="user-select">Filter:</label>
+          <select id="user-select" v-model="selectedUser" @change="onUserChange" class="glass-select">
+            <option value="">Alle Spieler (Global)</option>
+            <option v-for="u in usersList" :key="u.id" :value="u.username">
+              👤 {{ u.username }} {{ u.isVerified ? '✓' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <button @click="fetchAnalytics" class="refresh-btn" :disabled="loading">
+          <span v-if="loading" class="spinner"></span>
+          <span>🔄 Aktualisieren</span>
+        </button>
+      </div>
     </div>
 
     <!-- Loading state -->
@@ -85,7 +133,7 @@ const formatPercent = (val) => {
       <button @click="fetchAnalytics" class="btn primary">Erneut versuchen</button>
     </div>
 
-    <!-- Empty state (Spark hasn't run yet) -->
+    <!-- Empty state -->
     <div v-else-if="isDataEmpty()" class="empty-state glass">
       <div class="empty-icon">📊</div>
       <h3>Keine Spark-Analysedaten gefunden</h3>
@@ -105,7 +153,7 @@ const formatPercent = (val) => {
       <div class="row-1">
         <!-- Game Results -->
         <div class="card glass game-results-card">
-          <h3>🏆 Spielresultate</h3>
+          <h3>🏆 Spielresultate {{ selectedUser ? `für ${selectedUser}` : '(Global)' }}</h3>
           <div class="results-visual">
             <div 
               v-for="r in data.gameResults" 
@@ -119,14 +167,14 @@ const formatPercent = (val) => {
             <div v-for="r in data.gameResults" :key="r.result" class="legend-item">
               <span class="color-dot" :style="{ backgroundColor: getWinnerColor(r.result) }"></span>
               <span class="legend-name">{{ r.result }}</span>
-              <span class="legend-val">{{ r.count }} ({{ formatPercent(r.percentage) }}%)</span>
+              <span class="legend-val">{{ r.count }} ({{ formatPercent(r.percentage)}}%)</span>
             </div>
           </div>
         </div>
 
         <!-- Popular Openings -->
         <div class="card glass openings-card">
-          <h3>📖 Beliebteste Eröffnungszüge</h3>
+          <h3>📖 Beliebteste Eröffnungszüge {{ selectedUser ? `von ${selectedUser}` : '' }}</h3>
           <div class="openings-list">
             <div v-for="(op, index) in data.popularFirstMoves" :key="op.san" class="opening-item">
               <span class="opening-rank">#{{ index + 1 }}</span>
@@ -134,75 +182,134 @@ const formatPercent = (val) => {
               <div class="bar-container">
                 <div 
                   class="bar" 
-                  :style="{ width: (op.count / data.popularFirstMoves[0].count) * 100 + '%' }"
+                  :style="{ width: data.popularFirstMoves.length ? (op.count / data.popularFirstMoves[0].count) * 100 + '%' : '0%' }"
                 ></div>
               </div>
               <span class="opening-count">{{ op.count }}x</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 2: Puzzle Difficulties -->
-      <div class="card glass difficulty-card">
-        <h3>🎯 Lichess-Puzzles nach Schwierigkeitsgrad</h3>
-        <div class="difficulty-grid">
-          <div v-for="diff in data.puzzleDifficulty" :key="diff.difficulty" class="diff-box">
-            <span class="diff-title">{{ diff.difficulty }}</span>
-            <span class="diff-count">{{ diff.count.toLocaleString() }} Puzzles</span>
-            <div class="diff-details">
-              <div><span>Schnitt:</span> <strong>{{ Math.round(diff.avgRating) }}</strong> Rating</div>
-              <div><span>Züge Ø:</span> <strong>{{ diff.avgMoves.toFixed(1) }}</strong></div>
+            <div v-if="!data.popularFirstMoves || !data.popularFirstMoves.length" class="no-data">
+              Keine Eröffnungszüge aufgezeichnet
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Row 3: Puzzle Themes & Games Played Over Time -->
-      <div class="row-3">
-        <!-- Themes -->
-        <div class="card glass themes-card">
-          <h3>🏷️ Top Puzzle-Motive</h3>
-          <div class="themes-list">
-            <div v-for="t in data.puzzleThemes" :key="t.theme" class="theme-row">
-              <span class="theme-name">{{ t.theme }}</span>
-              <div class="theme-bar-wrap">
-                <div 
-                  class="theme-bar"
-                  :style="{ width: (t.count / data.puzzleThemes[0].count) * 100 + '%' }"
-                ></div>
-              </div>
-              <span class="theme-count">{{ t.count.toLocaleString() }}</span>
-              <span class="theme-rating">Ø {{ Math.round(t.avgRating) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Games Over Time -->
-        <div class="card glass games-time-card">
-          <h3>📅 Spieleentwicklung über Zeit</h3>
-          <div class="time-list-wrapper">
-            <table class="time-table">
+      <!-- Row 2: Leaderboards (Humans & Bots) -->
+      <div class="row-1">
+        <!-- Human Leaderboard -->
+        <div class="card glass leaderboard-card">
+          <h3>🏆 Spieler-Rangliste</h3>
+          <div class="table-wrapper">
+            <table class="leaderboard-table">
               <thead>
                 <tr>
-                  <th>Datum</th>
+                  <th>Rang</th>
+                  <th>Spieler</th>
                   <th>Spiele</th>
-                  <th style="color: #4ecca3">Weiß Siege</th>
-                  <th style="color: #ff6b6b">Schwarz Siege</th>
+                  <th style="color: #4ecca3">Siege</th>
+                  <th style="color: #ff6b6b">Ndl.</th>
                   <th style="color: #f0a500">Remis</th>
+                  <th>Quote</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="day in data.gamesOverTime" :key="day.date">
-                  <td>{{ day.date }}</td>
-                  <td><strong>{{ day.gamesPlayed }}</strong></td>
-                  <td>{{ day.whiteWins }}</td>
-                  <td>{{ day.blackWins }}</td>
-                  <td>{{ day.draws }}</td>
+                <tr 
+                  v-for="(user, index) in data.userWinRates" 
+                  :key="user.username" 
+                  class="leaderboard-row"
+                  :class="{ 'current-filter': user.username === selectedUser }"
+                  @click="selectedUser = user.username; fetchAnalytics()"
+                >
+                  <td><span class="rank-badge" :class="'rank-' + (index + 1)">{{ index + 1 }}</span></td>
+                  <td class="player-name"><strong>{{ user.username }}</strong></td>
+                  <td>{{ user.gamesPlayed }}</td>
+                  <td>{{ user.wins }}</td>
+                  <td>{{ user.losses }}</td>
+                  <td>{{ user.draws }}</td>
+                  <td>
+                    <div class="rate-cell">
+                      <span class="rate-text">{{ user.winRate.toFixed(1) }}%</span>
+                      <div class="mini-bar-wrap">
+                        <div class="mini-bar" :style="{ width: user.winRate + '%', backgroundColor: '#4ecca3' }"></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="!data.userWinRates || !data.userWinRates.length">
+                  <td colspan="7" class="no-data">Keine Ranglistendaten vorhanden</td>
                 </tr>
               </tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Bot Leaderboard -->
+        <div class="card glass bot-stats-card">
+          <h3>🤖 Bot-Erfolgsrate</h3>
+          <div class="table-wrapper">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Bot</th>
+                  <th>Spiele</th>
+                  <th style="color: #4ecca3">Siege</th>
+                  <th style="color: #ff6b6b">Ndl.</th>
+                  <th style="color: #f0a500">Remis</th>
+                  <th>Quote</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="bot in data.botStats" :key="bot.botName" class="leaderboard-row">
+                  <td class="bot-name">🤖 <strong>{{ bot.botName.replace('bot:', '') }}</strong></td>
+                  <td>{{ bot.gamesPlayed }}</td>
+                  <td>{{ bot.wins }}</td>
+                  <td>{{ bot.losses }}</td>
+                  <td>{{ bot.draws }}</td>
+                  <td>
+                    <div class="rate-cell">
+                      <span class="rate-text">{{ bot.winRate.toFixed(1) }}%</span>
+                      <div class="mini-bar-wrap">
+                        <div class="mini-bar" :style="{ width: bot.winRate + '%', backgroundColor: '#3bb38f' }"></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="!data.botStats || !data.botStats.length">
+                  <td colspan="6" class="no-data">Keine Bot-Statistiken vorhanden</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Games Over Time -->
+      <div class="card glass games-time-card">
+        <h3>📅 Spieleentwicklung über Zeit</h3>
+        <div class="time-list-wrapper">
+          <table class="time-table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Spiele</th>
+                <th style="color: #4ecca3">{{ selectedUser ? 'Siege' : 'Weiß Siege' }}</th>
+                <th style="color: #ff6b6b">{{ selectedUser ? 'Ndl.' : 'Schwarz Siege' }}</th>
+                <th style="color: #f0a500">Remis</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="day in data.gamesOverTime" :key="day.date">
+                <td>{{ day.date }}</td>
+                <td><strong>{{ day.gamesPlayed }}</strong></td>
+                <td>{{ day.whiteWins }}</td>
+                <td>{{ day.blackWins }}</td>
+                <td>{{ day.draws }}</td>
+              </tr>
+              <tr v-if="!data.gamesOverTime || !data.gamesOverTime.length">
+                <td colspan="5" class="no-data">Keine Zeitverlaufsdaten vorhanden</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -224,7 +331,9 @@ const formatPercent = (val) => {
   align-items: center;
   margin-bottom: 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 1rem;
+  padding-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
 }
 
 .title-section h2 {
@@ -240,11 +349,47 @@ const formatPercent = (val) => {
   color: rgba(255, 255, 255, 0.6);
 }
 
+.controls-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.user-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-select-wrap label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.glass-select {
+  background: rgba(25ff, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 16px;
+  cursor: pointer;
+  outline: none;
+  font-weight: 500;
+  transition: all 0.2s;
+  background-color: #1a1a2e;
+}
+
+.glass-select:focus {
+  border-color: #4ecca3;
+  box-shadow: 0 0 8px rgba(78, 204, 163, 0.3);
+}
+
 .refresh-btn {
-  background: rgba(78, 204, 163, 0.2);
-  border: 1px solid rgba(78, 204, 163, 0.4);
+  background: rgba(78, 204, 163, 0.15);
+  border: 1px solid rgba(78, 204, 163, 0.3);
   color: #4ecca3;
-  padding: 10px 20px;
+  padding: 8px 18px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -255,7 +400,7 @@ const formatPercent = (val) => {
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: rgba(78, 204, 163, 0.3);
+  background: rgba(78, 204, 163, 0.25);
   transform: translateY(-1px);
 }
 
@@ -269,6 +414,12 @@ const formatPercent = (val) => {
   padding: 1.5rem;
   border-radius: 16px;
   margin-bottom: 1.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
 h3 {
@@ -285,12 +436,13 @@ h3 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.row-3 {
-  display: grid;
-  grid-template-columns: 1.2fr 1.8fr;
-  gap: 1.5rem;
+@media (max-width: 768px) {
+  .row-1 {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* Loading, Error, Empty states */
@@ -352,7 +504,7 @@ h3 {
   display: flex;
   justify-content: space-around;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 15px;
 }
 
 .legend-item {
@@ -417,101 +569,89 @@ h3 {
   font-weight: bold;
 }
 
-/* Difficulty Grid */
-.difficulty-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1.25rem;
+
+
+/* Tables and Leaderboards */
+.table-wrapper {
+  overflow-x: auto;
 }
 
-.diff-box {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: transform 0.2s, background 0.2s;
-}
-
-.diff-box:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.diff-title {
-  font-weight: bold;
-  font-size: 1.1rem;
-  color: #4ecca3;
-  margin-bottom: 5px;
-}
-
-.diff-count {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 15px;
-}
-
-.diff-details {
-  font-size: 0.85rem;
+.leaderboard-table {
   width: 100%;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 10px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  text-align: left;
 }
 
-.diff-details div {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
+.leaderboard-table th {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
 }
 
-/* Themes Table/Row style */
-.themes-list {
+.leaderboard-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-row {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.leaderboard-row:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.current-filter {
+  background: rgba(78, 204, 163, 0.1) !important;
+  border-left: 3px solid #4ecca3;
+}
+
+.rank-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.rank-1 { background: gold; color: #1a1a2e; }
+.rank-2 { background: silver; color: #1a1a2e; }
+.rank-3 { background: #cd7f32; color: #1a1a2e; }
+
+.rate-cell {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
-.theme-row {
-  display: flex;
-  align-items: center;
-  font-size: 0.85rem;
-}
-
-.theme-name {
-  width: 100px;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.theme-bar-wrap {
-  flex-grow: 1;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
-  margin: 0 10px;
-  overflow: hidden;
-}
-
-.theme-bar {
-  height: 100%;
-  background: #f0a500;
-  border-radius: 4px;
-}
-
-.theme-count {
-  width: 60px;
+.rate-text {
   font-weight: bold;
-  text-align: right;
 }
 
-.theme-rating {
-  width: 70px;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: right;
+.mini-bar-wrap {
+  width: 100px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mini-bar {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
 }
 
 /* Games Played Time Table */
@@ -528,14 +668,14 @@ h3 {
 
 .time-table th {
   text-align: left;
-  padding: 10px;
+  padding: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.6);
   font-weight: 600;
 }
 
 .time-table td {
-  padding: 10px;
+  padding: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 

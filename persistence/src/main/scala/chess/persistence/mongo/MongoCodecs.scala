@@ -34,13 +34,15 @@ object MongoCodecs:
       ctx:    EncoderContext
     ): Unit =
       val doc = new Document()
-        .append("_id",        value.id)
-        .append("startFen",   value.startFen)
-        .append("finalFen",   value.finalFen)
-        .append("pgn",        value.pgn)
-        .append("result",     value.result)
-        .append("createdAt",  value.createdAt)
-        .append("updatedAt",  value.updatedAt)
+        .append("_id",         value.id)
+        .append("startFen",    value.startFen)
+        .append("finalFen",    value.finalFen)
+        .append("pgn",         value.pgn)
+        .append("result",      value.result)
+        .append("createdAt",   value.createdAt)
+        .append("updatedAt",   value.updatedAt)
+        .append("whitePlayer", value.whitePlayer)
+        .append("blackPlayer", value.blackPlayer)
       docCodec.encode(writer, doc, ctx)
 
     override def decode(
@@ -49,13 +51,15 @@ object MongoCodecs:
     ): PersistedGame =
       val doc = docCodec.decode(reader, ctx)
       PersistedGame(
-        id        = doc.getString("_id"),
-        startFen  = doc.getString("startFen"),
-        finalFen  = doc.getString("finalFen"),
-        pgn       = doc.getString("pgn"),
-        result    = doc.getString("result"),
-        createdAt = doc.getLong("createdAt"),
-        updatedAt = doc.getLong("updatedAt")
+        id          = doc.getString("_id"),
+        startFen    = doc.getString("startFen"),
+        finalFen    = doc.getString("finalFen"),
+        pgn         = doc.getString("pgn"),
+        result      = doc.getString("result"),
+        createdAt   = doc.getLong("createdAt"),
+        updatedAt   = doc.getLong("updatedAt"),
+        whitePlayer = Option(doc.getString("whitePlayer")).getOrElse("guest"),
+        blackPlayer = Option(doc.getString("blackPlayer")).getOrElse("guest")
       )
 
   // ─── MoveEvent codec ──────────────────────────────────────────────────────
