@@ -35,6 +35,13 @@ case class MoveEvent(
   timestamp: Long = System.currentTimeMillis()
 )
 
+case class EvaluationEvent(
+  sessionId: String,
+  eval:      Double,
+  timestamp: Long = System.currentTimeMillis()
+)
+
+
 /**
  * DTO for the "chess-game-reports" topic.
  * Published by our Pekko Stream producer after completing N self-play games.
@@ -177,15 +184,19 @@ object KafkaChessStream:
           }(scala.concurrent.ExecutionContext.Implicits.global)
         }
 
-        // ── Sink: log the analysis result ─────────────────────────────────
-        .viaMat(KillSwitches.single)(Keep.right)
-        .toMat(Sink.foreach { case (event, eval) =>
+        // ── Map and publish evaluation to chess-evaluations topic ─────────
+        .map { case (event, eval) =>
           val advantage = if eval > 0 then s"White +${eval.toInt}" else s"Black +${math.abs(eval.toInt)}"
           println(
             f"[CONSUMER] session=${event.sessionId}  move=${event.move}%-8s  " +
             f"eval=$advantage%-16s  fen=${event.fenAfter.take(25)}..."
           )
-        })(Keep.both)
+          val msg  = EvaluationEvent(event.sessionId, eval)
+          val json = msg.asJson.noSpaces
+          new ProducerRecord[String, String]("chess-evaluations", event.sessionId, json)
+        }
+        .viaMat(KillSwitches.single)(Keep.right)
+        .toMat(Producer.plainSink(producerSettings(bootstrapServers)))(Keep.both)
         .run()
 
     doneFuture.onComplete {

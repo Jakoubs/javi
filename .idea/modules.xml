@@ -3,8 +3,37 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/ai/chess-functional-improvements.chess-ai.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/ai/chess-functional-improvements.chess-ai.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/ai/chess-functional-improvements.chess-ai.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/ai/chess-functional-improvements.chess-ai.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/ai/chess-functional-improvements.chess-ai.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/ai/chess-functional-improvements.chess-ai.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/benchmark/chess-functional-improvements.chess-benchmark.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/benchmark/chess-functional-improvements.chess-benchmark.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/benchmark/chess-functional-improvements.chess-benchmark.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/benchmark/chess-functional-improvements.chess-benchmark.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/benchmark/chess-functional-improvements.chess-benchmark.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/benchmark/chess-functional-improvements.chess-benchmark.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/controller/chess-functional-improvements.chess-controller.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/controller/chess-functional-improvements.chess-controller.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/controller/chess-functional-improvements.chess-controller.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/controller/chess-functional-improvements.chess-controller.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/controller/chess-functional-improvements.chess-controller.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/controller/chess-functional-improvements.chess-controller.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.chess-functional-improvements-build.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.chess-functional-improvements-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/lichess/chess-functional-improvements.chess-lichess.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/lichess/chess-functional-improvements.chess-lichess.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/lichess/chess-functional-improvements.chess-lichess.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/lichess/chess-functional-improvements.chess-lichess.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/lichess/chess-functional-improvements.chess-lichess.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/lichess/chess-functional-improvements.chess-lichess.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/model/chess-functional-improvements.chess-model.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/model/chess-functional-improvements.chess-model.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/model/chess-functional-improvements.chess-model.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/model/chess-functional-improvements.chess-model.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/model/chess-functional-improvements.chess-model.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/model/chess-functional-improvements.chess-model.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/persistence/chess-functional-improvements.chess-persistence.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/persistence/chess-functional-improvements.chess-persistence.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/persistence/chess-functional-improvements.chess-persistence.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/persistence/chess-functional-improvements.chess-persistence.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/persistence/chess-functional-improvements.chess-persistence.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/persistence/chess-functional-improvements.chess-persistence.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/view/chess-functional-improvements.chess-view.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/view/chess-functional-improvements.chess-view.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/view/chess-functional-improvements.chess-view.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/view/chess-functional-improvements.chess-view.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/view/chess-functional-improvements.chess-view.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/view/chess-functional-improvements.chess-view.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.main~1.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.main~1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.test~1.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/chess-functional-improvements.test~1.iml" />
     </modules>
   </component>

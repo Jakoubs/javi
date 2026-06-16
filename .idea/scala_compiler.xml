@@ -2,6 +2,12 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="chess,chess-functional-improvements,chess-functional-improvements.main,chess-functional-improvements.main~1,chess-functional-improvements.test,chess-functional-improvements.test~1,chess.main,chess.test,javi_4056,javi_4056.main,javi_4056.test" />
+    <profile name="sbt 1" modules="chess,chess-functional-improvements,chess-functional-improvements.chess-ai,chess-functional-improvements.chess-benchmark,chess-functional-improvements.chess-controller,chess-functional-improvements.chess-lichess,chess-functional-improvements.chess-model,chess-functional-improvements.chess-persistence,chess-functional-improvements.chess-rest,chess-functional-improvements.chess-util,chess-functional-improvements.chess-view,chess-functional-improvements.main~1,chess-functional-improvements.test~1,chess.main,chess.test,javi_4056,javi_4056.main,javi_4056.test" />
+    <profile name="sbt 2" modules="chess-functional-improvements.chess-ai.main,chess-functional-improvements.chess-ai.test,chess-functional-improvements.chess-benchmark.main,chess-functional-improvements.chess-benchmark.test,chess-functional-improvements.chess-controller.main,chess-functional-improvements.chess-controller.test,chess-functional-improvements.chess-lichess.main,chess-functional-improvements.chess-lichess.test,chess-functional-improvements.chess-model.main,chess-functional-improvements.chess-model.test,chess-functional-improvements.chess-persistence.main,chess-functional-improvements.chess-persistence.test,chess-functional-improvements.chess-rest.main,chess-functional-improvements.chess-rest.test,chess-functional-improvements.chess-util.main,chess-functional-improvements.chess-util.test,chess-functional-improvements.chess-view.main,chess-functional-improvements.chess-view.test,chess-functional-improvements.main,chess-functional-improvements.test">
+      <parameters>
+        <parameter value="-Xmax-inlines" />
+        <parameter value="64" />
+      </parameters>
+    </profile>
   </component>
 </project>
