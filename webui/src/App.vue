@@ -1111,17 +1111,7 @@ const effectiveFlipped = computed(() => {
   <!-- Auth Modal -->
   <div v-if="showAuthModal" class="modal-overlay" @click.self="showAuthModal = false">
     <div class="modal-content glass">
-      <div v-if="isDevMode">
-        <h2>Dev Mode Login</h2>
-        <div class="form-group" style="margin-top: 20px;">
-          <select v-model="selectedDevUser" class="glass-select" style="width: 100%; padding: 15px;">
-            <option v-for="u in devTestUsers" :key="u" :value="u">{{ u }}</option>
-          </select>
-        </div>
-        <p v-if="authError" class="auth-error">{{ authError }}</p>
-        <button @click="handleDevLogin" class="auth-submit-btn" style="margin-top: 20px;">Login as {{ selectedDevUser }}</button>
-      </div>
-      <div v-else>
+      <div>
         <h2>{{ authMode === 'login' ? 'Welcome Back' : 'Join Javi Chess' }}</h2>
         <div class="auth-tabs">
           <button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Login</button>
