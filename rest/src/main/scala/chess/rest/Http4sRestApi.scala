@@ -382,6 +382,9 @@ class Http4sRestApi(
     case GET -> Root / "api" / "admin" / "stats" =>
       IO(AdminService.getStats(sessions.size, 0)).flatMap(stats => Ok(stats.asJson))
 
+    case GET -> Root / "api" / "analytics" / "summary" =>
+      IO(AnalyticsService.getSummary()).flatMap(summary => Ok(summary.asJson))
+
     case GET -> Root / "api" / "admin" / "users" =>
       IO(AdminService.listUsers()).flatMap(users => Ok(users.asJson))
 

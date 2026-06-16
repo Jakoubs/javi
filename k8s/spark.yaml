@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: spark
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: javi
+      app.kubernetes.io/component: spark
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: javi
+        app.kubernetes.io/component: spark
+    spec:
+      serviceAccountName: spark
+      containers:
+        - name: spark
+          image: javi-spark:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/chess
+            - name: DB_USER
+              value: chess
+            - name: DB_PASS
+              value: chess
+            - name: KAFKA_BOOTSTRAP
+              value: kafka:9092
+            - name: SPARK_OUTPUT_DIR
+              value: /app/output
+            - name: ENABLE_PUZZLE_ANALYSIS
+              value: "false"
+            - name: PUZZLE_CSV_PATH
+              value: /app/output/lichess_db_puzzle.csv
+            - name: JDK_JAVA_OPTIONS
+              value: >-
+                --add-opens=java.base/java.lang=ALL-UNNAMED
+                --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+                --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                --add-opens=java.base/java.io=ALL-UNNAMED
+                --add-opens=java.base/java.net=ALL-UNNAMED
+                --add-opens=java.base/java.nio=ALL-UNNAMED
+                --add-opens=java.base/java.util=ALL-UNNAMED
+                --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+                --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+                --add-opens=java.security/java.security=ALL-UNNAMED
+          volumeMounts:
+            - name: spark-output
+              mountPath: /app/output
+          resources:
+            requests:
+              cpu: 250m
+              memory: 3Gi
+            limits:
+              cpu: 2000m
+              memory: 12Gi
+      volumes:
+        - name: spark-output
+          persistentVolumeClaim:
+            claimName: spark-output
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: spark-output
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: spark
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+

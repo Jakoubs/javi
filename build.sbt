@@ -5,6 +5,7 @@ lazy val circeVersion   = "0.14.10"
 lazy val http4sVersion  = "0.23.23"
 lazy val slickVersion   = "3.5.1"
 lazy val mongoVersion   = "5.1.0"
+lazy val sparkVersion   = "3.5.3"
 
 lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-Xmax-inlines", "64"),
@@ -121,7 +122,7 @@ lazy val persistence = (project in file("persistence"))
   )
 
 lazy val root = (project in file("."))
-  .aggregate(util, model, ai, controller, view, rest, lichess, persistence, benchmark)
+  .aggregate(util, model, ai, controller, view, rest, lichess, persistence, benchmark, spark)
   .dependsOn(view, rest, lichess)
   .settings(
     commonSettings,
@@ -165,5 +166,84 @@ lazy val benchmark = (project in file("benchmark"))
     coverageExcludedPackages := ".*",
     Compile / doc / sources := Seq.empty,
     publish / skip := true
+  )
+
+// ── Spark Analytics (Scala 2.13 – Spark does not support Scala 3) ───────────
+//
+// Standalone subproject: no dependsOn to model/persistence (those are Scala 3).
+// Communicates with the rest of the system via JDBC (Postgres) and Kafka.
+
+lazy val spark = (project in file("spark"))
+  .settings(
+    scalaVersion := "2.13.14",
+    name := "chess-spark",
+    Compile / mainClass := Some("chess.spark.SparkMain"),
+    // Spark subproject does NOT use commonSettings (those pull in Scala 3 libs).
+    // Instead we define its own dependencies here.
+    Test / parallelExecution := false,
+    Test / logBuffered := false,
+    coverageExcludedPackages := "chess\\.spark.*",
+    // Spark 3.5.x requires these JVM flags on Java 17+ / 21+
+    // (Hadoop's UserGroupInformation uses javax.security.auth.Subject.getSubject
+    //  which is removed in newer Java versions)
+    Test / javaOptions ++= Seq(
+      "--add-opens=java.base/java.lang=ALL-UNNAMED",
+      "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+      "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+      "--add-opens=java.base/java.io=ALL-UNNAMED",
+      "--add-opens=java.base/java.net=ALL-UNNAMED",
+      "--add-opens=java.base/java.nio=ALL-UNNAMED",
+      "--add-opens=java.base/java.util=ALL-UNNAMED",
+      "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+      "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+      "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+      "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+      "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+      "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+      "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+    ),
+    Test / fork := true,
+    run / javaOptions ++= Seq(
+      "--add-opens=java.base/java.lang=ALL-UNNAMED",
+      "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+      "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+      "--add-opens=java.base/java.io=ALL-UNNAMED",
+      "--add-opens=java.base/java.net=ALL-UNNAMED",
+      "--add-opens=java.base/java.nio=ALL-UNNAMED",
+      "--add-opens=java.base/java.util=ALL-UNNAMED",
+      "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+      "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+      "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+      "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+      "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+      "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+      "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+    ),
+    run / fork := true,
+
+    libraryDependencies ++= Seq(
+      // Spark
+      "org.apache.spark" %% "spark-core"           % sparkVersion,
+      "org.apache.spark" %% "spark-sql"            % sparkVersion,
+      "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
+      // Postgres JDBC driver
+      "org.postgresql"    % "postgresql"             % "42.7.3",
+      // Typesafe Config for application.conf
+      "com.typesafe"      % "config"                 % "1.4.3",
+      // Test
+      "org.scalatest"    %% "scalatest"              % "3.2.17" % Test
+    ),
+    // Assembly config for fat JAR
+    assembly / mainClass := Some("chess.spark.SparkMain"),
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "services", _*)      => MergeStrategy.concat
+      case PathList("META-INF", _*)                  => MergeStrategy.discard
+      case PathList("reference.conf")                => MergeStrategy.concat
+      case PathList("module-info.class")             => MergeStrategy.discard
+      case x if x.endsWith(".proto")                => MergeStrategy.first
+      case x if x.endsWith(".properties")           => MergeStrategy.first
+      case x if x.endsWith(".class")                => MergeStrategy.first
+      case x                                         => MergeStrategy.first
+    }
   )
 

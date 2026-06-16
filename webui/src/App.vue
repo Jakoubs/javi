@@ -11,8 +11,9 @@ import HomeView from './components/HomeView.vue'
 import AdminPanel from './components/AdminPanel.vue'
 import UserSettings from './components/UserSettings.vue'
 import TournamentView from './components/TournamentView.vue'
+import AnalyticsView from './components/AnalyticsView.vue'
 
-const activeView = ref('home') // 'home', 'game', 'puzzles', or 'tournament'
+const activeView = ref('home') // 'home', 'game', 'puzzles', 'tournament', or 'analytics'
 const isSpectatorForced = ref(false)
 const showNewGameModal = ref(false)
 const showAdminPanel = ref(false)
@@ -814,6 +815,7 @@ const effectiveFlipped = computed(() => {
           <button :class="['nav-btn', { active: activeView === 'home' }]" @click="goToHome">Home</button>
           <button :class="['nav-btn', { active: activeView === 'puzzles' }]" @click="activeView = 'puzzles'">Puzzles</button>
           <button :class="['nav-btn', { active: activeView === 'tournament' }]" @click="activeView = 'tournament'">Tournament</button>
+          <button :class="['nav-btn', { active: activeView === 'analytics' }]" @click="activeView = 'analytics'">Analytics</button>
         </div>
 
         <div class="parser-switcher" v-show="activeView === 'game'">
@@ -979,6 +981,11 @@ const effectiveFlipped = computed(() => {
     <!-- Tournament Server View -->
     <main v-else-if="activeView === 'tournament'">
       <TournamentView />
+    </main>
+
+    <!-- Analytics View -->
+    <main v-else-if="activeView === 'analytics'">
+      <AnalyticsView :serverUrl="serverUrl" />
     </main>
 
     <!-- Game View -->

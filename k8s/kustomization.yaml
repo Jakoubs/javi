@@ -10,3 +10,5 @@ resources:
   - webui.yaml
   - ingress.yaml
   - kafka-stream.yaml
+  - spark.yaml
+  - spark-rbac.yaml

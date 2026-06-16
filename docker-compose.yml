@@ -175,8 +175,38 @@ services:
       kafka:
         condition: service_healthy
 
+  # ── Spark Analytics (opt-in) ─────────────────────────────────────────────────
+  spark:
+    build:
+      context: .
+      dockerfile: spark/Dockerfile
+    image: javi-spark:local
+    container_name: chess-spark
+    restart: unless-stopped
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/${CHESS_DB_NAME:-chess}
+      - DB_USER=${CHESS_DB_USER:-chess}
+      - DB_PASS=${CHESS_DB_PASSWORD:-chess}
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - SPARK_MASTER=local[*]
+      - SPARK_OUTPUT_DIR=/app/output
+      - ENABLE_PUZZLE_ANALYSIS=false
+      - PUZZLE_CSV_PATH=/app/data/lichess_db_puzzle.csv
+      - JDK_JAVA_OPTIONS=--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-opens=java.security/java.security=ALL-UNNAMED
+    volumes:
+      - spark_output:/app/output
+      # - ./lichess_db_puzzle.csv:/app/data/lichess_db_puzzle.csv:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    profiles:
+      - spark   # opt-in: docker compose --profile spark up
+
 
 # ── Named volumes (data survives container restarts) ─────────────────────────
 volumes:
   postgres_data:
   mongo_data:
+  spark_output:
