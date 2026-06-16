@@ -53,24 +53,67 @@ object TournamentBot:
     val response = client.send(streamReq, HttpResponse.BodyHandlers.ofInputStream())
     val reader = new BufferedReader(new InputStreamReader(response.body()))
 
+    val myBotIdOpt = getBotIdFromToken(token)
+
     var line = reader.readLine()
     while line != null do
       if line.trim.nonEmpty then
         parse(line) match
-          case Right(json) => handleTournamentEvent(tournamentId, token, json)
+          case Right(json) => handleTournamentEvent(tournamentId, token, myBotIdOpt, json)
           case Left(err)   => println(s"Failed to parse tournament event: $line")
       line = reader.readLine()
 
-  private def handleTournamentEvent(tournamentId: String, token: String, json: Json): Unit =
+  private def getBotIdFromToken(token: String): Option[String] =
+    try {
+      val parts = token.split("\\.")
+      if parts.length >= 2 then
+        val decodedBytes = java.util.Base64.getUrlDecoder.decode(parts(1))
+        val payload = new String(decodedBytes, "UTF-8")
+        parse(payload).toOption.flatMap(_.hcursor.get[String]("sub").toOption)
+      else None
+    } catch {
+      case _: Exception => None
+    }
+
+  private def handleTournamentEvent(tournamentId: String, token: String, myBotIdOpt: Option[String], json: Json): Unit =
     val cursor = json.hcursor
     cursor.get[String]("type").toOption match
       case Some("gameStart") =>
         val gameId = cursor.get[String]("gameId").getOrElse("")
-        val myColor = cursor.get[String]("color").getOrElse("")
-        println(s"Game started! Game ID: $gameId, playing as $myColor")
-        
-        // Handle game stream in a new thread
-        new Thread(() => handleGameStream(tournamentId, gameId, token, myColor)).start()
+        myBotIdOpt match {
+          case Some(myBotId) =>
+            new Thread(() => {
+              val detailsReq = HttpRequest.newBuilder()
+                .uri(URI.create(s"$baseUrl/$tournamentId/game/$gameId"))
+                .header("Authorization", s"Bearer $token")
+                .GET()
+                .build()
+              try {
+                val detailsRes = client.send(detailsReq, HttpResponse.BodyHandlers.ofString())
+                if detailsRes.statusCode() == 200 then
+                  parse(detailsRes.body()) match
+                    case Right(gameJson) =>
+                      val gameCursor = gameJson.hcursor
+                      val whiteId = gameCursor.downField("white").get[String]("id").getOrElse("")
+                      val blackId = gameCursor.downField("black").get[String]("id").getOrElse("")
+                      
+                      if whiteId == myBotId then
+                        println(s"[$gameId] Involviert! Ich spiele WEISS ($myBotId)")
+                        handleGameStream(tournamentId, gameId, token, "white")
+                      else if blackId == myBotId then
+                        println(s"[$gameId] Involviert! Ich spiele SCHWARZ ($myBotId)")
+                        handleGameStream(tournamentId, gameId, token, "black")
+                      else
+                        // Ignore games we are not playing in
+                        ()
+                    case Left(_) => ()
+              } catch {
+                case e: Exception => println(s"[$gameId] Failed to fetch game details on start: ${e.getMessage}")
+              }
+            }).start()
+          case None =>
+            println("Warnung: Bot-ID konnte nicht ermittelt werden.")
+        }
         
       case Some("tournamentFinished") =>
         println("Tournament finished!")
@@ -82,6 +125,30 @@ object TournamentBot:
       case None =>
 
   private def handleGameStream(tournamentId: String, gameId: String, token: String, myColor: String): Unit =
+    // Bootstrap: Fetch current game state to see if it is already our turn
+    val stateReq = HttpRequest.newBuilder()
+      .uri(URI.create(s"$baseUrl/$tournamentId/game/$gameId"))
+      .header("Authorization", s"Bearer $token")
+      .GET()
+      .build()
+      
+    try {
+      val stateRes = client.send(stateReq, HttpResponse.BodyHandlers.ofString())
+      if stateRes.statusCode() == 200 then
+        parse(stateRes.body()) match
+          case Right(json) =>
+            val cursor = json.hcursor
+            val turn = cursor.get[String]("turn").getOrElse("")
+            val fen = cursor.get[String]("fen").getOrElse("")
+            val status = cursor.get[String]("status").getOrElse("")
+            if status == "ongoing" && turn == myColor then
+              println(s"[$gameId] Bootstrapping: It's my turn ($myColor)!")
+              makeMove(tournamentId, gameId, token, fen)
+          case Left(_) => ()
+    } catch {
+      case e: Exception => println(s"[$gameId] Bootstrap fetch failed: ${e.getMessage}")
+    }
+
     val gameReq = HttpRequest.newBuilder()
       .uri(URI.create(s"$baseUrl/$tournamentId/game/$gameId/stream"))
       .header("Authorization", s"Bearer $token")
