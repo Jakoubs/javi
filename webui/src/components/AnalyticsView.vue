@@ -1,17 +1,20 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
 const props = defineProps({
   serverUrl: {
     type: String,
     required: true
+  },
+  currentUser: {
+    type: Object,
+    default: null
   }
 })
 
 const loading = ref(true)
 const errorMsg = ref(null)
 const selectedUser = ref('')
-const usersList = ref([])
 const refreshInterval = ref(null)
 
 const data = ref({
@@ -22,16 +25,6 @@ const data = ref({
   botStats: []
 })
 
-const fetchUsers = async () => {
-  try {
-    const response = await fetch(`${props.serverUrl}/api/admin/users`)
-    if (response.ok) {
-      usersList.value = await response.json()
-    }
-  } catch (e) {
-    console.error('Failed to fetch users list', e)
-  }
-}
 
 const fetchAnalytics = async (silent = false) => {
   if (!silent) loading.value = true
@@ -55,13 +48,15 @@ const fetchAnalytics = async (silent = false) => {
   }
 }
 
-const onUserChange = () => {
-  fetchAnalytics()
-}
+
 
 onMounted(() => {
+  if (props.currentUser) {
+    selectedUser.value = props.currentUser.username
+  } else {
+    selectedUser.value = ''
+  }
   fetchAnalytics()
-  fetchUsers()
   // Auto-refresh stats silently every 4 seconds for instant updates
   refreshInterval.value = setInterval(() => {
     fetchAnalytics(true)
@@ -73,6 +68,11 @@ onUnmounted(() => {
     clearInterval(refreshInterval.value)
   }
 })
+
+watch(() => props.currentUser, (newVal) => {
+  selectedUser.value = newVal ? newVal.username : ''
+  fetchAnalytics()
+}, { deep: true })
 
 const isDataEmpty = () => {
   return !data.value.gameResults.length &&
@@ -102,15 +102,10 @@ const formatPercent = (val) => {
       </div>
 
       <div class="controls-section">
-        <!-- User Selection Dropdown -->
+        <!-- User Information (No dropdown) -->
         <div class="user-select-wrap">
-          <label for="user-select">Filter:</label>
-          <select id="user-select" v-model="selectedUser" @change="onUserChange" class="glass-select">
-            <option value="">Alle Spieler (Global)</option>
-            <option v-for="u in usersList" :key="u.id" :value="u.username">
-              👤 {{ u.username }} {{ u.isVerified ? '✓' : '' }}
-            </option>
-          </select>
+          <span v-if="props.currentUser" class="user-display">👤 {{ props.currentUser.username }}</span>
+          <span v-else class="user-display">🌍 Alle Spieler (Global)</span>
         </div>
 
         <button @click="fetchAnalytics" class="refresh-btn" :disabled="loading">
@@ -218,7 +213,6 @@ const formatPercent = (val) => {
                   :key="user.username" 
                   class="leaderboard-row"
                   :class="{ 'current-filter': user.username === selectedUser }"
-                  @click="selectedUser = user.username; fetchAnalytics()"
                 >
                   <td><span class="rank-badge" :class="'rank-' + (index + 1)">{{ index + 1 }}</span></td>
                   <td class="player-name"><strong>{{ user.username }}</strong></td>
@@ -596,8 +590,18 @@ h3 {
 }
 
 .leaderboard-row {
-  cursor: pointer;
   transition: background 0.2s;
+}
+
+.user-display {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #4ecca3;
+  padding: 8px 16px;
+  font-weight: 600;
+  display: inline-block;
+  backdrop-filter: blur(10px);
 }
 
 .leaderboard-row:hover {

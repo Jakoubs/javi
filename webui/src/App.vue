@@ -985,7 +985,7 @@ const effectiveFlipped = computed(() => {
 
     <!-- Analytics View -->
     <main v-else-if="activeView === 'analytics'">
-      <AnalyticsView :serverUrl="serverUrl" />
+      <AnalyticsView :serverUrl="serverUrl" :currentUser="currentUser" />
     </main>
 
     <!-- Game View -->
