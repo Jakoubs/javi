@@ -22,6 +22,9 @@ object LichessMain {
       // Optional: Herausforderung gegen einen bestimmten Bot starten
       if (args.nonEmpty) {
         val targetBot = args(0)
+        // Warten bis der Event-Stream verbunden ist, damit GameStart-Events nicht verpasst werden
+        println(s"Warte 3 Sekunden bis Event-Stream bereit ist...")
+        Thread.sleep(3000)
         println(s"Sende Herausforderung an $targetBot...")
         client.challengeBot(targetBot).onComplete {
           case scala.util.Success(true) => println(s"Herausforderung an $targetBot gesendet.")

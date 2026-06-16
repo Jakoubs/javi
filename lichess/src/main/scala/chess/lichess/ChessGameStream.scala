@@ -4,7 +4,7 @@ import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.stream.scaladsl.*
 import org.apache.pekko.stream.{KillSwitches, UniqueKillSwitch}
-import chess.ai.{AlphaBetaAgent, Evaluator}
+import chess.ai.{AlphaBetaAgent, HceEvaluator}
 import chess.model.*
 
 import scala.concurrent.duration.*
@@ -19,7 +19,7 @@ case class PositionSnapshot(
   moveNumber:  Int,
   activeColor: Color,
   state:       GameState,
-  evalScore:   Double,        // from White's perspective (Evaluator.evaluate)
+  evalScore:   Double,        // from White's perspective
   legalMoves:  Int,
   isCheck:     Boolean
 )
@@ -38,6 +38,7 @@ case class GameReport(
 // ─── Stream graph ─────────────────────────────────────────────────────────────
 
 object ChessGameStream:
+  private val streamEvaluator = HceEvaluator.default
 
   /**
    * Run `numGames` self-play games through a Pekko Stream pipeline and print a
@@ -114,7 +115,7 @@ object ChessGameStream:
     while !finished && moveNum < maxMoves do
       val status    = GameRules.computeStatus(state)
       val legal     = MoveGenerator.legalMoves(state)
-      val evalScore = Evaluator.evaluate(state)
+      val evalScore = streamEvaluator.evaluate(state)
       val isCheck   = status.isInstanceOf[GameStatus.Check]
 
       snapshots += PositionSnapshot(
@@ -145,7 +146,7 @@ object ChessGameStream:
       moveNumber  = moveNum,
       activeColor = state.activeColor,
       state       = state,
-      evalScore   = Evaluator.evaluate(state),
+      evalScore   = streamEvaluator.evaluate(state),
       legalMoves  = 0,
       isCheck     = finalStatus.isInstanceOf[GameStatus.Check]
     )

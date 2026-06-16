@@ -4,7 +4,7 @@ import org.bson.{BsonReader, BsonWriter, Document}
 import org.bson.codecs.{Codec, DecoderContext, EncoderContext, DocumentCodec}
 import org.bson.codecs.configuration.{CodecProvider, CodecRegistries, CodecRegistry}
 
-import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme, TablebaseEntry}
 
 /**
  * BSON codec helpers for [[PersistedGame]] and [[MoveEvent]].
@@ -190,6 +190,41 @@ object MongoCodecs:
         description = doc.getString("description")
       )
 
+  // --- TablebaseEntry codec -------------------------------------------------
+
+  private val tablebaseEntryCodec: Codec[TablebaseEntry] = new Codec[TablebaseEntry]:
+    private val docCodec = new DocumentCodec()
+
+    override def getEncoderClass: Class[TablebaseEntry] = classOf[TablebaseEntry]
+
+    override def encode(
+      writer: BsonWriter,
+      value:  TablebaseEntry,
+      ctx:    EncoderContext
+    ): Unit =
+      val doc = new Document()
+        .append("fen",      value.fen)
+        .append("bestMove", value.bestMove)
+        .append("wdl",      value.wdl)
+        .append("dtz",      value.dtz.map(Int.box).orNull)
+        .append("dtm",      value.dtm.map(Int.box).orNull)
+        .append("source",   value.source)
+      docCodec.encode(writer, doc, ctx)
+
+    override def decode(
+      reader: BsonReader,
+      ctx:    DecoderContext
+    ): TablebaseEntry =
+      val doc = docCodec.decode(reader, ctx)
+      TablebaseEntry(
+        fen      = doc.getString("fen"),
+        bestMove = doc.getString("bestMove"),
+        wdl      = doc.getInteger("wdl"),
+        dtz      = Option(doc.getInteger("dtz")),
+        dtm      = Option(doc.getInteger("dtm")),
+        source   = doc.getString("source")
+      )
+
   // ─── CodecProvider & composite registry ───────────────────────────────────
 
   private object ChessCodecProvider extends CodecProvider:
@@ -199,6 +234,7 @@ object MongoCodecs:
       else if clazz == classOf[Opening] then openingCodec.asInstanceOf[Codec[T]]
       else if clazz == classOf[Puzzle] then puzzleCodec.asInstanceOf[Codec[T]]
       else if clazz == classOf[PuzzleTheme] then puzzleThemeCodec.asInstanceOf[Codec[T]]
+      else if clazz == classOf[TablebaseEntry] then tablebaseEntryCodec.asInstanceOf[Codec[T]]
       else null
 
   /**

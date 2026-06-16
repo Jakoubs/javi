@@ -47,7 +47,11 @@ case class GameStateUpdateEvent(
   status: String
 ) extends LichessGameEvent
 
-case class LichessClock(limit: Int, increment: Int)
+case class OpponentGoneEvent(
+  gone: Boolean
+) extends LichessGameEvent
+
+case class LichessClock(limit: Option[Int], increment: Option[Int])
 case class LichessPlayer(id: Option[String], name: Option[String], title: Option[String], rating: Option[Int])
 case class LichessGameState(moves: String, wtime: Long, btime: Long, winc: Long, binc: Long, status: String)
 
@@ -89,6 +93,7 @@ object LichessModels:
     c.get[String]("type") match {
       case Right("gameFull")  => c.as[GameFullEvent]
       case Right("gameState") => c.as[GameStateUpdateEvent]
+      case Right("opponentGone") => c.as[OpponentGoneEvent]
       case Right(other)       => Left(DecodingFailure(s"Unknown game event type: $other", c.history))
       case Left(_)            => c.as[GameStateUpdateEvent] // Sometimes type is missing in partial updates? Actually usually it's there.
     }
@@ -105,7 +110,14 @@ object LichessModels:
   
   implicit val decodeGameFullEvent: Decoder[GameFullEvent] = deriveDecoder
   implicit val decodeGameStateUpdateEvent: Decoder[GameStateUpdateEvent] = deriveDecoder
-  implicit val decodeLichessClock: Decoder[LichessClock] = deriveDecoder
+  implicit val decodeOpponentGoneEvent: Decoder[OpponentGoneEvent] = deriveDecoder
+  implicit val decodeLichessClock: Decoder[LichessClock] = (c: HCursor) =>
+    Right(
+      LichessClock(
+        limit = c.get[Int]("limit").toOption.orElse(c.get[Int]("initial").toOption),
+        increment = c.get[Int]("increment").toOption
+      )
+    )
   implicit val decodeLichessPlayer: Decoder[LichessPlayer] = deriveDecoder
   implicit val decodeLichessGameState: Decoder[LichessGameState] = deriveDecoder
   

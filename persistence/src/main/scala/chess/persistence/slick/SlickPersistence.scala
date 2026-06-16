@@ -4,8 +4,8 @@ import cats.effect.IO
 import _root_.slick.jdbc.JdbcProfile
 import _root_.slick.jdbc.JdbcBackend.Database
 
-import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao, PuzzleDao}
-import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening, Puzzle, PuzzleTheme}
+import chess.persistence.dao.{GameDao, MoveEventDao, UserDao, FriendshipDao, OpeningDao, PuzzleDao, TablebaseDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, User, Friendship, Opening, Puzzle, PuzzleTheme, TablebaseEntry}
 
 /**
  * Unified Slick implementation of both [[GameDao]] and [[MoveEventDao]].
@@ -28,9 +28,10 @@ final class SlickPersistence private (
   private val mTbl: MoveEventTable,
   private val uTbl: UserTable,
   private val oTbl: OpeningTable,
+  private val tbTbl: TablebaseTable,
   private val pTbl: PuzzleTable,
   private val ptTbl: PuzzleThemeTable
-) extends GameDao with MoveEventDao with UserDao with FriendshipDao with OpeningDao with PuzzleDao:
+) extends GameDao with MoveEventDao with UserDao with FriendshipDao with OpeningDao with PuzzleDao with TablebaseDao:
 
   import profile.api.*
 
@@ -134,6 +135,26 @@ final class SlickPersistence private (
   override def findByFen(fen: String): IO[List[Opening]] =
     run(oTbl.openings.filter(_.fen === fen).result).map(_.toList)
 
+  override def findBestByFen(fen: String): IO[Option[Opening]] =
+    run(oTbl.openingBest.filter(_.fen === fen).result.headOption).flatMap {
+      case some @ Some(_) => IO.pure(some)
+      case None =>
+        run(
+          oTbl.openings
+            .filter(_.fen === fen)
+            .sortBy(o => (o.weight.desc, o.move.asc))
+            .take(1)
+            .result
+            .headOption
+        )
+    }
+
+  override def findByFenCore(fenCore: String): IO[List[Opening]] =
+    run(oTbl.openings.filter(_.fen.like(s"$fenCore %")).result).map(_.toList)
+
+  override def findByFenBoardTurn(fenBoardTurn: String): IO[List[Opening]] =
+    run(oTbl.openings.filter(_.fen.like(s"$fenBoardTurn %")).result).map(_.toList)
+
   override def save(opening: Opening): IO[Unit] =
     run(oTbl.openings.insertOrUpdate(opening)).void
 
@@ -142,6 +163,17 @@ final class SlickPersistence private (
 
   override def deleteAll(): IO[Unit] =
     run(oTbl.openings.delete).void
+
+  // --- TablebaseDao ---------------------------------------------------------
+
+  override def findEntryByFen(fen: String): IO[Option[TablebaseEntry]] =
+    run(tbTbl.tablebaseEntries.filter(_.fen === fen).result.headOption)
+
+  override def saveEntry(entry: TablebaseEntry): IO[Unit] =
+    run(tbTbl.tablebaseEntries.insertOrUpdate(entry)).void
+
+  override def countEntries(): IO[Long] =
+    run(tbTbl.tablebaseEntries.length.result).map(_.toLong)
 
   // ─── PuzzleDao ─────────────────────────────────────────────────────────────
 
@@ -182,6 +214,7 @@ final class SlickPersistence private (
   def moveEventDao: MoveEventDao = this
   def openingDao:   OpeningDao   = this
   def puzzleDao:    PuzzleDao    = this
+  def tablebaseDao: TablebaseDao = this
 
 object SlickPersistence:
 
@@ -197,11 +230,12 @@ object SlickPersistence:
     val mTbl  = MoveEventTable(profile)
     val uTbl  = UserTable(profile)
     val oTbl  = OpeningTable(profile)
+    val tbTbl = TablebaseTable(profile)
     val pTbl  = PuzzleTable(profile)
     val ptTbl = PuzzleThemeTable(profile)
-    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl, pTbl, ptTbl)
+    val instance = new SlickPersistence(profile, db, gTbl, mTbl, uTbl, oTbl, tbTbl, pTbl, ptTbl)
     import profile.api.*
-    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema >> pTbl.createSchema >> ptTbl.createSchema
+    val ddl = gTbl.createSchema >> mTbl.createSchema >> uTbl.createSchema >> oTbl.createSchema >> tbTbl.createSchema >> pTbl.createSchema >> ptTbl.createSchema
     IO.fromFuture(IO(db.run(ddl))).as(instance)
 
   /**

@@ -42,11 +42,11 @@ lazy val util = (project in file("util"))
   )
 
 lazy val ai = (project in file("ai"))
-  .dependsOn(model, util)
+  .dependsOn(model, util, persistence)
   .settings(
     commonSettings,
     name := "chess-ai",
-    coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|AiEngine|PassiveTrainer|Evaluator)"
+    coverageExcludedPackages := "chess\\.ai\\.(AlphaBetaAgent|HceEvaluator|SyzygyProbe)"
   )
 
 lazy val controller = (project in file("controller"))
@@ -131,11 +131,20 @@ lazy val root = (project in file("."))
   )
 
 lazy val lichess = (project in file("lichess"))
-  .dependsOn(model, util, ai)
+  .dependsOn(model, util, ai, persistence)
   .settings(
     commonSettings,
     name := "chess-lichess",
     coverageExcludedPackages := "chess\\.lichess.*",
+    Compile / run / fork := true,
+    Compile / run / javaOptions ++= Seq(
+      "-Xms256m",
+      "-Xmx1024m",
+      "-XX:MaxMetaspaceSize=256m",
+      "-XX:+UseG1GC",
+      "-XX:MaxGCPauseMillis=200",
+      "-XX:+UseStringDeduplication"
+    ),
     libraryDependencies ++= Seq(
       "org.apache.pekko" %% "pekko-http"             % "1.0.1",
       "org.apache.pekko" %% "pekko-stream"           % "1.0.1",

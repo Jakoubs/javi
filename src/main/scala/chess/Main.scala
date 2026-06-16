@@ -77,6 +77,9 @@ object Main:
 
   private object InMemoryOpeningDao extends OpeningDao:
     override def findByFen(fen: String): IO[List[chess.persistence.model.Opening]] = IO.pure(Nil)
+    override def findBestByFen(fen: String): IO[Option[chess.persistence.model.Opening]] = IO.pure(None)
+    override def findByFenCore(fenCore: String): IO[List[chess.persistence.model.Opening]] = IO.pure(Nil)
+    override def findByFenBoardTurn(fenBoardTurn: String): IO[List[chess.persistence.model.Opening]] = IO.pure(Nil)
     override def save(opening: chess.persistence.model.Opening): IO[Unit] = IO.unit
     override def count(): IO[Long] = IO.pure(0L)
     override def deleteAll(): IO[Unit] = IO.unit

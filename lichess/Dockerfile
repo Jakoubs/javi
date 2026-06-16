@@ -7,11 +7,12 @@ WORKDIR /app
 COPY project/ project/
 COPY build.sbt .
 
-# lichess depends on model, util, ai
-COPY model/   model/
-COPY util/    util/
-COPY ai/      ai/
-COPY lichess/ lichess/
+# lichess depends on model, util, ai, persistence
+COPY model/       model/
+COPY util/        util/
+COPY ai/          ai/
+COPY persistence/ persistence/
+COPY lichess/     lichess/
 
 # Build fat JAR – reuse ivy/sbt cache via BuildKit cache mount
 # Increase memory and disable supershell to prevent hangs and provide better logs
@@ -29,6 +30,7 @@ RUN chown chess:chess /app
 
 COPY --from=builder --chown=chess:chess \
     /app/lichess/target/scala-3.3.4/chess-lichess-assembly-*.jar app.jar
+COPY --chown=chess:chess data/ data/
 COPY --chown=chess:chess ai_weights*.txt ./
 
 USER chess

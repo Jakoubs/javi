@@ -14,7 +14,7 @@ import io.circe.*
 import io.circe.generic.auto.*
 import io.circe.parser.*
 import io.circe.syntax.*
-import chess.ai.Evaluator
+import chess.ai.HceEvaluator
 import chess.model.*
 
 import scala.concurrent.duration.*
@@ -65,6 +65,7 @@ object GameReportMsg:
 // ─── Kafka stream pipeline ────────────────────────────────────────────────────
 
 object KafkaChessStream:
+  private val streamEvaluator = HceEvaluator.default
 
   val TOPIC_GAME_REPORTS = "chess-game-reports"
   val TOPIC_MOVES        = "chess-moves"
@@ -128,13 +129,13 @@ object KafkaChessStream:
   //
   // Reads MoveEvent JSON messages from the "chess-moves" topic (written by the
   // REST service every time a player makes a move) and runs each position
-  // through the Evaluator — all as a live Pekko reactive stream.
+  // through HceEvaluator as a live Pekko reactive stream.
   //
   // Pipeline shape:
   //
   //   Consumer.plainSource          (Kafka "chess-moves" topic)
   //     ──▶ Flow[MoveEvent]         (deserialise JSON)
-  //     ──▶ Flow[(event, eval)]     (evaluate position via Evaluator)
+  //     ──▶ Flow[(event, eval)]     (evaluate position via HceEvaluator)
   //     ──▶ Sink.foreach            (log analysis result)
 
   def runConsumer(
@@ -168,7 +169,7 @@ object KafkaChessStream:
           Future {
             val evalScore: Double =
               GameState.fromFen(event.fenAfter) match
-                case Right(state) => Evaluator.evaluate(state)
+                case Right(state) => streamEvaluator.evaluate(state)
                 case Left(err)    =>
                   println(s"[CONSUMER] FEN parse error for ${event.fenAfter.take(20)}: $err")
                   0.0

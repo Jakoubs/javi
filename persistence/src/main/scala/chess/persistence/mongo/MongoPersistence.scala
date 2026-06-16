@@ -7,8 +7,8 @@ import com.mongodb.client.model.{Filters, Sorts, ReplaceOptions}
 import org.bson.Document
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
-import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao, PuzzleDao}
-import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme}
+import chess.persistence.dao.{GameDao, MoveEventDao, OpeningDao, PuzzleDao, TablebaseDao}
+import chess.persistence.model.{MoveEvent, PersistedGame, Opening, Puzzle, PuzzleTheme, TablebaseEntry}
 
 import java.util.concurrent.CompletableFuture
 
@@ -31,9 +31,10 @@ final class MongoPersistence private (
   private val gamesCol:   MongoCollection[PersistedGame],
   private val movesCol:   MongoCollection[MoveEvent],
   private val openCol:    MongoCollection[Opening],
+  private val tbCol:      MongoCollection[TablebaseEntry],
   private val puzzleCol:  MongoCollection[Puzzle],
   private val themeCol:   MongoCollection[PuzzleTheme]
-) extends GameDao with MoveEventDao with OpeningDao with PuzzleDao:
+) extends GameDao with MoveEventDao with OpeningDao with PuzzleDao with TablebaseDao:
 
   // ─── Reactive-Streams → IO bridge ─────────────────────────────────────────
 
@@ -93,6 +94,16 @@ final class MongoPersistence private (
   override def findByFen(fen: String): IO[List[Opening]] =
     publisherToIO(openCol.find(Filters.eq("fen", fen)))
 
+  override def findBestByFen(fen: String): IO[Option[Opening]] =
+    publisherToIO(openCol.find(Filters.eq("fen", fen)).sort(Sorts.descending("weight")).limit(1))
+      .map(_.headOption)
+
+  override def findByFenCore(fenCore: String): IO[List[Opening]] =
+    publisherToIO(openCol.find(Filters.regex("fen", s"^${java.util.regex.Pattern.quote(fenCore)}\\s+")))
+
+  override def findByFenBoardTurn(fenBoardTurn: String): IO[List[Opening]] =
+    publisherToIO(openCol.find(Filters.regex("fen", s"^${java.util.regex.Pattern.quote(fenBoardTurn)}\\s+")))
+
   override def save(opening: Opening): IO[Unit] =
     val filter = Filters.and(Filters.eq("fen", opening.fen), Filters.eq("move", opening.move))
     val opts   = new ReplaceOptions().upsert(true)
@@ -104,6 +115,19 @@ final class MongoPersistence private (
   override def deleteAll(): IO[Unit] =
     publisherToUnit(openCol.deleteMany(new Document()))
 
+  // --- TablebaseDao ---------------------------------------------------------
+
+  override def findEntryByFen(fen: String): IO[Option[TablebaseEntry]] =
+    publisherToIO(tbCol.find(Filters.eq("fen", fen))).map(_.headOption)
+
+  override def saveEntry(entry: TablebaseEntry): IO[Unit] =
+    val filter = Filters.eq("fen", entry.fen)
+    val opts   = new ReplaceOptions().upsert(true)
+    publisherToUnit(tbCol.replaceOne(filter, entry, opts))
+
+  override def countEntries(): IO[Long] =
+    publisherToIO(tbCol.countDocuments()).map(_.headOption.map(_.toLong).getOrElse(0L))
+
   /** Close the underlying MongoClient. */
   def close(): IO[Unit] = IO(client.close())
 
@@ -111,6 +135,7 @@ final class MongoPersistence private (
   def moveEventDao: MoveEventDao = this
   def openingDao:   OpeningDao   = this
   def puzzleDao:    PuzzleDao    = this
+  def tablebaseDao: TablebaseDao = this
 
   // ─── PuzzleDao ─────────────────────────────────────────────────────────────
 
@@ -167,9 +192,11 @@ object MongoPersistence:
         .withCodecRegistry(MongoCodecs.registry)
       val openCol = db.getCollection(classOf[Opening].getName, classOf[Opening])
         .withCodecRegistry(MongoCodecs.registry)
+      val tbCol = db.getCollection("tablebase_entries", classOf[TablebaseEntry])
+        .withCodecRegistry(MongoCodecs.registry)
       val puzzleCol = db.getCollection("puzzles", classOf[Puzzle])
         .withCodecRegistry(MongoCodecs.registry)
       val themeCol = db.getCollection("puzzle_themes", classOf[PuzzleTheme])
         .withCodecRegistry(MongoCodecs.registry)
-      new MongoPersistence(client, gamesCol, movesCol, openCol, puzzleCol, themeCol)
+      new MongoPersistence(client, gamesCol, movesCol, openCol, tbCol, puzzleCol, themeCol)
     }

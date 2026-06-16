@@ -2,59 +2,166 @@ package chess.model
 
 object MoveGenerator:
 
-  private def bishopDirections: Array[(Int, Int)] = Array((1, 1), (1, -1), (-1, 1), (-1, -1))
-  private def rookDirections: Array[(Int, Int)] = Array((1, 0), (-1, 0), (0, 1), (0, -1))
-  private def knightDeltas: Array[(Int, Int)] = Array((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
-  private def kingDirections: Array[(Int, Int)] = Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
+  private val sliderDirections: Array[(Int, Int)] =
+    Array((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
+  private val rookDirectionIndices: Array[Int] = Array(0, 1, 2, 3)
+  private val bishopDirectionIndices: Array[Int] = Array(4, 5, 6, 7)
+  private val sliderDirectionAscending: Array[Boolean] = Array(true, false, true, false, true, false, true, false)
+  private val knightDeltas: Array[(Int, Int)] =
+    Array((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2))
+  private val kingDirections: Array[(Int, Int)] =
+    Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
+  private val knightAttackMasks: Array[Long] = precomputeAttackMasks(knightDeltas)
+  private val kingAttackMasks: Array[Long] = precomputeAttackMasks(kingDirections)
+  private val whitePawnAttackSourceMasks: Array[Long] = precomputePawnAttackSourceMasks(Color.White)
+  private val blackPawnAttackSourceMasks: Array[Long] = precomputePawnAttackSourceMasks(Color.Black)
+  private val sliderRays: Array[Array[Long]] = precomputeSliderRays()
 
   def legalMoves(state: GameState): List[Move] =
-    pseudoLegalMoves(state).filter(move => !leavesKingInCheck(state, move))
+    val pseudo = pseudoLegalMoves(state)
+    val legal = scala.collection.mutable.ListBuffer.empty[Move]
+    val kingPos = state.kingPos(state.activeColor)
+    val inCheck = kingPos.exists(pos => isAttackedBy(state.board, pos, state.activeColor.opposite))
+    var i = 0
+    while i < pseudo.length do
+      val move = pseudo(i)
+      if !leavesKingInCheck(state, move, kingPos, inCheck) then legal += move
+      i += 1
+    legal.toList
 
   def legalMovesFrom(state: GameState, from: Pos): List[Move] =
-    legalMoves(state).filter(_.from == from)
+    state.board.get(from) match
+      case Some(piece) if piece.color == state.activeColor =>
+        val pseudo = scala.collection.mutable.ArrayBuffer.empty[Move]
+        addPseudoMovesForPiece(pseudo, state, from, piece)
+        val legal = scala.collection.mutable.ListBuffer.empty[Move]
+        val kingPos = state.kingPos(state.activeColor)
+        val inCheck = kingPos.exists(pos => isAttackedBy(state.board, pos, state.activeColor.opposite))
+        var i = 0
+        while i < pseudo.length do
+          val move = pseudo(i)
+          if !leavesKingInCheck(state, move, kingPos, inCheck) then legal += move
+          i += 1
+        legal.toList
+      case _ => Nil
 
   def isInCheck(state: GameState, color: Color): Boolean =
-    state.board.findKing(color) match
-      case None      => false
+    state.kingPos(color) match
+      case None => false
       case Some(pos) => isAttackedBy(state.board, pos, color.opposite)
 
   private def pseudoLegalMoves(state: GameState): List[Move] =
-    val pieces = state.board.allPiecesOf(state.activeColor)
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
-    var index = 0
-    while index < pieces.length do
-      val (pos, piece) = pieces(index)
-      piece.pieceType match
-        case PieceType.Pawn =>
-          moves ++= pawnMoves(state, pos, piece.color)
-        case PieceType.Knight =>
-          moves ++= knightMoves(state, pos, piece.color)
-        case PieceType.Bishop =>
-          moves ++= slidingMoves(state, pos, piece.color, bishopDirections)
-        case PieceType.Rook =>
-          moves ++= slidingMoves(state, pos, piece.color, rookDirections)
-        case PieceType.Queen =>
-          moves ++= queenMoves(state, pos, piece.color)
-        case PieceType.King =>
-          moves ++= kingMoves(state, pos, piece.color)
-      index += 1
+    val board = state.board
+    val color = state.activeColor
+    val moves = scala.collection.mutable.ArrayBuffer.empty[Move]
+    pawnMovesFromBitboard(moves, state, color, board.bitboardOf(color, PieceType.Pawn))
+    knightMovesFromBitboard(moves, board, color, board.bitboardOf(color, PieceType.Knight))
+    slidingMovesFromBitboard(moves, board, color, board.bitboardOf(color, PieceType.Bishop), bishopDirectionIndices)
+    slidingMovesFromBitboard(moves, board, color, board.bitboardOf(color, PieceType.Rook), rookDirectionIndices)
+    queenMovesFromBitboard(moves, board, color, board.bitboardOf(color, PieceType.Queen))
+    kingMovesFromBitboard(moves, state, color, board.bitboardOf(color, PieceType.King))
     moves.toList
 
-  private def pawnMoves(state: GameState, pos: Pos, color: Color): List[Move] =
+  private def addPseudoMovesForPiece(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    pos: Pos,
+    piece: Piece
+  ): Unit =
+    piece.pieceType match
+      case PieceType.Pawn =>
+        pawnMoves(out, state, pos, piece.color)
+      case PieceType.Knight =>
+        appendKnightMovesFromSquare(out, state.board, pos, piece.color)
+      case PieceType.Bishop =>
+        appendSlidingMovesFromSquare(out, state.board, pos, piece.color, bishopDirectionIndices)
+      case PieceType.Rook =>
+        appendSlidingMovesFromSquare(out, state.board, pos, piece.color, rookDirectionIndices)
+      case PieceType.Queen =>
+        appendSlidingMovesFromSquare(out, state.board, pos, piece.color, rookDirectionIndices)
+        appendSlidingMovesFromSquare(out, state.board, pos, piece.color, bishopDirectionIndices)
+      case PieceType.King =>
+        appendKingMovesFromSquare(out, state, pos, piece.color)
+
+  private def pawnMovesFromBitboard(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    color: Color,
+    pawnsBb: Long
+  ): Unit =
+    var bb = pawnsBb
+    while bb != 0L do
+      val idx = java.lang.Long.numberOfTrailingZeros(bb)
+      pawnMoves(out, state, Board.posFromSquareIndex(idx), color)
+      bb &= (bb - 1L)
+
+  private def knightMovesFromBitboard(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    board: Board,
+    color: Color,
+    knightsBb: Long
+  ): Unit =
+    var bb = knightsBb
+    while bb != 0L do
+      val idx = java.lang.Long.numberOfTrailingZeros(bb)
+      appendKnightMovesFromSquare(out, board, Board.posFromSquareIndex(idx), color)
+      bb &= (bb - 1L)
+
+  private def slidingMovesFromBitboard(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    board: Board,
+    color: Color,
+    piecesBb: Long,
+    directionIndices: Array[Int]
+  ): Unit =
+    var bb = piecesBb
+    while bb != 0L do
+      val idx = java.lang.Long.numberOfTrailingZeros(bb)
+      appendSlidingMovesFromSquare(out, board, Board.posFromSquareIndex(idx), color, directionIndices)
+      bb &= (bb - 1L)
+
+  private def queenMovesFromBitboard(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    board: Board,
+    color: Color,
+    queensBb: Long
+  ): Unit =
+    var bb = queensBb
+    while bb != 0L do
+      val idx = java.lang.Long.numberOfTrailingZeros(bb)
+      val from = Board.posFromSquareIndex(idx)
+      appendSlidingMovesFromSquare(out, board, from, color, rookDirectionIndices)
+      appendSlidingMovesFromSquare(out, board, from, color, bishopDirectionIndices)
+      bb &= (bb - 1L)
+
+  private def kingMovesFromBitboard(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    color: Color,
+    kingBb: Long
+  ): Unit =
+    if kingBb != 0L then
+      val idx = java.lang.Long.numberOfTrailingZeros(kingBb)
+      appendKingMovesFromSquare(out, state, Board.posFromSquareIndex(idx), color)
+
+  private def pawnMoves(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    pos: Pos,
+    color: Color
+  ): Unit =
     val dir = if color == Color.White then 1 else -1
     val startRow = if color == Color.White then 1 else 6
     val promRow = if color == Color.White then 7 else 0
     val board = state.board
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
-
     def addMoves(to: Pos): Unit =
       if to.row == promRow then
-        moves += Move(pos, to, Some(PieceType.Queen))
-        moves += Move(pos, to, Some(PieceType.Rook))
-        moves += Move(pos, to, Some(PieceType.Bishop))
-        moves += Move(pos, to, Some(PieceType.Knight))
+        out += Move(pos, to, Some(PieceType.Queen))
+        out += Move(pos, to, Some(PieceType.Rook))
+        out += Move(pos, to, Some(PieceType.Bishop))
+        out += Move(pos, to, Some(PieceType.Knight))
       else
-        moves += Move(pos, to)
+        out += Move(pos, to)
 
     val oneStep = pos + (0, dir)
     if oneStep.isValid && board.isEmpty(oneStep) then
@@ -62,81 +169,69 @@ object MoveGenerator:
 
     val twoStep = pos + (0, 2 * dir)
     if pos.row == startRow && board.isEmpty(oneStep) && board.isEmpty(twoStep) then
-      moves += Move(pos, twoStep)
+      out += Move(pos, twoStep)
 
     val leftTarget = pos + (-1, dir)
     if leftTarget.isValid then
       if board.isOccupiedBy(leftTarget, color.opposite) then addMoves(leftTarget)
-      else if state.enPassantTarget.contains(leftTarget) then moves += Move(pos, leftTarget)
+      else if state.enPassantTarget.contains(leftTarget) then out += Move(pos, leftTarget)
 
     val rightTarget = pos + (1, dir)
     if rightTarget.isValid then
       if board.isOccupiedBy(rightTarget, color.opposite) then addMoves(rightTarget)
-      else if state.enPassantTarget.contains(rightTarget) then moves += Move(pos, rightTarget)
+      else if state.enPassantTarget.contains(rightTarget) then out += Move(pos, rightTarget)
 
-    moves.toList
+  private def appendKnightMovesFromSquare(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    board: Board,
+    from: Pos,
+    color: Color
+  ): Unit =
+    var attacks = knightAttackMasks(Board.squareIndex(from)) & ~board.colorMask(color)
+    while attacks != 0L do
+      val toIdx = java.lang.Long.numberOfTrailingZeros(attacks)
+      out += Move(from, Board.posFromSquareIndex(toIdx))
+      attacks &= (attacks - 1L)
 
-  private def knightMoves(state: GameState, pos: Pos, color: Color): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
-    val deltas = knightDeltas
-    var index = 0
-    while index < deltas.length do
-      val (dc, dr) = deltas(index)
-      val to = pos + (dc, dr)
-      if to.isValid && !state.board.isOccupiedBy(to, color) then
-        moves += Move(pos, to)
-      index += 1
-    moves.toList
-
-  private def slidingMoves(
-    state: GameState,
-    pos: Pos,
+  private def appendSlidingMovesFromSquare(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    board: Board,
+    from: Pos,
     color: Color,
-    directions: Array[(Int, Int)]
-  ): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
-    var dirIndex = 0
-    while dirIndex < directions.length do
-      val (dc, dr) = directions(dirIndex)
-      var current = pos + (dc, dr)
-      var blocked = false
-      while current.isValid && !blocked do
-        if state.board.isOccupiedBy(current, color) then
-          blocked = true
-        else if state.board.isOccupiedBy(current, color.opposite) then
-          moves += Move(pos, current)
-          blocked = true
-        else
-          moves += Move(pos, current)
-          current = current + (dc, dr)
-      dirIndex += 1
-    moves.toList
+    directionIndices: Array[Int]
+  ): Unit =
+    var attacks = sliderAttackMask(Board.squareIndex(from), board.occupiedMask, directionIndices) & ~board.colorMask(color)
+    while attacks != 0L do
+      val toIdx = java.lang.Long.numberOfTrailingZeros(attacks)
+      out += Move(from, Board.posFromSquareIndex(toIdx))
+      attacks &= (attacks - 1L)
 
-  private def queenMoves(state: GameState, pos: Pos, color: Color): List[Move] =
-    slidingMoves(state, pos, color, Array((1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)))
-
-  private def kingMoves(state: GameState, pos: Pos, color: Color): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
-    val directions = kingDirections
-    var index = 0
-    while index < directions.length do
-      val (dc, dr) = directions(index)
-      val to = pos + (dc, dr)
-      if to.isValid && !state.board.isOccupiedBy(to, color) then
-        moves += Move(pos, to)
-      index += 1
-    moves ++= castlingMoves(state, pos, color)
-    moves.toList
+  private def appendKingMovesFromSquare(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    from: Pos,
+    color: Color
+  ): Unit =
+    var attacks = kingAttackMasks(Board.squareIndex(from)) & ~state.board.colorMask(color)
+    while attacks != 0L do
+      val toIdx = java.lang.Long.numberOfTrailingZeros(attacks)
+      out += Move(from, Board.posFromSquareIndex(toIdx))
+      attacks &= (attacks - 1L)
+    addCastlingMoves(out, state, from, color)
 
   // $COVERAGE-OFF$
-  private def castlingMoves(state: GameState, kingPos: Pos, color: Color): List[Move] =
-    val moves = scala.collection.mutable.ListBuffer.empty[Move]
+  private def addCastlingMoves(
+    out: scala.collection.mutable.ArrayBuffer[Move],
+    state: GameState,
+    kingPos: Pos,
+    color: Color
+  ): Unit =
     val board = state.board
     val rights = state.castlingRights
     val row = if color == Color.White then 0 else 7
 
     if isAttackedBy(board, kingPos, color.opposite) then
-      return Nil
+      return
 
     val kingSideAllowed = if color == Color.White then rights.whiteKingSide else rights.blackKingSide
     if kingSideAllowed &&
@@ -146,7 +241,7 @@ object MoveGenerator:
       !isAttackedBy(board, Pos(5, row), color.opposite) &&
       !isAttackedBy(board, Pos(6, row), color.opposite)
     then
-      moves += Move(kingPos, Pos(6, row))
+      out += Move(kingPos, Pos(6, row))
 
     val queenSideAllowed = if color == Color.White then rights.whiteQueenSide else rights.blackQueenSide
     if queenSideAllowed &&
@@ -157,73 +252,39 @@ object MoveGenerator:
       !isAttackedBy(board, Pos(3, row), color.opposite) &&
       !isAttackedBy(board, Pos(4, row), color.opposite)
     then
-      moves += Move(kingPos, Pos(2, row))
+      out += Move(kingPos, Pos(2, row))
 
-    moves.toList
+  def isAttackedBy(board: Board, pos: Pos, attacker: Color): Boolean =
+    val idx = Board.squareIndex(pos)
+    val pawnSourceMask =
+      if attacker == Color.White then whitePawnAttackSourceMasks(idx)
+      else blackPawnAttackSourceMasks(idx)
+    val pawnAttacked = (board.bitboardOf(attacker, PieceType.Pawn) & pawnSourceMask) != 0L
+    val knightAttacked = (board.bitboardOf(attacker, PieceType.Knight) & knightAttackMasks(idx)) != 0L
+    val kingAttacked = (board.bitboardOf(attacker, PieceType.King) & kingAttackMasks(idx)) != 0L
+    val bishopLikeAttacked =
+      (sliderAttackMask(idx, board.occupiedMask, bishopDirectionIndices) &
+        (board.bitboardOf(attacker, PieceType.Bishop) | board.bitboardOf(attacker, PieceType.Queen))) != 0L
+    val rookLikeAttacked =
+      (sliderAttackMask(idx, board.occupiedMask, rookDirectionIndices) &
+        (board.bitboardOf(attacker, PieceType.Rook) | board.bitboardOf(attacker, PieceType.Queen))) != 0L
 
-  def isAttackedBy(board: Board, pos: Pos, attacker: Color): Boolean = {
-    val pawnDir = if attacker == Color.White then 1 else -1
-    val pawnAttacked = 
-      board.get(pos + (-1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn)) ||
-      board.get(pos + (1, -pawnDir)).contains(Piece(attacker, PieceType.Pawn))
-    
-    lazy val knightAttacked = {
-      val deltas = knightDeltas
-      var kIndex = 0
-      var found = false
-      while kIndex < deltas.length && !found do
-        val (dc, dr) = deltas(kIndex)
-        if board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.Knight)) then
-          found = true
-        kIndex += 1
-      found
-    }
+    pawnAttacked || knightAttacked || kingAttacked || bishopLikeAttacked || rookLikeAttacked
 
-    lazy val kingAttacked = {
-      val kings = kingDirections
-      var kgIndex = 0
-      var found = false
-      while kgIndex < kings.length && !found do
-        val (dc, dr) = kings(kgIndex)
-        if board.get(pos + (dc, dr)).contains(Piece(attacker, PieceType.King)) then
-          found = true
-        kgIndex += 1
-      found
-    }
+  private def leavesKingInCheck(state: GameState, move: Move, kingPos: Option[Pos], inCheck: Boolean): Boolean =
+    kingPos match
+      case Some(kp) if !inCheck && move.from != kp && !sharesLine(kp, move.from) =>
+        // Moving a piece that is not aligned with our king cannot expose a slider check.
+        false
+      case _ =>
+        leavesKingInCheckSlow(state, move)
 
-    pawnAttacked || knightAttacked || kingAttacked ||
-    slidingAttack(board, pos, attacker, bishopDirections, PieceType.Bishop) ||
-    slidingAttack(board, pos, attacker, rookDirections, PieceType.Rook)
-  }
-
-  private def slidingAttack(
-    board: Board,
-    pos: Pos,
-    attacker: Color,
-    directions: Array[(Int, Int)],
-    primary: PieceType
-  ): Boolean = {
-    var found = false
-    var dirIndex = 0
-    while dirIndex < directions.length && !found do
-      val (dc, dr) = directions(dirIndex)
-      var current = pos + (dc, dr)
-      var blocked = false
-      while current.isValid && !blocked && !found do
-        board.get(current) match
-          case None =>
-            current = current + (dc, dr)
-          case Some(Piece(c, pt)) if c == attacker && (pt == primary || pt == PieceType.Queen) =>
-            found = true
-          case _ =>
-            blocked = true
-      dirIndex += 1
-    found
-  }
-
-  private def leavesKingInCheck(state: GameState, move: Move): Boolean =
+  private def leavesKingInCheckSlow(state: GameState, move: Move): Boolean =
     val nextBoard = applyMoveToBoard(state, move)
     nextBoard.findKing(state.activeColor).exists(pos => isAttackedBy(nextBoard, pos, state.activeColor.opposite))
+
+  private def sharesLine(a: Pos, b: Pos): Boolean =
+    a.row == b.row || a.col == b.col || math.abs(a.row - b.row) == math.abs(a.col - b.col)
 
   private def applyMoveToBoard(state: GameState, move: Move): Board =
     val board = state.board
@@ -248,7 +309,63 @@ object MoveGenerator:
 
     val finalPiece = move.promotion match
       case Some(pt) => Piece(piece.color, pt)
-      case None     => piece
+      case None => piece
 
     boardAfterCastle.remove(move.from).put(move.to, finalPiece)
   // $COVERAGE-ON$
+
+  private def precomputeAttackMasks(deltas: Array[(Int, Int)]): Array[Long] =
+    Array.tabulate(64) { idx =>
+      val from = Board.posFromSquareIndex(idx)
+      var mask = 0L
+      var i = 0
+      while i < deltas.length do
+        val (dc, dr) = deltas(i)
+        val to = from + (dc, dr)
+        if to.isValid then mask |= Board.squareMask(to)
+        i += 1
+      mask
+    }
+
+  private def precomputePawnAttackSourceMasks(color: Color): Array[Long] =
+    Array.tabulate(64) { idx =>
+      val target = Board.posFromSquareIndex(idx)
+      val sourceRow = if color == Color.White then target.row - 1 else target.row + 1
+      var mask = 0L
+      val left = Pos(target.col - 1, sourceRow)
+      val right = Pos(target.col + 1, sourceRow)
+      if left.isValid then mask |= Board.squareMask(left)
+      if right.isValid then mask |= Board.squareMask(right)
+      mask
+    }
+
+  private def precomputeSliderRays(): Array[Array[Long]] =
+    Array.tabulate(64) { idx =>
+      val from = Board.posFromSquareIndex(idx)
+      Array.tabulate(sliderDirections.length) { dirIdx =>
+        val (dc, dr) = sliderDirections(dirIdx)
+        var current = from + (dc, dr)
+        var mask = 0L
+        while current.isValid do
+          mask |= Board.squareMask(current)
+          current = current + (dc, dr)
+        mask
+      }
+    }
+
+  private def sliderAttackMask(fromIdx: Int, occupied: Long, directionIndices: Array[Int]): Long =
+    var attacks = 0L
+    var i = 0
+    while i < directionIndices.length do
+      val dirIdx = directionIndices(i)
+      val ray = sliderRays(fromIdx)(dirIdx)
+      val blockers = ray & occupied
+      if blockers == 0L then
+        attacks |= ray
+      else
+        val blockerIdx =
+          if sliderDirectionAscending(dirIdx) then java.lang.Long.numberOfTrailingZeros(blockers)
+          else 63 - java.lang.Long.numberOfLeadingZeros(blockers)
+        attacks |= ray ^ sliderRays(blockerIdx)(dirIdx)
+      i += 1
+    attacks
