@@ -1,3 +1,5 @@
+import scala.sys.process._
+
 ThisBuild / scalaVersion := "3.3.4"
 ThisBuild / version      := "1.0.0"
 
@@ -5,6 +7,68 @@ lazy val circeVersion   = "0.14.10"
 lazy val http4sVersion  = "0.23.23"
 lazy val slickVersion   = "3.5.1"
 lazy val mongoVersion   = "5.1.0"
+
+lazy val performance = taskKey[Unit](
+  "Run the assignment performance suite: k6 API load test, Gatling user-flow test, and JMH microbenchmarks."
+)
+
+performance := {
+  val log = streams.value.log
+  val baseDir = baseDirectory.value
+  val isWindows = sys.props.getOrElse("os.name", "").toLowerCase.contains("win")
+  val baseUrl = sys.props.getOrElse("baseUrl", sys.env.getOrElse("BASE_URL", "http://localhost:8080"))
+  val perfProfile = sys.props.getOrElse("perfProfile", sys.env.getOrElse("PERF_PROFILE", "assignment"))
+
+  def executable(path: File, fallback: String): String =
+    if (path.exists) path.getAbsolutePath else fallback
+
+  def runOrFail(
+      label: String,
+      command: Seq[String],
+      cwd: File,
+      env: (String, String)*
+  ): Unit = {
+    log.info(s"Running $label: ${command.mkString(" ")}")
+    val exitCode = Process(command, cwd, env: _*) ! ProcessLogger(log.info(_), log.error(_))
+    if (exitCode != 0) {
+      sys.error(s"$label failed with exit code $exitCode")
+    }
+  }
+
+  val k6Command =
+    if (isWindows) {
+      val bundledWindowsK6 = baseDir / "perf" / "k6.exe"
+      Seq(executable(bundledWindowsK6, "k6"), "run", "perf/k6_load_test.js")
+    }
+    else {
+      val bundledK6 = baseDir / "perf" / "k6-v0.55.0-linux-amd64" / "k6"
+      Seq(executable(bundledK6, "k6"), "run", "perf/k6_load_test.js")
+    }
+
+  val bundledMaven =
+    baseDir / "perf" / "apache-maven-3.9.9" / "bin" / (if (isWindows) "mvn.cmd" else "mvn")
+  val maven = executable(bundledMaven, if (isWindows) "mvn.cmd" else "mvn")
+
+  log.info(s"Performance target: $baseUrl")
+  log.info(s"Performance profile: $perfProfile")
+
+  runOrFail(
+    "k6",
+    k6Command,
+    baseDir,
+    "BASE_URL" -> baseUrl,
+    "PERF_PROFILE" -> perfProfile
+  )
+
+  runOrFail(
+    "Gatling",
+    Seq(maven, "-q", "gatling:test", s"-DbaseUrl=$baseUrl", s"-DperfProfile=$perfProfile"),
+    baseDir / "perf" / "gatling"
+  )
+
+  log.info("Running JMH: benchmark/Jmh/run -i 3 -wi 2 -f 1 -t 1")
+  (benchmark / Jmh / run).toTask(" -i 3 -wi 2 -f 1 -t 1").value
+}
 
 lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-Xmax-inlines", "64"),

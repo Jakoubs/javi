@@ -114,6 +114,30 @@ kubectl apply -k k8s
 sbt test
 ```
 
+### Performance Tests
+
+Start the REST server in one terminal:
+
+```bash
+sbt rest/run
+```
+
+Then run only the assignment performance suite in a second terminal:
+
+```bash
+sbt performance
+```
+
+This command runs exactly the three performance checks from the assignment:
+k6 API load test, Gatling user-flow test, and JMH microbenchmarks. The default
+profile is `assignment`; use `-DperfProfile=full` for the longer stress/soak
+k6 profile. On Windows, install `k6` into your PATH or place `k6.exe` in
+`perf/k6.exe`; Linux can use the bundled `perf/k6-v0.55.0-linux-amd64/k6`.
+
+```bash
+sbt -DbaseUrl=http://localhost:8080 -DperfProfile=full performance
+```
+
 ### Generate Coverage Locally
 
 ```bash

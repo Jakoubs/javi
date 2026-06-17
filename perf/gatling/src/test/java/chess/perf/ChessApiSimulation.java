@@ -14,6 +14,12 @@ import java.util.stream.Stream;
 
 public class ChessApiSimulation extends Simulation {
     String baseUrl = System.getProperty("baseUrl", "http://localhost:8080");
+    String perfProfile = System.getProperty("perfProfile", "assignment");
+    int gameplayUsers = Integer.getInteger("gameplayUsers", "full".equals(perfProfile) ? 100 : 20);
+    int constantUsersPerSecValue = Integer.getInteger("constantUsersPerSec", "full".equals(perfProfile) ? 10 : 5);
+    int rampSeconds = Integer.getInteger("rampSeconds", "full".equals(perfProfile) ? 60 : 30);
+    int holdSeconds = Integer.getInteger("holdSeconds", "full".equals(perfProfile) ? 60 : 30);
+    int rampDownSeconds = Integer.getInteger("rampDownSeconds", "full".equals(perfProfile) ? 20 : 10);
 
     HttpProtocolBuilder httpProtocol = http
         .baseUrl(baseUrl)
@@ -63,13 +69,26 @@ public class ChessApiSimulation extends Simulation {
             .check(status().in(200, 201))
         );
 
+    ScenarioBuilder puzzleScenario = scenario("Puzzle FEN")
+        .exec(http("GET /api/puzzles/legal-moves")
+            .get("/api/puzzles/legal-moves")
+            .queryParam("fen", "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+            .queryParam("square", "e5")
+            .check(status().is(200))
+            .check(jsonPath("$[0]").exists())
+        );
+
     {
         setUp(
             pingScenario.injectOpen(constantUsersPerSec(2).during(10)),
             gameplayScenario.injectOpen(
-                rampUsers(20).during(30),
-                constantUsersPerSec(5).during(30),
-                rampUsers(0).during(10)
+                rampUsers(gameplayUsers).during(rampSeconds),
+                constantUsersPerSec(constantUsersPerSecValue).during(holdSeconds),
+                rampUsers(0).during(rampDownSeconds)
+            ),
+            puzzleScenario.injectOpen(
+                rampUsers(Math.max(5, gameplayUsers / 2)).during(Math.max(10, rampSeconds / 2)),
+                constantUsersPerSec(Math.max(1, constantUsersPerSecValue / 2)).during(Math.max(10, holdSeconds / 2))
             )
         ).protocols(httpProtocol)
          .assertions(
