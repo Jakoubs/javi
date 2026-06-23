@@ -32,7 +32,7 @@ class GameTable(val profile: JdbcProfile):
   import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `games` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
-    MTable.getTables("games").flatMap { tables =>
-      if tables.isEmpty then games.schema.create
+    MTable.getTables.flatMap { tables =>
+      if !tables.exists(_.name.name.equalsIgnoreCase("games")) then games.schema.create
       else DBIO.successful(())
     }

@@ -25,7 +25,9 @@ RUN mkdir -p /var/cache/nginx /var/run && \
 
 # Copy built assets and config
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
-COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf.template
+COPY --chown=nginx:nginx entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 USER nginx
 
@@ -34,4 +36,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
     CMD wget -qO- http://127.0.0.1:8080/ || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]

@@ -226,6 +226,7 @@ lazy val spark = (project in file("spark"))
       "org.apache.spark" %% "spark-core"           % sparkVersion,
       "org.apache.spark" %% "spark-sql"            % sparkVersion,
       "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
+      "org.apache.spark" %% "spark-kubernetes"     % sparkVersion,
       // Postgres JDBC driver
       "org.postgresql"    % "postgresql"             % "42.7.3",
       // Typesafe Config for application.conf

@@ -12,3 +12,4 @@ resources:
   - kafka-stream.yaml
   - spark.yaml
   - spark-rbac.yaml
+  - bots.yaml

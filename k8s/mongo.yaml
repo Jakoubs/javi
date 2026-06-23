@@ -27,6 +27,28 @@ spec:
           env:
             - name: MONGO_INITDB_DATABASE
               value: chess
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+      volumes:
+        - name: mongo-data
+          persistentVolumeClaim:
+            claimName: mongo-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-data
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: mongo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service

@@ -22,6 +22,10 @@ const gameState = ref(null)
 const tournamentEvents = ref([])
 const gameEvents = ref([])
 
+const registeredBots = ref([])
+const startingBotId = ref(null)
+const selectedBotToLink = ref('')
+
 const activeTab = ref('connect')
 const showJsonModal = ref(false)
 const jsonModalTitle = ref('')
@@ -55,6 +59,30 @@ const flatTournaments = computed(() => [
   ...tournaments.value.finished.map(t => ({ ...t, statusGroup: 'finished' }))
 ])
 const currentFen = computed(() => gameState.value?.fen || START_FEN)
+
+const loggedInBotId = computed(() => {
+  if (!token.value) return null
+  try {
+    const payload = token.value.split('.')[1]
+    const decoded = JSON.parse(atob(payload))
+    return decoded.sub
+  } catch (e) {
+    return null
+  }
+})
+
+const myActiveGames = computed(() => {
+  if (!loggedInBotId.value) return []
+  const active = []
+  if (roundInfo.value && roundInfo.value.pairings) {
+    roundInfo.value.pairings.forEach(p => {
+      if ((p.white?.id === loggedInBotId.value || p.black?.id === loggedInBotId.value) && p.winner === null) {
+        if (p.gameId) active.push(p.gameId)
+      }
+    })
+  }
+  return active
+})
 
 const setStatus = (message, isError = false) => {
   statusMessage.value = message
@@ -117,11 +145,65 @@ const readNdjson = async (path, options = {}) => {
     .map(line => JSON.parse(line))
 }
 
+const loadBots = async () => {
+  try {
+    const res = await readJson('/api/bots')
+    registeredBots.value = res.bots || []
+  } catch (e) {
+    setStatus(`Failed to load bots: ${e.message}`, true)
+  }
+}
+
+const startBot = async (botId) => {
+  startingBotId.value = botId
+  try {
+    await request(`/api/bots/${encodeURIComponent(botId)}/start`, { method: 'POST' })
+    setStatus('Bot start command sent.')
+    await new Promise(r => setTimeout(r, 1000))
+    await loadBots()
+  } catch (e) {
+    setStatus(`Failed to start bot: ${e.message}`, true)
+  } finally {
+    startingBotId.value = null
+  }
+}
+
+const stopBot = async (botId) => {
+  try {
+    await request(`/api/bots/${encodeURIComponent(botId)}/stop`, { method: 'POST' })
+    setStatus('Bot stop command sent.')
+    await new Promise(r => setTimeout(r, 500))
+    await loadBots()
+  } catch (e) {
+    setStatus(`Failed to stop bot: ${e.message}`, true)
+  }
+}
+
+const linkBotToTournament = async () => {
+  if (!selectedTournamentId.value.trim() || !selectedBotToLink.value) return
+  loading.value = true
+  try {
+    await readJson(`/api/tournament/${encodeURIComponent(selectedTournamentId.value.trim())}/participants`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ botId: selectedBotToLink.value })
+    })
+    await loadTournament()
+    await loadResults()
+    setStatus('Bot successfully linked to tournament.')
+  } catch (e) {
+    setStatus(`Failed to link bot: ${e.message}`, true)
+  } finally {
+    loading.value = false
+  }
+}
+
 const loadTournaments = async () => {
   loading.value = true
   try {
     saveConfig()
     tournaments.value = await readJson('/api/tournament')
+    await loadBots()
     setStatus('Tournament server connected.')
     activeTab.value = 'tournament'
   } catch (e) {
@@ -223,7 +305,6 @@ const loadResults = async () => {
   try {
     results.value = await readNdjson(`/api/tournament/${encodeURIComponent(selectedTournamentId.value.trim())}/results`)
     setStatus('Results loaded.')
-    openJsonModal('Results', results.value)
   } catch (e) {
     setStatus(`Results failed: ${e.message}`, true)
   } finally {
@@ -237,7 +318,6 @@ const loadRound = async () => {
   try {
     roundInfo.value = await readJson(`/api/tournament/${encodeURIComponent(selectedTournamentId.value.trim())}/round/${roundInput.value}`)
     setStatus(`Round ${roundInput.value} loaded.`)
-    openJsonModal(`Round ${roundInput.value}`, roundInfo.value)
   } catch (e) {
     setStatus(`Round failed: ${e.message}`, true)
   } finally {
@@ -340,6 +420,15 @@ const startGameStream = async () => {
 const stopGameStream = () => {
   gameStreamAbort?.abort()
   gameStreamAbort = null
+}
+
+const spectateGame = async (gameId) => {
+  if (!gameId) return
+  selectedGameId.value = gameId
+  saveConfig()
+  activeTab.value = 'game'
+  await loadGame()
+  await startGameStream()
 }
 
 onUnmounted(() => {
@@ -447,22 +536,45 @@ onUnmounted(() => {
       <div class="tournament-split">
 
         <!-- Left: list -->
-        <section class="glass side-panel">
-          <div class="panel-header">
-            <h3>Tournaments</h3>
-            <button class="btn-icon" title="Refresh" @click="loadTournaments">↻</button>
+        <section class="glass side-panel" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+            <div class="panel-header">
+              <h3>Tournaments</h3>
+              <button class="btn-icon" title="Refresh" @click="loadTournaments">↻</button>
+            </div>
+            <div class="t-list" style="flex: 1; overflow-y: auto;">
+              <button
+                v-for="t in flatTournaments"
+                :key="t.id"
+                :class="['t-row', { selected: selectedTournamentId === t.id }]"
+                @click="selectTournament(t.id)"
+              >
+                <span class="t-name">{{ t.fullName || t.name || t.id }}</span>
+                <span class="t-meta">{{ t.statusGroup }} · {{ t.nbPlayers || 0 }} bots · {{ t.nbRounds }}r</span>
+              </button>
+              <div v-if="flatTournaments.length === 0" class="empty">No tournaments loaded.</div>
+            </div>
           </div>
-          <div class="t-list">
-            <button
-              v-for="t in flatTournaments"
-              :key="t.id"
-              :class="['t-row', { selected: selectedTournamentId === t.id }]"
-              @click="selectTournament(t.id)"
-            >
-              <span class="t-name">{{ t.fullName || t.name || t.id }}</span>
-              <span class="t-meta">{{ t.statusGroup }} · {{ t.nbPlayers || 0 }} bots · {{ t.nbRounds }}r</span>
-            </button>
-            <div v-if="flatTournaments.length === 0" class="empty">No tournaments loaded.</div>
+
+          <div class="bot-management-section" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.75rem; display: flex; flex-direction: column; min-height: 150px;">
+            <div class="panel-header">
+              <h3>Bot Management</h3>
+              <button class="btn-icon" title="Refresh Bots" @click="loadBots">↻</button>
+            </div>
+            <div class="bot-list mt" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px;">
+              <div v-for="bot in registeredBots" :key="bot.id" class="bot-row glass" style="padding: 0.4rem 0.6rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; border-color: rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);">
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-weight: 600;">{{ bot.name }}</span>
+                  <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4); text-transform: uppercase;">{{ bot.status }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span v-if="startingBotId === bot.id" class="spinner" style="width: 14px; height: 14px;"></span>
+                  <button v-else-if="bot.status === 'stopped'" class="mini-btn primary" @click="startBot(bot.id)">Start</button>
+                  <button v-else class="mini-btn danger" @click="stopBot(bot.id)">Stop</button>
+                </div>
+              </div>
+              <div v-if="registeredBots.length === 0" class="empty">No registered bots.</div>
+            </div>
           </div>
         </section>
 
@@ -487,16 +599,74 @@ onUnmounted(() => {
             <span class="chip">{{ selectedTournament.nbRounds }} rounds</span>
             <button class="chip-link" @click="openJsonModal('Tournament', selectedTournament)">View JSON ↗</button>
           </div>
-          <div v-else class="empty mt">No tournament selected.</div>
-
-          <!-- Round & Results -->
-          <div class="section-divider">
-            <span>Round &amp; Results</span>
+          
+          <!-- Link Bot Section -->
+          <div v-if="selectedTournament && selectedTournament.status === 'created'" class="link-bot-section mt" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-top: 0.5rem;">
+            <span style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Link Bot:</span>
+            <select v-model="selectedBotToLink" class="glass-input mono small" style="width: auto; flex: 1; min-width: 100px; padding: 0.2rem 0.5rem; height: auto;">
+              <option value="" disabled>Select Bot</option>
+              <option v-for="bot in registeredBots" :key="bot.id" :value="bot.id">
+                {{ bot.name }} ({{ bot.status }})
+              </option>
+            </select>
+            <button class="mini-btn primary" :disabled="!selectedBotToLink || loading" @click="linkBotToTournament">Link</button>
           </div>
-          <div class="btn-group">
-            <input v-model.number="roundInput" class="glass-input mono small" type="number" min="1" style="width:4rem">
+
+          <div v-if="!selectedTournament" class="empty mt">No tournament selected.</div>
+
+          <!-- Tournament Display -->
+          <div class="section-divider">
+            <span>Tournament Overview</span>
+          </div>
+
+          <div v-if="myActiveGames.length > 0" class="active-games-banner glass">
+            <span class="active-pulse"></span>
+            <span>Your bot is playing!</span>
+            <button v-for="gid in myActiveGames" :key="gid" class="btn primary small ml-auto" @click="spectateGame(gid)">
+              Watch {{ gid }}
+            </button>
+          </div>
+
+          <div class="btn-group mb-sm mt">
+            <input v-model.number="roundInput" class="glass-input mono small" type="number" min="1" style="width:4rem" placeholder="Rnd">
             <button class="mini-btn" @click="loadRound">Load Round</button>
-            <button class="mini-btn" @click="loadResults">Load Results</button>
+            <button class="mini-btn" @click="loadResults">Load Standings</button>
+          </div>
+
+          <!-- Standings Table -->
+          <div v-if="results.length > 0" class="standings-table mt">
+            <div class="s-header">
+              <span class="s-rank">#</span>
+              <span class="s-name">Bot</span>
+              <span class="s-pts">Pts</span>
+              <span class="s-tb">TB</span>
+            </div>
+            <div v-for="res in results" :key="res.bot.id" class="s-row" :class="{'is-me': res.bot.id === loggedInBotId}">
+              <span class="s-rank">{{ res.rank }}</span>
+              <span class="s-name">{{ res.bot.name || res.bot.id }}</span>
+              <span class="s-pts">{{ res.points }}</span>
+              <span class="s-tb">{{ res.tieBreak }}</span>
+            </div>
+          </div>
+
+          <!-- Pairings / Bracket -->
+          <div v-if="roundInfo && roundInfo.pairings" class="pairings-list mt">
+            <h4 class="round-title">Round {{ roundInfo.round }}</h4>
+            <div v-for="p in roundInfo.pairings" :key="p.gameId || (p.white?.id + p.black?.id)" class="pairing-card" :class="{'my-pairing': p.white?.id === loggedInBotId || p.black?.id === loggedInBotId}">
+              <div class="player white-player" :class="{'winner': p.winner === 'white'}">
+                <span class="color-dot w"></span>
+                {{ p.white?.name || p.white?.id || '?' }}
+              </div>
+              <div class="vs-label">vs</div>
+              <div class="player black-player" :class="{'winner': p.winner === 'black'}">
+                <span class="color-dot b"></span>
+                {{ p.black?.name || p.black?.id || '?' }}
+              </div>
+              <div class="match-actions">
+                <span v-if="p.winner" class="match-result">{{ p.winner === 'draw' ? '½ - ½' : (p.winner === 'white' ? '1 - 0' : '0 - 1') }}</span>
+                <button v-if="p.gameId" class="mini-btn primary" @click="spectateGame(p.gameId)">Watch</button>
+              </div>
+            </div>
           </div>
 
           <!-- Stream -->
@@ -920,6 +1090,130 @@ label {
 }
 .section-divider::before { display: none; }
 
+/* ── Tournament Renderings ── */
+.mb-sm { margin-bottom: 0.5rem; }
+.ml-auto { margin-left: auto; }
+.btn.small { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
+
+.active-games-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border-color: rgba(78,204,163,0.4);
+  background: rgba(78,204,163,0.1);
+  border-radius: 8px;
+}
+.active-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(78,204,163,0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(78,204,163,0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(78,204,163,0); }
+}
+
+.standings-table {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+.s-header, .s-row {
+  display: flex;
+  padding: 0.4rem 0.75rem;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.s-header {
+  background: rgba(255,255,255,0.05);
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+.s-row:last-child { border-bottom: none; }
+.s-row:hover { background: rgba(255,255,255,0.05); }
+.s-row.is-me { background: rgba(78,204,163,0.15); color: var(--primary); }
+
+.s-rank { width: 30px; color: rgba(255,255,255,0.5); }
+.s-name { flex: 1; font-weight: 600; }
+.s-pts { width: 40px; text-align: right; font-weight: bold; color: var(--primary); }
+.s-tb { width: 40px; text-align: right; color: rgba(255,255,255,0.4); }
+
+.round-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+
+.pairings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pairing-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  gap: 0.75rem;
+  transition: background 0.15s;
+}
+.pairing-card:hover { background: rgba(255,255,255,0.07); }
+.pairing-card.my-pairing { border-color: rgba(78,204,163,0.4); }
+
+.player {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player.winner { font-weight: bold; color: var(--primary); }
+
+.color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.color-dot.w { background: #fff; border: 1px solid #ccc; }
+.color-dot.b { background: #333; border: 1px solid #111; }
+
+.vs-label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+}
+
+.match-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.match-result {
+  font-size: 0.85rem;
+  font-weight: bold;
+  background: rgba(255,255,255,0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
 /* ── Glass input ── */
 .glass-input {
   width: 100%;
@@ -938,7 +1232,7 @@ label {
 /* ── Game split ── */
 .game-split {
   display: grid;
-  grid-template-columns: minmax(260px, 380px) 1fr;
+  grid-template-columns: 1fr minmax(260px, 380px);
   gap: 0.75rem;
   height: 100%;
 }
@@ -949,6 +1243,8 @@ label {
   justify-content: center;
   padding: 0.5rem;
   min-height: 320px;
+  container-type: inline-size;
+  --board-square-size: min(calc((100cqw - 2rem) / 8), 7.5vh, 75px);
 }
 
 .game-controls {

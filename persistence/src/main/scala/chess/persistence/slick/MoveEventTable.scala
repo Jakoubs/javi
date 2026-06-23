@@ -33,7 +33,7 @@ class MoveEventTable(val profile: JdbcProfile):
   import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `move_events` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
-    MTable.getTables("move_events").flatMap { tables =>
-      if tables.isEmpty then moveEvents.schema.create
+    MTable.getTables.flatMap { tables =>
+      if !tables.exists(_.name.name.equalsIgnoreCase("move_events")) then moveEvents.schema.create
       else DBIO.successful(())
     }

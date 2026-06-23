@@ -26,7 +26,7 @@ class OpeningTable(val profile: JdbcProfile):
   import scala.concurrent.ExecutionContext.Implicits.global
   /** DDL to create the `openings` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
-    MTable.getTables("openings").flatMap { tables =>
-      if tables.isEmpty then openings.schema.create
+    MTable.getTables.flatMap { tables =>
+      if !tables.exists(_.name.name.equalsIgnoreCase("openings")) then openings.schema.create
       else DBIO.successful(())
     }

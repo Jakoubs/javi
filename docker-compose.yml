@@ -5,7 +5,7 @@
 #   postgres – PostgreSQL 16  (port 5432)  ← Slick backend
 #   mongo    – MongoDB 7      (port 27017) ← MongoDB backend
 #   rest     – Scala/http4s REST API (port 8080)
-#   webui    – Vue 3 / Vite frontend served by nginx (port 3000)
+#   webui    – Vue 3 / Vite frontend served by nginx (port 80)
 #   lichess  – Lichess bot client (outbound only, opt-in profile)
 #
 # Quick start:
@@ -107,9 +107,53 @@ services:
     restart: unless-stopped
     ports:
       - "80:8080"
+    environment:
+      - TOURNAMENT_URL=${TOURNAMENT_URL:-http://host.docker.internal:8086}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       rest:
         condition: service_healthy
+
+  bot1:
+    build:
+      context: .
+      dockerfile: rest/Dockerfile
+    image: javi-rest:local
+    container_name: chess-bot1
+    restart: unless-stopped
+    environment:
+      - TOURNAMENT_URL=${TOURNAMENT_URL:-http://host.docker.internal:8086}
+      - BOT_NAME=Javi-Bot1
+      - DOCKER_ENV=true
+    entrypoint: ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "app.jar", "chess.rest.TournamentBot"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      rest:
+        condition: service_healthy
+    profiles:
+      - manual-bots
+
+  bot2:
+    build:
+      context: .
+      dockerfile: rest/Dockerfile
+    image: javi-rest:local
+    container_name: chess-bot2
+    restart: unless-stopped
+    environment:
+      - TOURNAMENT_URL=${TOURNAMENT_URL:-http://host.docker.internal:8086}
+      - BOT_NAME=Javi-Bot2
+      - DOCKER_ENV=true
+    entrypoint: ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "app.jar", "chess.rest.TournamentBot"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      rest:
+        condition: service_healthy
+    profiles:
+      - manual-bots
 
   # ── Kafka (Message Broker) ─────────────────────────────────────────────────
   kafka:

@@ -25,6 +25,9 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/rest/chess-functional-improvements.chess-rest.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/spark/chess-functional-improvements.chess-spark.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/spark/chess-functional-improvements.chess-spark.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/spark/chess-functional-improvements.chess-spark.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/spark/chess-functional-improvements.chess-spark.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/spark/chess-functional-improvements.chess-spark.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/spark/chess-functional-improvements.chess-spark.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.main.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.test.iml" filepath="$PROJECT_DIR$/.idea/modules/javi/util/chess-functional-improvements.chess-util.test.iml" />

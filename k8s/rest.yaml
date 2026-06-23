@@ -46,19 +46,22 @@ spec:
               port: http
             initialDelaySeconds: 20
             periodSeconds: 10
+            timeoutSeconds: 10
           livenessProbe:
             httpGet:
               path: /api/state
               port: http
             initialDelaySeconds: 45
             periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 6
           resources:
             requests:
-              cpu: 100m
+              cpu: 500m
               memory: 512Mi
             limits:
-              cpu: 1000m
-              memory: 1Gi
+              cpu: 4000m
+              memory: 2Gi
 ---
 apiVersion: v1
 kind: Service
@@ -70,6 +73,7 @@ metadata:
     app.kubernetes.io/component: rest
 spec:
   type: ClusterIP
+  sessionAffinity: ClientIP
   selector:
     app.kubernetes.io/name: javi
     app.kubernetes.io/component: rest

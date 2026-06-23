@@ -16,6 +16,7 @@
             <option value="$PROJECT_DIR$/persistence" />
             <option value="$PROJECT_DIR$/project" />
             <option value="$PROJECT_DIR$/rest" />
+            <option value="$PROJECT_DIR$/spark" />
             <option value="$PROJECT_DIR$/util" />
             <option value="$PROJECT_DIR$/view" />
           </set>

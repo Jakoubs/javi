@@ -25,6 +25,9 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          env:
+            - name: TOURNAMENT_URL
+              value: "https://tournament.staging.maichess.berger-software.com"
           readinessProbe:
             httpGet:
               path: /

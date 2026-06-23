@@ -23,7 +23,7 @@ class PuzzleThemeTable(val profile: JdbcProfile):
 
   /** DDL to create the `puzzle_themes` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
-    MTable.getTables("puzzle_themes").flatMap { tables =>
-      if tables.isEmpty then puzzleThemes.schema.create
+    MTable.getTables.flatMap { tables =>
+      if !tables.exists(_.name.name.equalsIgnoreCase("puzzle_themes")) then puzzleThemes.schema.create
       else DBIO.successful(())
     }

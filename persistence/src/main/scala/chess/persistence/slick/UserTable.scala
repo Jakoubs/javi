@@ -44,9 +44,8 @@ class UserTable(val profile: JdbcProfile):
   import _root_.slick.jdbc.meta.MTable
   import scala.concurrent.ExecutionContext.Implicits.global
   def createSchema: profile.api.DBIO[Unit] =
-    for {
-      tUsers <- MTable.getTables("users")
-      _      <- if tUsers.isEmpty then users.schema.create else DBIO.successful(())
-      tFriends <- MTable.getTables("friendships")
-      _      <- if tFriends.isEmpty then friendships.schema.create else DBIO.successful(())
-    } yield ()
+    MTable.getTables.flatMap { tables =>
+      val createUsers = if !tables.exists(_.name.name.equalsIgnoreCase("users")) then users.schema.create else DBIO.successful(())
+      val createFriends = if !tables.exists(_.name.name.equalsIgnoreCase("friendships")) then friendships.schema.create else DBIO.successful(())
+      createUsers >> createFriends
+    }

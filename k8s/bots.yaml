@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bot1
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: bot1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: javi
+      app.kubernetes.io/component: bot1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: javi
+        app.kubernetes.io/component: bot1
+    spec:
+      containers:
+        - name: bot1
+          image: javi-rest:local
+          imagePullPolicy: IfNotPresent
+          command: ["java"]
+          args: ["-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "app.jar", "chess.rest.TournamentBot"]
+          env:
+            - name: TOURNAMENT_URL
+              value: "https://tournament.staging.maichess.berger-software.com"
+            - name: BOT_NAME
+              value: "Javi-Bot1"
+            - name: DOCKER_ENV
+              value: "true"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bot2
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: bot2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: javi
+      app.kubernetes.io/component: bot2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: javi
+        app.kubernetes.io/component: bot2
+    spec:
+      containers:
+        - name: bot2
+          image: javi-rest:local
+          imagePullPolicy: IfNotPresent
+          command: ["java"]
+          args: ["-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-cp", "app.jar", "chess.rest.TournamentBot"]
+          env:
+            - name: TOURNAMENT_URL
+              value: "https://tournament.staging.maichess.berger-software.com"
+            - name: BOT_NAME
+              value: "Javi-Bot2"
+            - name: DOCKER_ENV
+              value: "true"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

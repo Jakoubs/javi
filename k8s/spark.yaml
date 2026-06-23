@@ -30,6 +30,8 @@ spec:
               value: chess
             - name: DB_PASS
               value: chess
+            - name: SPARK_MASTER
+              value: "local[*]"
             - name: KAFKA_BOOTSTRAP
               value: kafka:9092
             - name: SPARK_OUTPUT_DIR

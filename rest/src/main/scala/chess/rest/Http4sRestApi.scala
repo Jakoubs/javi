@@ -255,6 +255,12 @@ class Http4sRestApi(
             persistGameAndMove(sessionId, move, s, session).handleErrorWith { err =>
               IO.println(s"[REST DB ERROR] Failed to persist game/move: ${err.getMessage}")
             }
+        case (Command.AiMove, s) if s.messageType != MessageType.Error && s.lastMove.isDefined =>
+          val move = s.lastMove.get
+          kafkaService.publishMove(sessionId, move, s.game.toFen) *>
+            persistGameAndMove(sessionId, move, s, session).handleErrorWith { err =>
+              IO.println(s"[REST DB ERROR] Failed to persist game/move: ${err.getMessage}")
+            }
         case (_, s) if s.status != chess.model.GameStatus.Playing =>
           updateGameResult(sessionId, s).handleErrorWith { err =>
             IO.println(s"[REST DB ERROR] Failed to update game status: ${err.getMessage}")
@@ -266,7 +272,16 @@ class Http4sRestApi(
       isAiTurn = (activeCol == Color.White && newState.aiWhite) || 
                  (activeCol == Color.Black && newState.aiBlack)
                     
-      _ <- if (isAiTurn && newState.status == chess.model.GameStatus.Playing) {
+      isGameOver = newState.status match {
+        case chess.model.GameStatus.Checkmate(_) |
+             chess.model.GameStatus.Stalemate |
+             chess.model.GameStatus.Draw(_) |
+             chess.model.GameStatus.Timeout(_) |
+             chess.model.GameStatus.Resigned(_) => true
+        case _ => false
+      }
+
+      _ <- if (isAiTurn && !isGameOver) {
         (IO.sleep(500.millis) >> dispatch(sessionId, Command.AiMove)).start.void
       } else IO.unit
       

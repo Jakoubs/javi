@@ -37,7 +37,7 @@ class PuzzleTable(val profile: JdbcProfile):
 
   /** DDL to create the `puzzles` table if it does not exist. */
   val createSchema: profile.api.DBIO[Unit] =
-    MTable.getTables("puzzles").flatMap { tables =>
-      if tables.isEmpty then puzzles.schema.create
+    MTable.getTables.flatMap { tables =>
+      if !tables.exists(_.name.name.equalsIgnoreCase("puzzles")) then puzzles.schema.create
       else DBIO.successful(())
     }

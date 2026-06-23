@@ -48,7 +48,7 @@ class AuthService(val userDao: UserDao, emailService: EmailService):
       for {
         userOpt <- userDao.findByUsername(req.username)
         result = userOpt match {
-          case Some(user) if BCrypt.checkpw(req.password, user.passwordHash) =>
+          case Some(user) if isValidBcryptHash(user.passwordHash) && BCrypt.checkpw(req.password, user.passwordHash) =>
             if (user.isVerified) {
               Right(AuthResponse(user.id, user.username, generateToken(user.id), true))
             } else {
@@ -83,3 +83,6 @@ class AuthService(val userDao: UserDao, emailService: EmailService):
 
   private def generateToken(userId: Long): String =
     java.util.UUID.randomUUID().toString
+
+  private def isValidBcryptHash(hash: String): Boolean =
+    hash != null && hash.startsWith("$2") && hash.length == 60
