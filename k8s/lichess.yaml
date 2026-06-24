@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lichess
+  namespace: javi
+  labels:
+    app.kubernetes.io/name: javi
+    app.kubernetes.io/component: lichess
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: javi
+      app.kubernetes.io/component: lichess
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: javi
+        app.kubernetes.io/component: lichess
+    spec:
+      containers:
+        - name: lichess
+          image: javi-lichess:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LICHESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lichess-secret
+                  key: lichess-token
+            - name: CHESS_PERSISTENCE_BACKEND
+              value: slick
+            - name: CHESS_DB_URL
+              value: jdbc:postgresql://postgres:5432/chess
+            - name: CHESS_DB_USER
+              value: chess
+            - name: CHESS_DB_PASSWORD
+              value: chess
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

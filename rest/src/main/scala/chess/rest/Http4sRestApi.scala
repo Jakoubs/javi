@@ -501,6 +501,56 @@ class Http4sRestApi(
       }
       Ok(games.asJson)
 
+    case POST -> Root / "api" / "bot" / "join-tournament" / tournamentId =>
+      // Priority: 1. TOURNAMENT_BOT_TOKEN env var, 2. auto-register with TOURNAMENT_BOT_NAME
+      val envToken = Option(System.getenv("TOURNAMENT_BOT_TOKEN")).map(_.trim).filter(_.nonEmpty)
+      val botName  = Option(System.getenv("TOURNAMENT_BOT_NAME")).map(_.trim).filter(_.nonEmpty)
+                       .getOrElse("javi-bot")
+
+      val tokenResult: Either[String, String] = envToken match
+        case Some(t) => Right(t)
+        case None    =>
+          println(s"[REST] No TOURNAMENT_BOT_TOKEN set – auto-registering as '$botName'…")
+          TournamentBot.registerBot(botName)
+
+      tokenResult match
+        case Left(err) =>
+          BadRequest(s"""{"error":${io.circe.Json.fromString(err).noSpaces}}""")
+        case Right(token) =>
+          TournamentBot.joinAndPlay(tournamentId, token) match
+            case Left(err) =>
+              BadRequest(s"""{"error":${io.circe.Json.fromString(err).noSpaces}}""")
+            case Right(_) =>
+              IO.pure(Response[IO](Status.Accepted).withEntity(
+                s"""{"status":"started","tournamentId":${io.circe.Json.fromString(tournamentId).noSpaces}}"""
+              ))
+
+    // Manual registration endpoint – useful to get a token and set it as env var
+    case POST -> Root / "api" / "bot" / "register" =>
+      val botName = Option(System.getenv("TOURNAMENT_BOT_NAME")).map(_.trim).filter(_.nonEmpty)
+                      .getOrElse("javi-bot")
+      TournamentBot.registerBot(botName) match
+        case Left(err)    => BadRequest(s"""{"error":${io.circe.Json.fromString(err).noSpaces}}""")
+        case Right(token) => Ok(s"""{"token":${io.circe.Json.fromString(token).noSpaces},"name":${io.circe.Json.fromString(botName).noSpaces}}""")
+
+    case GET -> Root / "api" / "bot" / "sessions" =>
+      val sessions = TournamentBot.getActiveSessions.map { s =>
+        io.circe.Json.obj(
+          "tournamentId" -> io.circe.Json.fromString(s.tournamentId),
+          "startedAt"    -> io.circe.Json.fromLong(s.startedAt),
+          "active"       -> io.circe.Json.fromBoolean(s.active.get())
+        )
+      }
+      Ok(io.circe.Json.arr(sessions*).noSpaces)
+
+    case DELETE -> Root / "api" / "bot" / "join-tournament" / tournamentId =>
+      TournamentBot.getActiveSessions.find(_.tournamentId == tournamentId) match
+        case Some(s) =>
+          s.active.set(false)
+          Ok(s"""{"stopped":true,"tournamentId":${io.circe.Json.fromString(tournamentId).noSpaces}}""")
+        case None =>
+          NotFound(s"""{"error":"No active bot session for tournament $tournamentId"}""")
+
     case req =>
       IO(println(s"[REST DEBUG] Unmatched request: ${req.method} ${req.uri}")) >> NotFound(s"Route not found: ${req.uri}")
   }

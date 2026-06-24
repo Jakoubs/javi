@@ -22,6 +22,11 @@ const gameState = ref(null)
 const tournamentEvents = ref([])
 const gameEvents = ref([])
 
+// Bot session state
+const botStatus = ref(null)  // null | 'starting' | 'active' | 'error'
+const botMessage = ref('')
+const botTournamentId = ref('')
+
 const activeTab = ref('connect')
 const showJsonModal = ref(false)
 const jsonModalTitle = ref('')
@@ -342,6 +347,42 @@ const stopGameStream = () => {
   gameStreamAbort = null
 }
 
+const botJoinTournament = async () => {
+  if (!selectedTournamentId.value.trim()) return
+  botStatus.value = 'starting'
+  botMessage.value = 'Starte Bot…'
+  botTournamentId.value = selectedTournamentId.value.trim()
+  try {
+    // Calls OUR own REST API (no bearer token needed – server reads TOURNAMENT_BOT_TOKEN env var)
+    const res = await fetch(`/api/bot/join-tournament/${encodeURIComponent(botTournamentId.value)}`, {
+      method: 'POST'
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok || res.status === 202) {
+      botStatus.value = 'active'
+      botMessage.value = `Bot läuft in Turnier ${botTournamentId.value}`
+    } else {
+      botStatus.value = 'error'
+      botMessage.value = data.error || `Fehler ${res.status}`
+    }
+  } catch (e) {
+    botStatus.value = 'error'
+    botMessage.value = `Netzwerkfehler: ${e.message}`
+  }
+}
+
+const botStopTournament = async () => {
+  if (!botTournamentId.value) return
+  try {
+    await fetch(`/api/bot/join-tournament/${encodeURIComponent(botTournamentId.value)}`, {
+      method: 'DELETE'
+    })
+  } catch (_) {}
+  botStatus.value = null
+  botMessage.value = ''
+  botTournamentId.value = ''
+}
+
 onUnmounted(() => {
   stopTournamentStream()
   stopGameStream()
@@ -476,6 +517,28 @@ onUnmounted(() => {
               <button class="mini-btn" @click="joinTournament">Join</button>
               <button class="mini-btn" @click="withdrawTournament">Withdraw</button>
               <button class="mini-btn primary" @click="startTournament">Start</button>
+            </div>
+
+            <!-- Bot controls -->
+            <div class="bot-row">
+              <button
+                class="mini-btn bot-btn"
+                :disabled="botStatus === 'starting' || botStatus === 'active'"
+                @click="botJoinTournament"
+              >
+                🤖 Bot beitreten
+              </button>
+              <button
+                v-if="botStatus === 'active'"
+                class="mini-btn danger"
+                @click="botStopTournament"
+              >
+                ■ Bot stoppen
+              </button>
+              <span v-if="botStatus" class="bot-status" :class="botStatus">
+                <span class="bot-dot"></span>
+                {{ botMessage }}
+              </span>
             </div>
           </div>
 
@@ -1035,4 +1098,60 @@ label {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Bot controls ── */
+.bot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.bot-btn {
+  border-color: rgba(130, 100, 255, 0.35);
+  background: rgba(130, 100, 255, 0.1);
+  color: #c4b5fd;
+}
+.bot-btn:hover:not(:disabled) {
+  background: rgba(130, 100, 255, 0.2);
+}
+.bot-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bot-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+.bot-status.active { color: var(--primary); }
+.bot-status.error  { color: #ff6b6b; }
+
+.bot-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+.bot-status.starting .bot-dot {
+  background: #fbbf24;
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+.bot-status.active .bot-dot {
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.bot-status.error .bot-dot { background: #ff6b6b; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
 </style>
+

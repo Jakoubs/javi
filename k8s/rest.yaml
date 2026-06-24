@@ -40,6 +40,17 @@ spec:
               value: chess
             - name: KAFKA_BOOTSTRAP
               value: kafka:9092
+            - name: TOURNAMENT_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lichess-secret
+                  key: tournament-bot-token
+            - name: TOURNAMENT_BOT_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: lichess-secret
+                  key: tournament-bot-name
+
           readinessProbe:
             httpGet:
               path: /api/state
